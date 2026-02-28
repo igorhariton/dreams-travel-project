@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TravelDreams — Ultra Hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sky1: #E8F4FD;
+  --sky2: #D1EAF8;
+  --sky3: #B8DFF4;
+  --ocean: #7EC8E3;
+  --deep: #2A7FAB;
+  --navy: #1A5276;
+  --gold: #D4A84B;
+  --gold2: #F0C060;
+  --coral: #E8705A;
+  --mint: #4ECDC4;
+  --lavender: #A78BFA;
+  --rose: #F9A8D4;
+  --ink: #1A2E44;
+  --ink2: #2C4A6E;
+  --glass: rgba(255,255,255,0.55);
+  --glass2: rgba(255,255,255,0.25);
+  --glass-border: rgba(255,255,255,0.7);
+  --shadow: rgba(42,127,171,0.15);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: none;
+}
+
+/* ── Cursor ── */
+#cur { position:fixed; pointer-events:none; z-index:9999; width:10px; height:10px; background:var(--coral); border-radius:50%; transform:translate(-50%,-50%); transition:width .2s,height .2s; mix-blend-mode:multiply; }
+#cur-ring { position:fixed; pointer-events:none; z-index:9998; width:34px; height:34px; border:2px solid rgba(212,168,75,0.6); border-radius:50%; transform:translate(-50%,-50%); transition:width .3s,height .3s; }
+
+/* ── BG Canvas ── */
+#bgC { position:fixed; inset:0; width:100vw; height:100vh; }
+
+/* ── Stage ── */
+.stage {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  padding: 0 5vw;
+  gap: 2vw;
+  z-index: 10;
+}
+
+/* ══ LEFT ══ */
+.left { position: relative; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 40px;
+  padding: 6px 16px; margin-bottom: 24px;
+  font-size: 11px; font-weight: 600; color: var(--deep);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(42,127,171,0.12);
+  opacity: 0; animation: slideUp .7s .2s forwards;
+}
+.pill-dot { width: 7px; height: 7px; background: var(--coral); border-radius: 50%; animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
+
+.headline {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(44px, 5vw, 76px);
+  line-height: 1.0;
+  color: var(--ink);
+  margin-bottom: 6px;
+  opacity: 0; animation: slideUp .8s .35s forwards;
+}
+.headline em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--deep) 0%, var(--ocean) 50%, var(--mint) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hl2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 4vw, 60px);
+  color: var(--gold);
+  font-weight: 400; font-style: italic;
+  display: block; margin-bottom: 20px;
+  opacity: 0; animation: slideUp .8s .5s forwards;
+}
+
+.sub {
+  font-size: 15px; font-weight: 400; color: var(--ink2);
+  max-width: 400px; line-height: 1.75; margin-bottom: 32px;
+  opacity: 0; animation: slideUp .8s .65s forwards;
+}
+
+/* Search widget */
+.search-wrap {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: 0 8px 40px rgba(42,127,171,0.18), 0 2px 8px rgba(255,255,255,0.5) inset;
+  max-width: 500px;
+  opacity: 0; animation: slideUp .8s .8s forwards;
+}
+.search-row { display: flex; align-items: stretch; gap: 0; }
+.sf {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; border-right: 1px solid rgba(42,127,171,0.12);
+  cursor: pointer; border-radius: 12px; transition: background .2s;
+}
+.sf:last-of-type { border-right: none; }
+.sf:hover { background: rgba(126,200,227,0.12); }
+.sf-lbl { font-size: 9px; font-weight: 700; color: var(--ocean); letter-spacing: .1em; text-transform: uppercase; }
+.sf-val { font-size: 13px; font-weight: 500; color: var(--ink); }
+.sf-val.typing::after { content:'|'; animation: cursor .6s step-end infinite; color: var(--deep); }
+@keyframes cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+.s-btn {
+  background: linear-gradient(135deg, var(--deep), var(--ocean));
+  color: white; border: none; border-radius: 13px;
+  padding: 0 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 16px rgba(42,127,171,0.35);
+  flex-shrink: 0;
+}
+.s-btn:hover { opacity: .9; transform: scale(.98); }
+
+/* Stats */
+.stats { display:flex; gap:0; margin-top:24px; opacity:0; animation:slideUp .8s 1s forwards; }
+.stat { flex:1; padding:14px 16px; background:rgba(255,255,255,0.55); backdrop-filter:blur(12px); border:1px solid var(--glass-border); }
+.stat:first-child { border-radius:14px 0 0 14px; }
+.stat:last-child { border-radius:0 14px 14px 0; }
+.stat + .stat { border-left: none; }
+.s-num { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--ink); line-height:1; }
+.s-num .accent { color:var(--deep); font-size:16px; }
+.s-lbl { font-size:10px; font-weight:600; color:rgba(42,127,171,0.6); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; }
+.stat:hover { background:rgba(255,255,255,0.75); }
+
+/* Tags */
+.tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; opacity:0; animation:slideUp .8s 1.2s forwards; }
+.tag {
+  display:flex; align-items:center; gap:6px; padding:7px 15px;
+  background:rgba(255,255,255,0.6); backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.8); border-radius:30px;
+  font-size:12px; font-weight:500; color:var(--ink2);
+  cursor:pointer; transition:all .25s;
+  box-shadow: 0 2px 8px rgba(42,127,171,0.08);
+}
+.tag:hover { background:rgba(255,255,255,.9); color:var(--ink); transform:translateY(-2px); box-shadow:0 6px 20px rgba(42,127,171,0.15); }
+.tag.on { background:linear-gradient(135deg,var(--deep),var(--ocean)); color:white; border-color:transparent; box-shadow:0 4px 16px rgba(42,127,171,0.3); }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+/* ══ RIGHT ══ */
+.right {
+  position:relative; display:flex; align-items:center; justify-content:center;
+  height:100vh;
+  opacity:0; animation:fadeIn 1.2s .4s forwards;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+#gC { border-radius:50%; position:relative; z-index:2; cursor:grab; }
+#gC:active { cursor:grabbing; }
+
+/* Globe halo rings */
+.halo {
+  position:absolute; top:50%; left:50%; border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none; z-index:1;
+}
+.halo-1 { width:82%; padding-top:82%; background:radial-gradient(ellipse,rgba(126,200,227,.15) 0%, transparent 70%); animation:haloBreath 4s ease-in-out infinite; }
+.halo-2 { width:96%; padding-top:96%; border:1px dashed rgba(42,127,171,0.2); animation:haloSpin 40s linear infinite; }
+.halo-3 { width:106%; padding-top:106%; border:1px solid rgba(255,255,255,0.3); animation:haloSpin 60s linear infinite reverse; }
+.halo-dot { width:10px; height:10px; background:var(--coral); border-radius:50%; position:absolute; top:-5px; left:50%; transform:translateX(-50%); box-shadow:0 0 12px 4px rgba(232,112,90,0.5); }
+@keyframes haloBreath { 0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.07)} }
+@keyframes haloSpin { from{transform:translate(-50%,-50%) rotate(0deg)} to{transform:translate(-50%,-50%) rotate(360deg)} }
+
+/* Floating UI cards */
+.fcard {
+  position:absolute; z-index:20; pointer-events:none;
+  background:rgba(255,255,255,0.72);
+  backdrop-filter:blur(22px);
+  border:1px solid rgba(255,255,255,0.85);
+  border-radius:18px;
+  box-shadow:0 8px 32px rgba(42,127,171,0.15), 0 2px 6px rgba(255,255,255,0.6) inset;
+  opacity:0;
+}
+.fc-a { top:6%; right:-4%; min-width:185px; padding:15px; animation:fcFloat 9s ease-in-out 1.8s infinite; }
+.fc-b { bottom:18%; left:-6%; min-width:200px; padding:15px; animation:fcFloat 10s ease-in-out 3.5s infinite; }
+.fc-c { top:44%; right:-5%; min-width:195px; padding:14px; animation:fcFloat 11s ease-in-out 6s infinite; }
+.fc-d { top:18%; left:-2%; min-width:160px; padding:12px; animation:fcFloat 8s ease-in-out 8s infinite; }
+
+@keyframes fcFloat {
+  0%   { opacity:0; transform:translateY(12px) scale(.97); }
+  12%  { opacity:1; transform:translateY(0) scale(1); }
+  85%  { opacity:1; transform:translateY(-8px) scale(1); }
+  100% { opacity:0; transform:translateY(-14px) scale(.97); }
+}
+
+.fc-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.fc-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.fc-icon.blue { background:linear-gradient(135deg,#DBEAFE,#BFDBFE); }
+.fc-icon.teal { background:linear-gradient(135deg,#CCFBF1,#99F6E4); }
+.fc-icon.coral { background:linear-gradient(135deg,#FEE2E2,#FCA5A5); }
+.fc-icon.gold { background:linear-gradient(135deg,#FEF3C7,#FDE68A); }
+.fc-icon.lav  { background:linear-gradient(135deg,#EDE9FE,#DDD6FE); }
+.fc-name { font-size:13px; font-weight:700; color:var(--ink); }
+.fc-loc  { font-size:10px; color:rgba(42,79,120,.55); margin-top:1px; }
+
+.fc-price { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--ink); }
+.fc-price small { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:400; color:rgba(42,79,120,.5); }
+.fc-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-top:7px; }
+.fc-badge.hot { background:#FEE2E2; color:#DC2626; }
+.fc-badge.ok  { background:#DCFCE7; color:#16A34A; }
+.fc-badge.new { background:#EDE9FE; color:#7C3AED; }
+.fc-badge.live { background:#FEF3C7; color:#B45309; }
+
+.fc-divider { height:1px; background:rgba(42,127,171,.1); margin:10px 0; }
+
+.fc-row { display:flex; align-items:center; justify-content:space-between; }
+.fc-tag { font-size:10px; color:rgba(42,79,120,.55); }
+.fc-val { font-size:12px; font-weight:600; color:var(--ink); }
+
+.fc-stars { color:#FBBF24; font-size:11px; letter-spacing:-1px; }
+.fc-review { font-size:10px; color:rgba(42,79,120,.5); }
+
+/* Flight route card */
+.route-row { display:flex; align-items:center; gap:6px; margin-top:10px; }
+.route-code { font-size:18px; font-weight:800; color:var(--ink); font-family:'Playfair Display',serif; }
+.route-line { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.route-dash { height:1px; width:100%; background:linear-gradient(to right,var(--ocean),var(--mint)); border-radius:2px; }
+.route-plane { font-size:14px; animation:planeWiggle 2s ease-in-out infinite; }
+.route-dur { font-size:9px; color:rgba(42,79,120,.55); font-weight:500; }
+@keyframes planeWiggle { 0%,100%{transform:translateX(-2px)} 50%{transform:translateX(2px)} }
+
+/* Mini map dots */
+.minimap { display:flex; gap:5px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+.mmdot { width:7px; height:7px; border-radius:50%; }
+
+/* Weather bar */
+.wx-bar {
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+  background:rgba(255,255,255,0.88); backdrop-filter:blur(28px);
+  border:1px solid rgba(255,255,255,.95); border-radius:50px;
+  padding:12px 28px; display:flex; gap:22px; align-items:center;
+  z-index:100;
+  box-shadow:0 8px 32px rgba(42,127,171,.16), 0 1px 4px rgba(255,255,255,.9) inset;
+  opacity:0; animation:slideUp .8s 2.2s forwards;
+  white-space: nowrap;
+}
+.wx { display:flex; align-items:center; gap:6px; }
+.wx-em { font-size:17px; }
+.wx-d { display:flex; flex-direction:column; }
+.wx-city { font-size:9px; font-weight:700; color:rgba(42,79,120,.5); letter-spacing:.08em; text-transform:uppercase; }
+.wx-t { font-size:13px; font-weight:600; color:var(--ink); }
+.wx-sep { width:1px; height:28px; background:rgba(42,127,171,.12); }
+
+/* Live badge */
+.live {
+  position:fixed; bottom:22px; left:22px; z-index:101;
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,.72); backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.85); border-radius:40px;
+  padding:8px 16px;
+  box-shadow:0 4px 20px rgba(42,127,171,.15);
+  opacity:0; animation:fadeIn 1s 2.5s forwards;
+  font-size:12px; color:var(--ink2);
+}
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--coral); animation:blink 1s ease-in-out infinite; }
+.live strong { color:var(--ink); font-weight:700; }
+
+/* Booking toast */
+.toast {
+  position:fixed; top:24px; right:24px; z-index:200;
+  background:rgba(255,255,255,.85); backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.9); border-radius:16px;
+  padding:14px 18px; max-width:280px;
+  box-shadow:0 8px 32px rgba(42,127,171,.18);
+  display:flex; gap:12px; align-items:center;
+  opacity:0; animation:toastAnim 5s 3s ease-in-out infinite;
+}
+@keyframes toastAnim {
+  0%  { opacity:0; transform:translateX(30px); }
+  10% { opacity:1; transform:translateX(0); }
+  80% { opacity:1; transform:translateX(0); }
+  100%{ opacity:0; transform:translateX(30px); }
+}
+.toast-icon { width:38px; height:38px; background:linear-gradient(135deg,#DCFCE7,#BBF7D0); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.toast-title { font-size:13px; font-weight:700; color:var(--ink); }
+.toast-sub { font-size:11px; color:rgba(42,79,120,.55); margin-top:2px; }
+
+/* Nav dots */
+.ndots {
+  position:fixed; right:16px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:9px; z-index:101;
+  opacity:0; animation:fadeIn 1s 2.8s forwards;
+}
+.nd { width:6px; height:6px; border-radius:50%; background:rgba(42,127,171,.25); cursor:pointer; transition:all .3s; }
+.nd.on { background:var(--deep); transform:scale(1.5); }
+.nd:hover { background:var(--ocean); }
+
+/* Progress line top */
+.pbar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(to right,var(--gold),var(--ocean),var(--mint)); z-index:999; animation:pbarAnim 10s ease-in-out infinite; border-radius:0 3px 3px 0; }
+@keyframes pbarAnim { 0%{width:0;opacity:1} 75%{width:100%;opacity:1} 100%{width:100%;opacity:0} }
+
+/* Grain */
+.grain { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.018; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px 200px; }
+
+/* Animated mesh gradient overlay on top of canvas */
+#mesh {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: 
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(186,230,253,0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(253,230,138,0.3) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 60% 80%, rgba(125,211,252,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 10% 70%, rgba(167,243,208,0.2) 0%, transparent 50%);
+  animation: meshShift 12s ease-in-out infinite alternate;
+}
+@keyframes meshShift {
+  0%   { opacity: 0.7; transform: scale(1) translate(0,0); }
+  33%  { opacity: 0.9; transform: scale(1.02) translate(10px,-5px); }
+  66%  { opacity: 0.75; transform: scale(0.99) translate(-8px,8px); }
+  100% { opacity: 0.85; transform: scale(1.01) translate(5px,-10px); }
+}
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="pbar"></div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<canvas id="bgC"></canvas>
+<div id="mesh"></div>
+
+<!-- TOAST -->
+<div class="toast">
+  <div class="toast-icon">✈️</div>
+  <div>
+    <div class="toast-title">Booking Confirmed!</div>
+    <div class="toast-sub">Santorini · Oct 14 – Oct 21 · 2 guests</div>
+  </div>
+</div>
+
+<div class="stage">
+  <!-- ── LEFT ── -->
+  <div class="left">
+    <div class="pill"><span class="pill-dot"></span>50+ Destinations · Curated for You</div>
+
+    <h1 class="headline">Discover<br><em>The World</em></h1>
+    <span class="hl2">Your story starts here.</span>
+
+    <p class="sub">Handpicked destinations, seamless booking, and journeys that transform. From hidden coastlines to ancient cities — we craft every detail.</p>
+
+    <div class="search-wrap">
+      <div class="search-row">
+        <div class="sf">
+          <span class="sf-lbl">📍 Where to?</span>
+          <span class="sf-val typing" id="typeEl">Santorini, Greece</span>
+        </div>
+        <div class="sf" style="max-width:128px;">
+          <span class="sf-lbl">📅 Dates</span>
+          <span class="sf-val">Oct 14 – 21</span>
+        </div>
+        <div class="sf" style="max-width:100px;">
+          <span class="sf-lbl">👥 Guests</span>
+          <span class="sf-val">2 Adults</span>
+        </div>
+        <button class="s-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search
+        </button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="s-num"><span id="c1">0</span><span class="accent">+</span></div><div class="s-lbl">Countries</div></div>
+      <div class="stat"><div class="s-num"><span id="c2">0</span><span class="accent">k</span></div><div class="s-lbl">Hotels</div></div>
+      <div class="stat"><div class="s-num"><span id="c3">0</span><span class="accent">M</span></div><div class="s-lbl">Travelers</div></div>
+      <div class="stat"><div class="s-num">4.9<span class="accent">★</span></div><div class="s-lbl">Rating</div></div>
+    </div>
+
+    <div class="tags">
+      <div class="tag on">🏖️ Beach</div>
+      <div class="tag">🏔️ Mountain</div>
+      <div class="tag">🏛️ Culture</div>
+      <div class="tag">🌿 Eco Travel</div>
+      <div class="tag">🍷 Gastronomy</div>
+      <div class="tag">🌸 Romance</div>
+      <div class="tag">🎒 Adventure</div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="right" id="rp">
+    <div class="halo halo-1"></div>
+    <div class="halo halo-2"><div class="halo-dot"></div></div>
+    <div class="halo halo-3"></div>
+    <canvas id="gC"></canvas>
+
+    <!-- Card A: Destination price -->
+    <div class="fcard fc-a">
+      <div class="fc-head">
+        <div class="fc-icon teal">🏝️</div>
+        <div><div class="fc-name">Santorini, Greece</div><div class="fc-loc">🇬🇷 Cyclades Islands</div></div>
+      </div>
+      <div class="fc-price">$2,840 <small>/ person</small></div>
+      <div class="fc-badge hot">🔥 Only 3 left</div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-stars">★★★★★</div>
+        <div class="fc-review">4.9 (2,841 reviews)</div>
+      </div>
+    </div>
+
+    <!-- Card B: Flight info -->
+    <div class="fcard fc-b">
+      <div class="fc-head">
+        <div class="fc-icon blue">✈️</div>
+        <div><div class="fc-name">Direct Flight</div><div class="fc-loc">Non-stop · Economy</div></div>
+      </div>
+      <div class="route-row">
+        <div><div class="route-code">LHR</div><div class="fc-tag">London</div></div>
+        <div class="route-line">
+          <div class="route-plane">✈</div>
+          <div class="route-dash"></div>
+          <div class="route-dur">6h 30m</div>
+        </div>
+        <div style="text-align:right"><div class="route-code">ATH</div><div class="fc-tag">Athens</div></div>
+      </div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-badge ok">Available</div>
+        <div class="fc-val">from $342</div>
+      </div>
+    </div>
+
+    <!-- Card C: Review -->
+    <div class="fcard fc-c">
+      <div class="fc-head">
+        <div class="fc-icon coral">💬</div>
+        <div><div class="fc-name">Sarah M.</div><div class="fc-loc">Traveled to Bali, 2024</div></div>
+      </div>
+      <div style="font-size:12px; color:var(--ink2); line-height:1.6; font-style:italic;">"Absolutely magical. TravelDreams made every detail perfect — from the villa to the hidden waterfalls."</div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-stars">★★★★★</div>
+        <div class="fc-badge new">Verified</div>
+      </div>
+    </div>
+
+    <!-- Card D: Mini deal -->
+    <div class="fcard fc-d">
+      <div class="fc-head">
+        <div class="fc-icon gold">⚡</div>
+        <div><div class="fc-name">Flash Deal</div><div class="fc-loc">Expires in 02:47</div></div>
+      </div>
+      <div class="fc-price" style="font-size:20px;">$1,190 <small>was $1,680</small></div>
+      <div class="minimap">
+        <div class="mmdot" style="background:#E8705A;"></div>
+        <div class="mmdot" style="background:#4ECDC4;"></div>
+        <div class="mmdot" style="background:#A78BFA;"></div>
+        <div class="mmdot" style="background:#D4A84B;"></div>
+        <div style="font-size:10px;color:rgba(42,79,120,.5);">Maldives · 5 nights</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Weather bar — fixed at bottom center -->
+<div class="wx-bar">
+  <div class="wx"><span class="wx-em">☀️</span><div class="wx-d"><div class="wx-city">Santorini</div><div class="wx-t">26°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌤️</span><div class="wx-d"><div class="wx-city">Bali</div><div class="wx-t">29°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">⛅</span><div class="wx-d"><div class="wx-city">Tokyo</div><div class="wx-t">18°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌊</span><div class="wx-d"><div class="wx-city">Maldives</div><div class="wx-t">31°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌺</span><div class="wx-d"><div class="wx-city">Hawaii</div><div class="wx-t">27°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🗼</span><div class="wx-d"><div class="wx-city">Paris</div><div class="wx-t">14°C</div></div></div>
+</div>
+
+<!-- Nav dots -->
+<div class="ndots">
+  <div class="nd on"></div><div class="nd"></div><div class="nd"></div><div class="nd"></div><div class="nd"></div>
+</div>
+
+<!-- Live -->
+<div class="live">
+  <div class="live-dot"></div>
+  <div><strong id="liveN">1,384</strong> travelers online now</div>
+</div>
+
+<script>
+// ── Cursor
+const cur = document.getElementById('cur'), curR = document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function ac(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.13;ry+=(my-ry)*.13;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(ac);})();
+
+// ── Counters
+function count(id,val,dur,dec=0){
+  const el=document.getElementById(id);
+  if(!el){return;}
+  el.textContent=dec?'0.0':'0';
+  let s=null;
+  (function step(ts){
+    if(!s)s=ts;
+    const p=Math.min((ts-s)/dur,1),e=1-Math.pow(1-p,3),v=val*e;
+    el.textContent=dec?v.toFixed(dec):Math.floor(v);
+    if(p<1)requestAnimationFrame(step);
+  })(performance.now());
+}
+// Start counters after page fully loaded
+window.addEventListener('load',()=>{
+  setTimeout(()=>{count('c1',50,1800);count('c2',2.4,2000,1);count('c3',1.2,2200,1);},600);
+});
+
+// ── Live counter
+setInterval(()=>{ document.getElementById('liveN').textContent=(1300+Math.floor(Math.random()*300)).toLocaleString(); },3200);
+
+// ── Typing
+const dests=['Santorini, Greece','Bali, Indonesia','Kyoto, Japan','Maldives Islands','Amalfi Coast, Italy','Machu Picchu, Peru','Safari, Kenya','Iceland Aurora'];
+let di=0,ci=0,del=false;
+const tel=()=>document.getElementById("typeEl");
+function type(){const el=tel();if(!el)return;const d=dests[di];if(!del){ci++;el.textContent=d.slice(0,ci);if(ci===d.length){del=true;setTimeout(type,2000);return;}setTimeout(type,55+Math.random()*45);}else{ci--;el.textContent=d.slice(0,ci);if(ci===0){del=false;di=(di+1)%dests.length;setTimeout(type,400);return;}setTimeout(type,30);}}
+setTimeout(type,2000);
+
+// ── Tags
+document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tag').forEach(x=>x.classList.remove('on'));t.classList.add('on');}));
+document.querySelectorAll('.nd').forEach((d,i)=>d.addEventListener('click',()=>{document.querySelectorAll('.nd').forEach((x,j)=>x.classList.toggle('on',j===i));}));
+
+// ── Countdown timer in flash deal card
+(function cd(){const loc=document.querySelector('.fc-d .fc-loc');if(!loc)return;let s=167;setInterval(()=>{s--;if(s<0)s=300;const m=Math.floor(s/60).toString().padStart(2,'0'),sec=(s%60).toString().padStart(2,'0');loc.textContent=`Expires in ${m}:${sec}`;},1000);})();
+
+// ══════════════════════════════════════════
+// BG CANVAS — Animated World Map
+// ══════════════════════════════════════════
+const bgC=document.getElementById('bgC'),bgX=bgC.getContext('2d');
+let BW,BH;
+function rbg(){BW=bgC.width=window.innerWidth;BH=bgC.height=window.innerHeight;}
+rbg();window.addEventListener('resize',rbg);
+
+// ── Map nodes: major world cities (normalized x,y for map projection)
+const mapNodes = [
+  {name:'New York',    x:.095, y:.46,  col:'#E8705A'},
+  {name:'London',      x:.418, y:.30,  col:'#2A7FAB'},
+  {name:'Paris',       x:.430, y:.33,  col:'#D4A84B'},
+  {name:'Dubai',       x:.582, y:.46,  col:'#F0A500'},
+  {name:'Mumbai',      x:.585, y:.52,  col:'#E8705A'},
+  {name:'Singapore',   x:.652, y:.60,  col:'#4ECDC4'},
+  {name:'Tokyo',       x:.724, y:.30,  col:'#FC5185'},
+  {name:'Sydney',      x:.720, y:.80,  col:'#34D399'},
+  {name:'Bali',        x:.680, y:.68,  col:'#A78BFA'},
+  {name:'Cairo',       x:.492, y:.42,  col:'#D4A84B'},
+  {name:'Cape Town',   x:.455, y:.84,  col:'#4ECDC4'},
+  {name:'São Paulo',   x:.165, y:.72,  col:'#F97316'},
+  {name:'Los Angeles', x:.040, y:.40,  col:'#60A5FA'},
+  {name:'Toronto',     x:.112, y:.35,  col:'#34D399'},
+  {name:'Mexico City', x:.085, y:.50,  col:'#FC5185'},
+  {name:'Santorini',   x:.480, y:.36,  col:'#60A5FA'},
+  {name:'Maldives',    x:.600, y:.58,  col:'#06B6D4'},
+  {name:'Nairobi',     x:.520, y:.58,  col:'#84CC16'},
+  {name:'Bangkok',     x:.648, y:.52,  col:'#F59E0B'},
+  {name:'Amsterdam',   x:.438, y:.26,  col:'#E879F9'},
+  {name:'Barcelona',   x:.426, y:.36,  col:'#FB923C'},
+  {name:'Reykjavik',   x:.378, y:.22,  col:'#93C5FD'},
+  {name:'Marrakech',   x:.418, y:.44,  col:'#FCD34D'},
+];
+
+// ── Flight routes between nodes
+const routePairs = [
+  [0,1],[1,6],[0,3],[2,9],[3,5],[5,7],[6,8],[1,3],[4,5],
+  [11,0],[12,5],[13,1],[10,9],[14,12],[15,2],[16,5],[17,9],
+  [18,5],[1,20],[21,1],[2,22],[0,13],[6,7],[3,8],[2,15]
+];
+
+// ── Animated planes on routes
+const planes = routePairs.map((r,i) => ({
+  from: r[0], to: r[1],
+  t: Math.random(),
+  speed: .0008 + Math.random()*.001,
+  active: Math.random() > .35,
+  trail: []
+}));
+
+// ── Floating passport stamps
+const stamps = [
+  {x:.12, y:.18, label:'BOARDED', sub:'JFK → CDG', rot:-8,  col:'#E8705A', delay:0},
+  {x:.82, y:.14, label:'VISITED', sub:'TOKYO',      rot: 6,  col:'#2A7FAB', delay:1.5},
+  {x:.08, y:.72, label:'ARRIVED', sub:'RIO DE JANEIRO', rot:-5, col:'#34D399', delay:3},
+  {x:.88, y:.75, label:'EXPLORED', sub:'SYDNEY',    rot: 9,  col:'#A78BFA', delay:4.5},
+  {x:.50, y:.08, label:'CHECKED IN',sub:'PARIS',    rot:-4,  col:'#D4A84B', delay:6},
+];
+
+// ── Floating postcards
+const postcards = [
+  {x:.05, y:.44, dest:'🏝️ MALDIVES',    price:'from $1,240', rot:-6,  delay:2},
+  {x:.90, y:.38, dest:'🗼 PARIS',        price:'from $890',   rot: 7,  delay:5},
+  {x:.50, y:.85, dest:'🌸 KYOTO',        price:'from $1,100', rot:-3,  delay:8},
+];
+
+// ── Grid lines (map parallels & meridians)
+let bgT = 0;
+
+function drawBg(){
+  bgX.clearRect(0,0,BW,BH);
+  bgT += .005;
+
+  // ── 1. PAPER TEXTURE BASE — warm cream/ivory
+  const base = bgX.createLinearGradient(0,0,BW,BH);
+  base.addColorStop(0,   '#F8F4ED');
+  base.addColorStop(.25, '#F5F0E6');
+  base.addColorStop(.5,  '#F2EDE3');
+  base.addColorStop(.75, '#F5F0E6');
+  base.addColorStop(1,   '#EDE8DF');
+  bgX.fillStyle = base;
+  bgX.fillRect(0,0,BW,BH);
+
+  // ── 2. Aged paper vignette (darker edges, lighter center)
+  const paperVig = bgX.createRadialGradient(BW*.5,BH*.5,BH*.1, BW*.5,BH*.5,BW*.85);
+  paperVig.addColorStop(0,   'rgba(255,250,240,.0)');
+  paperVig.addColorStop(.55, 'rgba(200,180,140,.07)');
+  paperVig.addColorStop(.8,  'rgba(160,130,90,.14)');
+  paperVig.addColorStop(1,   'rgba(120,90,50,.22)');
+  bgX.fillStyle = paperVig; bgX.fillRect(0,0,BW,BH);
+
+  // ── 3. Paper noise (subtle grain)
+  bgX.save();
+  bgX.globalAlpha = .028;
+  for(let i=0;i<400;i++){
+    const nx=Math.random()*BW, ny=Math.random()*BH, nr=Math.random()*1.8;
+    const grey = 80+Math.floor(Math.random()*80);
+    bgX.fillStyle=`rgb(${grey},${grey-10},${grey-20})`;
+    bgX.beginPath(); bgX.arc(nx,ny,nr,0,Math.PI*2); bgX.fill();
+  }
+  bgX.restore();
+
+  // ── 4. MAP GRID — latitude/longitude lines
+  bgX.save();
+  bgX.strokeStyle = 'rgba(42,127,171,.1)';
+  bgX.lineWidth = .7;
+  bgX.setLineDash([4,8]);
+  // Horizontals (parallels)
+  for(let i=1;i<8;i++){
+    const y = BH * i/8;
+    bgX.beginPath(); bgX.moveTo(0,y); bgX.lineTo(BW,y); bgX.stroke();
+  }
+  // Verticals (meridians)
+  for(let i=1;i<14;i++){
+    const x = BW * i/14;
+    bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x,BH); bgX.stroke();
+  }
+  bgX.setLineDash([]);
+  bgX.restore();
+
+  // ── 5. Decorative compass rose (bottom left)
+  drawCompass(BW*.08, BH*.82, Math.min(BW,BH)*.065, bgT*.3);
+
+  // ── 6. Map scale bar (bottom right)
+  drawScaleBar(BW*.78, BH*.92);
+
+  // ── 7. CONTINENT SILHOUETTES (stylized, simplified paths)
+  drawContinents();
+
+  // ── 8. FLIGHT ROUTE ARCS
+  for(const pl of planes){
+    if(!pl.active) continue;
+    pl.t += pl.speed;
+    if(pl.t > 1){ pl.t -= 1; pl.trail = []; pl.active = Math.random() > .15; }
+
+    const n1 = mapNodes[pl.from], n2 = mapNodes[pl.to];
+    const x1=n1.x*BW, y1=n1.y*BH, x2=n2.x*BW, y2=n2.y*BH;
+
+    // Arc path
+    const mx=(x1+x2)/2, my=(y1+y2)/2 - Math.hypot(x2-x1,y2-y1)*.18;
+
+    // Draw dashed arc
+    bgX.save();
+    bgX.strokeStyle = `${n1.col}55`;
+    bgX.lineWidth = 1.2;
+    bgX.setLineDash([5,7]);
+    bgX.beginPath();
+    bgX.moveTo(x1,y1); bgX.quadraticCurveTo(mx,my,x2,y2);
+    bgX.stroke();
+    bgX.setLineDash([]);
+    bgX.restore();
+
+    // Plane position along bezier
+    const bt = pl.t;
+    const bx = (1-bt)*(1-bt)*x1 + 2*(1-bt)*bt*mx + bt*bt*x2;
+    const by = (1-bt)*(1-bt)*y1 + 2*(1-bt)*bt*my + bt*bt*y2;
+
+    // Trail
+    pl.trail.push({x:bx, y:by, a:1});
+    if(pl.trail.length > 22) pl.trail.shift();
+
+    // Draw trail
+    for(let i=0;i<pl.trail.length;i++){
+      const ta = (i/pl.trail.length)*.5;
+      bgX.save();
+      bgX.globalAlpha = ta;
+      bgX.fillStyle = n1.col;
+      bgX.beginPath(); bgX.arc(pl.trail[i].x, pl.trail[i].y, .8+ta*1.5, 0, Math.PI*2); bgX.fill();
+      bgX.restore();
+    }
+
+    // Plane icon
+    const angle = Math.atan2(
+      2*(1-bt)*(my-y1) + 2*bt*(y2-my),
+      2*(1-bt)*(mx-x1) + 2*bt*(x2-mx)
+    );
+    bgX.save();
+    bgX.translate(bx,by); bgX.rotate(angle);
+    bgX.globalAlpha = .9;
+    drawPlaneIcon(n1.col, 6);
+    bgX.restore();
+  }
+
+  // Reactivate inactive planes occasionally
+  if(Math.random() < .008){ const p=planes[Math.floor(Math.random()*planes.length)]; if(!p.active){p.active=true;p.t=0;p.trail=[];} }
+
+  // ── 9. CITY NODES
+  for(const node of mapNodes){
+    const nx=node.x*BW, ny=node.y*BH;
+    const pulse = .4 + .6*Math.abs(Math.sin(bgT*1.5 + node.x*8));
+
+    // Outer ring
+    bgX.save();
+    bgX.globalAlpha = .18 * pulse;
+    bgX.strokeStyle = node.col;
+    bgX.lineWidth = 1.5;
+    bgX.beginPath(); bgX.arc(nx,ny,12+pulse*5,0,Math.PI*2); bgX.stroke();
+
+    // Inner dot
+    bgX.globalAlpha = .7;
+    bgX.fillStyle = 'white';
+    bgX.beginPath(); bgX.arc(nx,ny,5,0,Math.PI*2); bgX.fill();
+    bgX.fillStyle = node.col;
+    bgX.globalAlpha = .9;
+    bgX.beginPath(); bgX.arc(nx,ny,3.5,0,Math.PI*2); bgX.fill();
+
+    // City label
+    bgX.globalAlpha = .55;
+    bgX.font = '500 10px Plus Jakarta Sans';
+    bgX.fillStyle = '#2C4A6E';
+    bgX.textAlign = 'center';
+    // Pill background
+    const tw = bgX.measureText(node.name).width;
+    bgX.globalAlpha = .35;
+    bgX.fillStyle = 'rgba(255,255,255,.8)';
+    bgX.beginPath();
+    bgX.roundRect ? bgX.roundRect(nx-tw/2-4, ny+8, tw+8, 13, 3) : bgX.rect(nx-tw/2-4,ny+8,tw+8,13);
+    bgX.fill();
+    bgX.globalAlpha = .6;
+    bgX.fillStyle = '#1A2E44';
+    bgX.fillText(node.name, nx, ny+18);
+    bgX.restore();
+  }
+
+  // ── 10. PASSPORT STAMPS
+  for(const s of stamps){
+    const t = (bgT - s.delay) % 18;
+    if(t < 0 || t > 12) continue;
+    const alpha = t < 1 ? t : t > 10 ? (12-t)/2 : 1;
+    const sx2 = s.x*BW, sy2 = s.y*BH;
+    bgX.save();
+    bgX.translate(sx2,sy2); bgX.rotate(s.rot*Math.PI/180);
+    bgX.globalAlpha = alpha * .55;
+    // Stamp box
+    bgX.strokeStyle = s.col;
+    bgX.lineWidth = 2.5;
+    const sw=88, sh=44;
+    bgX.strokeRect(-sw/2,-sh/2,sw,sh);
+    // Inner double border
+    bgX.lineWidth = 1; bgX.globalAlpha = alpha*.4;
+    bgX.strokeRect(-sw/2+4,-sh/2+4,sw-8,sh-8);
+    // Text
+    bgX.globalAlpha = alpha*.65;
+    bgX.fillStyle = s.col;
+    bgX.font = 'bold 10px Plus Jakarta Sans';
+    bgX.textAlign = 'center';
+    bgX.fillText(s.label, 0, -6);
+    bgX.font = '400 8px Plus Jakarta Sans';
+    bgX.fillStyle = '#2C4A6E';
+    bgX.fillText(s.sub, 0, 7);
+    bgX.restore();
+  }
+
+  // ── 11. FLOATING POSTCARDS
+  for(const pc of postcards){
+    const t = (bgT - pc.delay) % 20;
+    if(t < 0 || t > 14) continue;
+    const alpha = t < 1.5 ? t/1.5 : t > 12 ? (14-t)/2 : 1;
+    const floatY = Math.sin(bgT*.8 + pc.delay)*6;
+    const pcx=pc.x*BW, pcy=pc.y*BH+floatY;
+    bgX.save();
+    bgX.translate(pcx,pcy); bgX.rotate(pc.rot*Math.PI/180);
+    bgX.globalAlpha = alpha * .6;
+    // Card shadow
+    bgX.shadowColor='rgba(0,0,0,.12)'; bgX.shadowBlur=12; bgX.shadowOffsetY=4;
+    bgX.fillStyle='rgba(255,255,255,.88)';
+    const cw=90,ch=52;
+    bgX.beginPath();
+    bgX.roundRect ? bgX.roundRect(-cw/2,-ch/2,cw,ch,6) : bgX.rect(-cw/2,-ch/2,cw,ch);
+    bgX.fill();
+    bgX.shadowBlur=0;
+    // Stamp corner
+    bgX.fillStyle='rgba(42,127,171,.15)';
+    bgX.fillRect(cw/2-20,-ch/2+4,16,14);
+    bgX.strokeStyle='rgba(42,127,171,.3)'; bgX.lineWidth=.5;
+    bgX.strokeRect(cw/2-20,-ch/2+4,16,14);
+    // Postcard lines
+    bgX.fillStyle='rgba(42,79,120,.55)';
+    bgX.font='bold 11px Plus Jakarta Sans';
+    bgX.textAlign='center';
+    bgX.fillText(pc.dest,0,-8);
+    bgX.font='400 9px Plus Jakarta Sans';
+    bgX.fillStyle='rgba(42,127,171,.7)';
+    bgX.fillText(pc.price,0,8);
+    // Red divider line
+    bgX.strokeStyle='rgba(232,112,90,.5)'; bgX.lineWidth=1;
+    bgX.beginPath(); bgX.moveTo(-cw/2+8,2); bgX.lineTo(cw/2-8,2); bgX.stroke();
+    bgX.restore();
+  }
+
+  // ── 12. Paper fold lines (subtle diagonal)
+  bgX.save();
+  bgX.strokeStyle='rgba(160,130,90,.06)';
+  bgX.lineWidth=.8;
+  bgX.beginPath(); bgX.moveTo(0,BH*.33); bgX.lineTo(BW,BH*.35); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(0,BH*.66); bgX.lineTo(BW,BH*.67); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(BW*.33,0); bgX.lineTo(BW*.34,BH); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(BW*.66,0); bgX.lineTo(BW*.67,BH); bgX.stroke();
+  bgX.restore();
+
+  // ── 13. Title watermark (very subtle)
+  bgX.save();
+  bgX.globalAlpha = .04;
+  bgX.font = `bold ${BW*.06}px Playfair Display`;
+  bgX.fillStyle = '#2A7FAB';
+  bgX.textAlign = 'center';
+  bgX.fillText('TRAVEL DREAMS', BW*.5, BH*.54);
+  bgX.restore();
+
+  requestAnimationFrame(drawBg);
+}
+
+function drawPlaneIcon(col, size){
+  bgX.fillStyle = col;
+  bgX.beginPath();
+  // Simple plane silhouette
+  bgX.moveTo(size, 0);
+  bgX.lineTo(-size*.6, -size*.45);
+  bgX.lineTo(-size*.3, 0);
+  bgX.lineTo(-size*.6, size*.45);
+  bgX.closePath(); bgX.fill();
+  // Wings
+  bgX.beginPath();
+  bgX.moveTo(size*.1, 0);
+  bgX.lineTo(-size*.1, -size*.9);
+  bgX.lineTo(-size*.5, -size*.4);
+  bgX.lineTo(-size*.2, 0);
+  bgX.closePath(); bgX.fill();
+  bgX.beginPath();
+  bgX.moveTo(size*.1, 0);
+  bgX.lineTo(-size*.1, size*.9);
+  bgX.lineTo(-size*.5, size*.4);
+  bgX.lineTo(-size*.2, 0);
+  bgX.closePath(); bgX.fill();
+}
+
+function drawCompass(cx,cy,r,rot){
+  bgX.save(); bgX.translate(cx,cy); bgX.rotate(rot);
+  bgX.globalAlpha = .22;
+  // Outer circle
+  bgX.strokeStyle='#2A7FAB'; bgX.lineWidth=1.5;
+  bgX.beginPath(); bgX.arc(0,0,r,0,Math.PI*2); bgX.stroke();
+  bgX.beginPath(); bgX.arc(0,0,r*.82,0,Math.PI*2); bgX.stroke();
+  // 8 tick marks
+  for(let i=0;i<16;i++){
+    const a=i*Math.PI/8, len=i%2===0?r*.15:r*.08;
+    bgX.lineWidth=i%4===0?2:1;
+    bgX.beginPath();
+    bgX.moveTo(Math.cos(a)*r*.82, Math.sin(a)*r*.82);
+    bgX.lineTo(Math.cos(a)*(r*.82-len), Math.sin(a)*(r*.82-len));
+    bgX.stroke();
+  }
+  // N/S/E/W arrows
+  const arrowDirs = [[0,'N','#E8705A'],[Math.PI,'S','#2A7FAB'],[Math.PI/2,'E','#2A7FAB'],[-Math.PI/2,'W','#2A7FAB']];
+  for(const[a,lbl,col] of arrowDirs){
+    bgX.fillStyle=col;
+    bgX.beginPath();
+    bgX.moveTo(Math.cos(a)*r*.65, Math.sin(a)*r*.65);
+    bgX.lineTo(Math.cos(a+Math.PI/2)*r*.08, Math.sin(a+Math.PI/2)*r*.08);
+    bgX.lineTo(Math.cos(a-Math.PI/2)*r*.08, Math.sin(a-Math.PI/2)*r*.08);
+    bgX.closePath(); bgX.fill();
+    bgX.font=`bold ${r*.22}px Plus Jakarta Sans`;
+    bgX.fillStyle='#1A2E44'; bgX.textAlign='center';
+    bgX.fillText(lbl, Math.cos(a)*r*.9, Math.sin(a)*r*.9+r*.08);
+  }
+  // Center dot
+  bgX.fillStyle='#2A7FAB'; bgX.globalAlpha=.4;
+  bgX.beginPath(); bgX.arc(0,0,r*.08,0,Math.PI*2); bgX.fill();
+  bgX.restore();
+}
+
+function drawScaleBar(x,y){
+  bgX.save(); bgX.globalAlpha=.3;
+  bgX.strokeStyle='#2C4A6E'; bgX.lineWidth=1.5; bgX.lineCap='square';
+  const w=80;
+  bgX.beginPath(); bgX.moveTo(x,y); bgX.lineTo(x+w,y); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x,y-5); bgX.lineTo(x,y+5); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+w,y-5); bgX.lineTo(x+w,y+5); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+w/2,y-3); bgX.lineTo(x+w/2,y+3); bgX.stroke();
+  bgX.font='400 9px Plus Jakarta Sans'; bgX.fillStyle='#2C4A6E'; bgX.textAlign='center';
+  bgX.fillText('5,000 km', x+w/2, y-8);
+  bgX.restore();
+}
+
+function drawContinents(){
+  // Real Natural Earth simplified paths, projected into a 1000x500 viewBox
+  // then scaled to BW x BH
+  const sx = BW/1000, sy = BH/500;
+  const p = new Path2D();
+
+  // ── NORTH AMERICA
+  p.moveTo(sx*158,sy*52); p.lineTo(sx*148,sy*62); p.lineTo(sx*135,sy*58);
+  p.lineTo(sx*118,sy*65); p.lineTo(sx*100,sy*60); p.lineTo(sx*88,sy*68);
+  p.lineTo(sx*80,sy*62); p.lineTo(sx*76,sy*70); p.lineTo(sx*70,sy*68);
+  p.lineTo(sx*66,sy*75); p.lineTo(sx*58,sy*72); p.lineTo(sx*52,sy*80);
+  p.lineTo(sx*50,sy*90); p.lineTo(sx*58,sy*100); p.lineTo(sx*62,sy*115);
+  p.lineTo(sx*70,sy*120); p.lineTo(sx*68,sy*132); p.lineTo(sx*75,sy*140);
+  p.lineTo(sx*72,sy*152); p.lineTo(sx*80,sy*165); p.lineTo(sx*85,sy*180);
+  p.lineTo(sx*95,sy*190); p.lineTo(sx*100,sy*205); p.lineTo(sx*108,sy*215);
+  p.lineTo(sx*115,sy*228); p.lineTo(sx*122,sy*235); p.lineTo(sx*128,sy*248);
+  p.lineTo(sx*132,sy*258); p.lineTo(sx*140,sy*262); p.lineTo(sx*148,sy*270);
+  p.lineTo(sx*152,sy*282); p.lineTo(sx*148,sy*292); p.lineTo(sx*142,sy*298);
+  p.lineTo(sx*138,sy*308); p.lineTo(sx*130,sy*315); p.lineTo(sx*122,sy*322);
+  p.lineTo(sx*118,sy*332); p.lineTo(sx*112,sy*338); p.lineTo(sx*108,sy*348);
+  p.lineTo(sx*100,sy*355); p.lineTo(sx*92,sy*360); p.lineTo(sx*88,sy*372);
+  p.lineTo(sx*80,sy*378); p.lineTo(sx*75,sy*388); p.lineTo(sx*72,sy*370);
+  p.lineTo(sx*68,sy*362); p.lineTo(sx*60,sy*368); p.lineTo(sx*56,sy*358);
+  p.lineTo(sx*52,sy*348); p.lineTo(sx*48,sy*338); p.lineTo(sx*44,sy*325);
+  p.lineTo(sx*40,sy*315); p.lineTo(sx*38,sy*302); p.lineTo(sx*36,sy*290);
+  p.lineTo(sx*32,sy*278); p.lineTo(sx*28,sy*265); p.lineTo(sx*25,sy*252);
+  p.lineTo(sx*22,sy*238); p.lineTo(sx*20,sy*225); p.lineTo(sx*18,sy*210);
+  p.lineTo(sx*16,sy*195); p.lineTo(sx*18,sy*180); p.lineTo(sx*22,sy*168);
+  p.lineTo(sx*28,sy*155); p.lineTo(sx*35,sy*142); p.lineTo(sx*40,sy*128);
+  p.lineTo(sx*48,sy*115); p.lineTo(sx*55,sy*102); p.lineTo(sx*62,sy*90);
+  p.lineTo(sx*70,sy*80); p.lineTo(sx*78,sy*70); p.lineTo(sx*86,sy*62);
+  p.lineTo(sx*96,sy*55); p.lineTo(sx*108,sy*50); p.lineTo(sx*120,sy*45);
+  p.lineTo(sx*132,sy*42); p.lineTo(sx*145,sy*44); p.lineTo(sx*158,sy*52);
+  p.closePath();
+
+  // Greenland
+  p.moveTo(sx*195,sy*25); p.lineTo(sx*215,sy*18); p.lineTo(sx*235,sy*22);
+  p.lineTo(sx*248,sy*30); p.lineTo(sx*252,sy*42); p.lineTo(sx*240,sy*50);
+  p.lineTo(sx*225,sy*55); p.lineTo(sx*210,sy*52); p.lineTo(sx*200,sy*42);
+  p.lineTo(sx*195,sy*25); p.closePath();
+
+  // ── SOUTH AMERICA
+  p.moveTo(sx*148,sy*355); p.lineTo(sx*158,sy*348); p.lineTo(sx*168,sy*352);
+  p.lineTo(sx*178,sy*360); p.lineTo(sx*185,sy*372); p.lineTo(sx*190,sy*385);
+  p.lineTo(sx*195,sy*400); p.lineTo(sx*198,sy*415); p.lineTo(sx*195,sy*432);
+  p.lineTo(sx*190,sy*448); p.lineTo(sx*185,sy*460); p.lineTo(sx*178,sy*472);
+  p.lineTo(sx*170,sy*480); p.lineTo(sx*162,sy*488); p.lineTo(sx*155,sy*494);
+  p.lineTo(sx*148,sy*490); p.lineTo(sx*142,sy*482); p.lineTo(sx*138,sy*470);
+  p.lineTo(sx*135,sy*455); p.lineTo(sx*132,sy*440); p.lineTo(sx*130,sy*425);
+  p.lineTo(sx*128,sy*410); p.lineTo(sx*126,sy*395); p.lineTo(sx*124,sy*380);
+  p.lineTo(sx*128,sy*368); p.lineTo(sx*135,sy*358); p.lineTo(sx*142,sy*352);
+  p.lineTo(sx*148,sy*355); p.closePath();
+
+  // ── EUROPE
+  p.moveTo(sx*430,sy*82); p.lineTo(sx*445,sy*78); p.lineTo(sx*460,sy*80);
+  p.lineTo(sx*472,sy*85); p.lineTo(sx*480,sy*95); p.lineTo(sx*488,sy*105);
+  p.lineTo(sx*495,sy*115); p.lineTo(sx*492,sy*128); p.lineTo(sx*485,sy*138);
+  p.lineTo(sx*478,sy*148); p.lineTo(sx*470,sy*155); p.lineTo(sx*462,sy*162);
+  p.lineTo(sx*452,sy*168); p.lineTo(sx*442,sy*172); p.lineTo(sx*432,sy*178);
+  p.lineTo(sx*422,sy*182); p.lineTo(sx*415,sy*175); p.lineTo(sx*408,sy*165);
+  p.lineTo(sx*402,sy*155); p.lineTo(sx*398,sy*145); p.lineTo(sx*395,sy*132);
+  p.lineTo(sx*398,sy*120); p.lineTo(sx*405,sy*110); p.lineTo(sx*412,sy*100);
+  p.lineTo(sx*420,sy*90); p.lineTo(sx*430,sy*82); p.closePath();
+
+  // Scandinavia
+  p.moveTo(sx*448,sy*55); p.lineTo(sx*458,sy*48); p.lineTo(sx*470,sy*52);
+  p.lineTo(sx*478,sy*62); p.lineTo(sx*472,sy*72); p.lineTo(sx*462,sy*78);
+  p.lineTo(sx*452,sy*72); p.lineTo(sx*445,sy*65); p.lineTo(sx*448,sy*55); p.closePath();
+
+  // British Isles
+  p.moveTo(sx*410,sy*88); p.lineTo(sx*418,sy*84); p.lineTo(sx*424,sy*90);
+  p.lineTo(sx*420,sy*98); p.lineTo(sx*412,sy*100); p.lineTo(sx*406,sy*95);
+  p.lineTo(sx*410,sy*88); p.closePath();
+
+  // ── AFRICA
+  p.moveTo(sx*420,sy*182); p.lineTo(sx*432,sy*178); p.lineTo(sx*445,sy*180);
+  p.lineTo(sx*458,sy*185); p.lineTo(sx*470,sy*192); p.lineTo(sx*480,sy*202);
+  p.lineTo(sx*488,sy*215); p.lineTo(sx*495,sy*228); p.lineTo(sx*500,sy*242);
+  p.lineTo(sx*504,sy*258); p.lineTo(sx*506,sy*272); p.lineTo(sx*508,sy*288);
+  p.lineTo(sx*508,sy*305); p.lineTo(sx*506,sy*322); p.lineTo(sx*502,sy*338);
+  p.lineTo(sx*498,sy*355); p.lineTo(sx*492,sy*368); p.lineTo(sx*485,sy*380);
+  p.lineTo(sx*478,sy*390); p.lineTo(sx*470,sy*400); p.lineTo(sx*462,sy*408);
+  p.lineTo(sx*453,sy*414); p.lineTo(sx*445,sy*420); p.lineTo(sx*438,sy*426);
+  p.lineTo(sx*432,sy*434); p.lineTo(sx*428,sy*445); p.lineTo(sx*424,sy*455);
+  p.lineTo(sx*420,sy*462); p.lineTo(sx*415,sy*455); p.lineTo(sx*410,sy*445);
+  p.lineTo(sx*406,sy*432); p.lineTo(sx*402,sy*418); p.lineTo(sx*398,sy*402);
+  p.lineTo(sx*395,sy*385); p.lineTo(sx*393,sy*368); p.lineTo(sx*392,sy*350);
+  p.lineTo(sx*392,sy*332); p.lineTo(sx*394,sy*315); p.lineTo(sx*396,sy*298);
+  p.lineTo(sx*400,sy*282); p.lineTo(sx*404,sy*268); p.lineTo(sx*408,sy*255);
+  p.lineTo(sx*412,sy*242); p.lineTo(sx*415,sy*228); p.lineTo(sx*416,sy*215);
+  p.lineTo(sx*415,sy*202); p.lineTo(sx*412,sy*192); p.lineTo(sx*416,sy*185);
+  p.lineTo(sx*420,sy*182); p.closePath();
+
+  // Madagascar
+  p.moveTo(sx*512,sy*340); p.lineTo(sx*518,sy*332); p.lineTo(sx*524,sy*340);
+  p.lineTo(sx*522,sy*355); p.lineTo(sx*516,sy*362); p.lineTo(sx*510,sy*355);
+  p.lineTo(sx*512,sy*340); p.closePath();
+
+  // ── ASIA (split into regions for accuracy)
+  // Main Asia body
+  p.moveTo(sx*490,sy*80); p.lineTo(sx*508,sy*72); p.lineTo(sx*525,sy*68);
+  p.lineTo(sx*542,sy*65); p.lineTo(sx*558,sy*62); p.lineTo(sx*575,sy*60);
+  p.lineTo(sx*592,sy*58); p.lineTo(sx*608,sy*56); p.lineTo(sx*622,sy*55);
+  p.lineTo(sx*638,sy*58); p.lineTo(sx*652,sy*62); p.lineTo(sx*665,sy*68);
+  p.lineTo(sx*678,sy*75); p.lineTo(sx*690,sy*85); p.lineTo(sx*700,sy*95);
+  p.lineTo(sx*708,sy*108); p.lineTo(sx*715,sy*122); p.lineTo(sx*720,sy*138);
+  p.lineTo(sx*722,sy*152); p.lineTo(sx*725,sy*168); p.lineTo(sx*722,sy*182);
+  p.lineTo(sx*718,sy*195); p.lineTo(sx*712,sy*208); p.lineTo(sx*705,sy*220);
+  p.lineTo(sx*698,sy*232); p.lineTo(sx*690,sy*242); p.lineTo(sx*680,sy*252);
+  p.lineTo(sx*670,sy*258); p.lineTo(sx*660,sy*262); p.lineTo(sx*650,sy*268);
+  p.lineTo(sx*640,sy*275); p.lineTo(sx*630,sy*282); p.lineTo(sx*622,sy*290);
+  p.lineTo(sx*615,sy*300); p.lineTo(sx*608,sy*310); p.lineTo(sx*600,sy*320);
+  p.lineTo(sx*592,sy*328); p.lineTo(sx*582,sy*335); p.lineTo(sx*572,sy*340);
+  p.lineTo(sx*562,sy*345); p.lineTo(sx*552,sy*348); p.lineTo(sx*542,sy*350);
+  p.lineTo(sx*532,sy*352); p.lineTo(sx*522,sy*350); p.lineTo(sx*512,sy*345);
+  p.lineTo(sx*505,sy*338); p.lineTo(sx*500,sy*328); p.lineTo(sx*496,sy*318);
+  p.lineTo(sx*492,sy*305); p.lineTo(sx*490,sy*292); p.lineTo(sx*490,sy*278);
+  p.lineTo(sx*492,sy*265); p.lineTo(sx*494,sy*252); p.lineTo(sx*496,sy*238);
+  p.lineTo(sx*495,sy*225); p.lineTo(sx*490,sy*215); p.lineTo(sx*485,sy*205);
+  p.lineTo(sx*482,sy*195); p.lineTo(sx*480,sy*182); p.lineTo(sx*482,sy*168);
+  p.lineTo(sx*484,sy*155); p.lineTo(sx*486,sy*142); p.lineTo(sx*488,sy*128);
+  p.lineTo(sx*490,sy*115); p.lineTo(sx*490,sy*100); p.lineTo(sx*490,sy*80);
+  p.closePath();
+
+  // Indian subcontinent
+  p.moveTo(sx*580,sy*200); p.lineTo(sx*592,sy*195); p.lineTo(sx*604,sy*198);
+  p.lineTo(sx*612,sy*208); p.lineTo(sx*618,sy*222); p.lineTo(sx*620,sy*238);
+  p.lineTo(sx*618,sy*254); p.lineTo(sx*612,sy*268); p.lineTo(sx*605,sy*280);
+  p.lineTo(sx*598,sy*292); p.lineTo(sx*592,sy*302); p.lineTo(sx*586,sy*310);
+  p.lineTo(sx*580,sy*316); p.lineTo(sx*575,sy*308); p.lineTo(sx*570,sy*295);
+  p.lineTo(sx*566,sy*280); p.lineTo(sx*564,sy*265); p.lineTo(sx*566,sy*250);
+  p.lineTo(sx*570,sy*235); p.lineTo(sx*574,sy*220); p.lineTo(sx*580,sy*200);
+  p.closePath();
+
+  // Japan
+  p.moveTo(sx*718,sy*120); p.lineTo(sx*724,sy*115); p.lineTo(sx*730,sy*120);
+  p.lineTo(sx*728,sy*132); p.lineTo(sx*722,sy*138); p.lineTo(sx*716,sy*132);
+  p.lineTo(sx*718,sy*120); p.closePath();
+
+  // Southeast Asia / Malaysia
+  p.moveTo(sx*640,sy*282); p.lineTo(sx*652,sy*278); p.lineTo(sx*662,sy*285);
+  p.lineTo(sx*668,sy*298); p.lineTo(sx*665,sy*312); p.lineTo(sx*655,sy*320);
+  p.lineTo(sx*644,sy*315); p.lineTo(sx*636,sy*305); p.lineTo(sx*634,sy*292);
+  p.lineTo(sx*640,sy*282); p.closePath();
+
+  // Sri Lanka
+  p.moveTo(sx*598,sy*318); p.lineTo(sx*604,sy*315); p.lineTo(sx*608,sy*322);
+  p.lineTo(sx*604,sy*330); p.lineTo(sx*598,sy*328); p.lineTo(sx*595,sy*322);
+  p.lineTo(sx*598,sy*318); p.closePath();
+
+  // ── AUSTRALIA
+  p.moveTo(sx*682,sy*340); p.lineTo(sx*698,sy*332); p.lineTo(sx*714,sy*328);
+  p.lineTo(sx*730,sy*325); p.lineTo(sx*745,sy*328); p.lineTo(sx*758,sy*335);
+  p.lineTo(sx*768,sy*345); p.lineTo(sx*776,sy*358); p.lineTo(sx*780,sy*372);
+  p.lineTo(sx*782,sy*388); p.lineTo(sx*780,sy*405); p.lineTo(sx*775,sy*420);
+  p.lineTo(sx*768,sy*434); p.lineTo(sx*758,sy*446); p.lineTo(sx*748,sy*455);
+  p.lineTo(sx*735,sy*462); p.lineTo(sx*722,sy*465); p.lineTo(sx*708,sy*465);
+  p.lineTo(sx*695,sy*462); p.lineTo(sx*682,sy*456); p.lineTo(sx*670,sy*448);
+  p.lineTo(sx*660,sy*438); p.lineTo(sx*652,sy*425); p.lineTo(sx*646,sy*412);
+  p.lineTo(sx*642,sy*398); p.lineTo(sx*640,sy*382); p.lineTo(sx*642,sy*368);
+  p.lineTo(sx*648,sy*355); p.lineTo(sx*658,sy*344); p.lineTo(sx*670,sy*338);
+  p.lineTo(sx*682,sy*340); p.closePath();
+
+  // New Zealand
+  p.moveTo(sx*800,sy*430); p.lineTo(sx*808,sy*424); p.lineTo(sx*814,sy*432);
+  p.lineTo(sx*810,sy*442); p.lineTo(sx*802,sy*445); p.lineTo(sx*796,sy*438);
+  p.lineTo(sx*800,sy*430); p.closePath();
+
+  // ── RUSSIA / SIBERIA (simplified northern mass)
+  p.moveTo(sx*492,sy*55); p.lineTo(sx*510,sy*48); p.lineTo(sx*530,sy*42);
+  p.lineTo(sx*550,sy*38); p.lineTo(sx*575,sy*34); p.lineTo(sx*600,sy*30);
+  p.lineTo(sx*625,sy*28); p.lineTo(sx*650,sy*26); p.lineTo(sx*675,sy*28);
+  p.lineTo(sx*698,sy*32); p.lineTo(sx*718,sy*38); p.lineTo(sx*736,sy*46);
+  p.lineTo(sx*750,sy*56); p.lineTo(sx*742,sy*64); p.lineTo(sx*728,sy*62);
+  p.lineTo(sx*710,sy*58); p.lineTo(sx*692,sy*56); p.lineTo(sx*672,sy*54);
+  p.lineTo(sx*650,sy*52); p.lineTo(sx*628,sy*52); p.lineTo(sx*606,sy*52);
+  p.lineTo(sx*582,sy*54); p.lineTo(sx*558,sy*56); p.lineTo(sx*536,sy*58);
+  p.lineTo(sx*515,sy*60); p.lineTo(sx*500,sy*64); p.lineTo(sx*492,sy*55);
+  p.closePath();
+
+  bgX.save();
+
+  // Shadow layer (like in reference image — offset shapes)
+  bgX.save();
+  bgX.translate(6, 6);
+  bgX.globalAlpha = 0.07;
+  bgX.fillStyle = '#1A3A5C';
+  bgX.fill(p);
+  bgX.restore();
+
+  // Main continent fill
+  bgX.globalAlpha = 0.18;
+  bgX.fillStyle = '#2A5F8A';
+  bgX.fill(p);
+
+  // Subtle inner highlight
+  bgX.globalAlpha = 0.06;
+  bgX.strokeStyle = '#FFFFFF';
+  bgX.lineWidth = 1;
+  bgX.stroke(p);
+
+  bgX.restore();
+}
+
+requestAnimationFrame(drawBg);
+
+// ══════════════════════════════════════════
+// GLOBE — Light ocean theme
+// ══════════════════════════════════════════
+const gCv=document.getElementById('gC'),gX=gCv.getContext('2d');
+let GW,GH,GR,GCX,GCY;
+function rg(){
+  const p=document.getElementById('rp');
+  const sz=Math.min(p.clientWidth,p.clientHeight)*.68;
+  gCv.width=gCv.height=sz*window.devicePixelRatio;
+  gCv.style.width=gCv.style.height=sz+'px';
+  GW=GH=gCv.width;GR=GW*.45;GCX=GCY=GW/2;
+}
+rg();window.addEventListener('resize',rg);
+
+const cities=[
+  {name:'Paris',lat:48.8,lon:2.3,col:'#2A7FAB',emoji:'🗼'},
+  {name:'Bali',lat:-8.3,lon:115,col:'#4ECDC4',emoji:'🌴'},
+  {name:'Tokyo',lat:35.7,lon:139.7,col:'#E8705A',emoji:'🗾'},
+  {name:'New York',lat:40.7,lon:-74,col:'#A78BFA',emoji:'🗽'},
+  {name:'Sydney',lat:-33.9,lon:151.2,col:'#34D399',emoji:'🦘'},
+  {name:'Dubai',lat:25.2,lon:55.3,col:'#D4A84B',emoji:'🌇'},
+  {name:'Santorini',lat:36.4,lon:25.4,col:'#60A5FA',emoji:'🏛️'},
+  {name:'Maldives',lat:3.2,lon:73.2,col:'#06B6D4',emoji:'🏝️'},
+  {name:'Rio',lat:-22.9,lon:-43.2,col:'#F0C060',emoji:'🎭'},
+  {name:'London',lat:51.5,lon:-.1,col:'#8B5CF6',emoji:'🎡'},
+  {name:'Singapore',lat:1.3,lon:103.8,col:'#EC4899',emoji:'🦁'},
+  {name:'Marrakech',lat:31.6,lon:-8,col:'#EF4444',emoji:'🕌'},
+  {name:'Cape Town',lat:-33.9,lon:18.4,col:'#10B981',emoji:'🌍'},
+  {name:'Vancouver',lat:49.3,lon:-123.1,col:'#6366F1',emoji:'🍁'},
+];
+
+const routes=[[0,6],[1,7],[2,4],[3,9],[5,2],[8,3],[10,1],[11,0],[12,4],[13,3],[6,5],[7,10]];
+const routeAnims=routes.map((_,i)=>({p:0,dir:1,offset:i*.25,speed:.004+Math.random()*.003}));
+
+let rotY=0,rotSpeed=.0025,drag=false,lastX=0,autoRot=true,gT=0;
+
+function ll3d(lat,lon,r,ry){
+  const phi=(90-lat)*Math.PI/180;
+  const theta=(lon+ry*180/Math.PI)*Math.PI/180;
+  return{x:r*Math.sin(phi)*Math.cos(theta),y:-r*Math.cos(phi),z:r*Math.sin(phi)*Math.sin(theta)};
+}
+function proj(p){const f=GR*3.5,z=p.z+f,s=f/z;return{x:GCX+p.x*s,y:GCY+p.y*s,z:p.z,s};}
+
+// Land dots
+const land=[];
+function seedLand(la0,la1,lo0,lo1,n,j=12){for(let i=0;i<n;i++)land.push({lat:la0+(la1-la0)*Math.random()+(Math.random()-.5)*j,lon:lo0+(lo1-lo0)*Math.random()+(Math.random()-.5)*j});}
+seedLand(36,70,-10,40,90,7);   // Europe
+seedLand(25,70,-130,-60,110,9);// N America
+seedLand(-55,12,-80,-35,75,8); // S America
+seedLand(-35,37,-18,50,100,9); // Africa
+seedLand(0,70,40,145,200,10);  // Asia
+seedLand(-45,-10,115,153,55,6);// Australia
+seedLand(60,72,20,50,20,4);    // Scandinavia
+seedLand(30,45,130,145,25,3);  // Japan
+
+function drawGlobe(){
+  gX.clearRect(0,0,GW,GH);
+
+  // Globe base — light ocean blue
+  const base=gX.createRadialGradient(GCX-GR*.2,GCY-GR*.2,0,GCX,GCY,GR);
+  base.addColorStop(0,'#C8EAF8');
+  base.addColorStop(.3,'#A8D8EE');
+  base.addColorStop(.7,'#7DC3E0');
+  base.addColorStop(1,'#4E9DBD');
+  gX.save();gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.fillStyle=base;gX.fill();gX.restore();
+
+  // Ocean depth shading
+  gX.save();gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.clip();
+  const depth=gX.createRadialGradient(GCX,GCY*.8,0,GCX,GCY,GR*1.1);
+  depth.addColorStop(0,'transparent');
+  depth.addColorStop(.7,'rgba(42,127,171,.12)');
+  depth.addColorStop(1,'rgba(26,82,118,.25)');
+  gX.fillStyle=depth;gX.fillRect(0,0,GW,GH);gX.restore();
+
+  // Grid lines
+  gX.save();gX.strokeStyle='rgba(255,255,255,0.35)';gX.lineWidth=.6;
+  for(let lat=-75;lat<=75;lat+=15){
+    gX.beginPath();let first=true;
+    for(let lon=0;lon<=360;lon+=3){
+      const p3=ll3d(lat,lon,GR,rotY),p2=proj(p3);
+      if(p3.z>-GR*.15){first?gX.moveTo(p2.x,p2.y):gX.lineTo(p2.x,p2.y);first=false;}else first=true;
+    }gX.stroke();
+  }
+  for(let lon=0;lon<360;lon+=20){
+    gX.beginPath();let first=true;
+    for(let lat=-90;lat<=90;lat+=3){
+      const p3=ll3d(lat,lon,GR,rotY),p2=proj(p3);
+      if(p3.z>-GR*.15){first?gX.moveTo(p2.x,p2.y):gX.lineTo(p2.x,p2.y);first=false;}else first=true;
+    }gX.stroke();
+  }
+  gX.restore();
+
+  // Land masses
+  for(const pt of land){
+    const p3=ll3d(pt.lat,pt.lon,GR*.999,rotY);
+    if(p3.z<-GR*.2)continue;
+    const p2=proj(p3);
+    const df=Math.max(0,(p3.z+GR*.3)/(GR*1.3));
+    gX.save();gX.globalAlpha=df*.75;
+    gX.fillStyle='rgba(74,160,80,.7)';
+    gX.beginPath();gX.arc(p2.x,p2.y,2.8*p2.s*.0038*GR,0,Math.PI*2);gX.fill();
+    gX.restore();
+  }
+
+  // Flight arcs
+  gT+=.016;
+  routes.forEach((route,i)=>{
+    const a=routeAnims[i];
+    a.p+=a.dir*a.speed;
+    if(a.p>1)a.dir=-1;if(a.p<0)a.dir=1;
+    const c1=cities[route[0]],c2=cities[route[1]];
+    // Draw arc
+    gX.save();
+    gX.strokeStyle=c1.col;gX.lineWidth=1.5;
+    gX.shadowColor=c1.col;gX.shadowBlur=8;
+    gX.globalAlpha=.65;
+    const steps=80,drawSteps=Math.floor(steps*a.p);
+    gX.beginPath();let pen=false;
+    for(let s=0;s<=drawSteps;s++){
+      const t=s/steps;
+      const lat=c1.lat+(c2.lat-c1.lat)*t;
+      const lon=c1.lon+(c2.lon-c1.lon)*t;
+      const lift=1+Math.sin(t*Math.PI)*.18;
+      const p3=ll3d(lat,lon,GR*lift,rotY),p2=proj(p3);
+      if(p3.z>-GR*.2){pen?gX.lineTo(p2.x,p2.y):gX.moveTo(p2.x,p2.y);pen=true;}else pen=false;
+    }
+    gX.stroke();
+    // Plane head
+    if(a.p>.04){
+      const ht=Math.min(a.p,.97);
+      const lat=c1.lat+(c2.lat-c1.lat)*ht,lon=c1.lon+(c2.lon-c1.lon)*ht;
+      const lift=1+Math.sin(ht*Math.PI)*.18;
+      const p3=ll3d(lat,lon,GR*lift,rotY);
+      if(p3.z>-GR*.15){
+        const p2=proj(p3);
+        gX.globalAlpha=1;gX.fillStyle=c1.col;
+        gX.beginPath();gX.arc(p2.x,p2.y,4,0,Math.PI*2);gX.fill();
+        gX.globalAlpha=.25;gX.beginPath();gX.arc(p2.x,p2.y,9,0,Math.PI*2);gX.fill();
+      }
+    }
+    gX.restore();
+  });
+
+  // City dots
+  for(const city of cities){
+    const p3=ll3d(city.lat,city.lon,GR,rotY);
+    if(p3.z<-GR*.05)continue;
+    const p2=proj(p3);
+    const df=Math.max(.2,(p3.z+GR)/(GR*2));
+    const pulse=(Math.sin(gT*2.5+city.lon*.08)*.5+.5);
+
+    // Outer glow
+    gX.save();gX.globalAlpha=df*.35*pulse;
+    const glowG=gX.createRadialGradient(p2.x,p2.y,0,p2.x,p2.y,16+pulse*8);
+    glowG.addColorStop(0,city.col);glowG.addColorStop(1,'transparent');
+    gX.fillStyle=glowG;gX.fillRect(p2.x-30,p2.y-30,60,60);
+
+    // Ring
+    gX.globalAlpha=df*.5*(1-pulse*.3);
+    gX.strokeStyle=city.col;gX.lineWidth=1.2;
+    gX.beginPath();gX.arc(p2.x,p2.y,7+pulse*4,0,Math.PI*2);gX.stroke();
+
+    // Core dot
+    gX.globalAlpha=df;gX.fillStyle='white';
+    gX.beginPath();gX.arc(p2.x,p2.y,4,0,Math.PI*2);gX.fill();
+    gX.fillStyle=city.col;
+    gX.beginPath();gX.arc(p2.x,p2.y,2.5,0,Math.PI*2);gX.fill();
+
+    // Label
+    if(df>.55&&p2.s>.75){
+      gX.globalAlpha=df*.9;
+      gX.font=`600 ${Math.round(10*p2.s)}px Plus Jakarta Sans`;
+      gX.textAlign='center';
+      // Label bg
+      const tw=gX.measureText(city.name).width;
+      gX.fillStyle='rgba(255,255,255,0.75)';
+      gX.beginPath();gX.roundRect?gX.roundRect(p2.x-tw/2-4,p2.y-22,tw+8,14,4):gX.rect(p2.x-tw/2-4,p2.y-22,tw+8,14);
+      gX.fill();
+      gX.fillStyle=city.col;
+      gX.fillText(city.name,p2.x,p2.y-11);
+    }
+    gX.restore();
+  }
+
+  // Specular highlight
+  gX.save();
+  gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.clip();
+  const spec=gX.createRadialGradient(GCX-GR*.3,GCY-GR*.3,0,GCX-GR*.3,GCY-GR*.3,GR*.65);
+  spec.addColorStop(0,'rgba(255,255,255,.22)');spec.addColorStop(.5,'rgba(255,255,255,.06)');spec.addColorStop(1,'transparent');
+  gX.fillStyle=spec;gX.fillRect(0,0,GW,GH);
+  gX.restore();
+
+  // Edge rim light
+  gX.save();
+  const rim=gX.createRadialGradient(GCX,GCY,GR*.82,GCX,GCY,GR*1.02);
+  rim.addColorStop(0,'transparent');rim.addColorStop(.5,'rgba(126,200,227,.1)');rim.addColorStop(1,'rgba(42,127,171,.25)');
+  gX.beginPath();gX.arc(GCX,GCY,GR*1.01,0,Math.PI*2);gX.fillStyle=rim;gX.fill();
+  gX.restore();
+
+  if(autoRot)rotY+=rotSpeed;
+  requestAnimationFrame(drawGlobe);
+}
+requestAnimationFrame(drawGlobe);
+
+// Drag globe
+gCv.addEventListener('mousedown',e=>{drag=true;lastX=e.clientX;autoRot=false;});
+window.addEventListener('mouseup',()=>{drag=false;autoRot=true;});
+window.addEventListener('mousemove',e=>{if(drag){rotY+=(e.clientX-lastX)*.005;lastX=e.clientX;}});
+
+// Touch
+gCv.addEventListener('touchstart',e=>{drag=true;lastX=e.touches[0].clientX;autoRot=false;},{passive:true});
+window.addEventListener('touchend',()=>{drag=false;autoRot=true;});
+window.addEventListener('touchmove',e=>{if(drag){rotY+=(e.touches[0].clientX-lastX)*.005;lastX=e.touches[0].clientX;}},{passive:true});
+</script>
+</body>
+</html>
