@@ -81,7 +81,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                   <CheckCircle size={40} className="text-green-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('booking.success')}</h2>
-                <p className="text-gray-500 text-center">Your booking for <strong>{item.name}</strong> has been confirmed. A confirmation email will be sent shortly.</p>
+                <p className="text-gray-500 text-center">{t('booking.confirmed_for')} <strong>{item.name}</strong> {t('booking.confirmed_suffix')}</p>
               </div>
             ) : (
               <>
@@ -89,7 +89,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{t('booking.title')}</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Step {step} of 2</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{t('booking.step')} {step} {t('booking.of')} 2</p>
                   </div>
                   <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <X size={20} />
@@ -112,7 +112,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     <div className="text-xs text-gray-500">{t('common.per_night')}</div>
                     {multiplier !== 1.0 && (
                       <div className={`text-xs mt-1 font-medium ${multiplier > 1 ? 'text-red-500' : 'text-green-500'}`}>
-                        {multiplier > 1 ? '🔥 Peak season' : '✨ Off-season deal'}
+                        {multiplier > 1 ? `🔥 ${t('booking.peak_season')}` : `✨ ${t('booking.offseason_deal')}`}
                       </div>
                     )}
                   </div>
@@ -166,7 +166,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         <span className="font-medium">${subtotal}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Taxes & fees (12%)</span>
+                        <span className="text-gray-600">{t('booking.taxes_fees')} (12%)</span>
                         <span className="font-medium">${taxes}</span>
                       </div>
                       <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-blue-200">
@@ -179,7 +179,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                       onClick={() => setStep(2)}
                       className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all"
                     >
-                      Continue to Details →
+                      {t('booking.continue_details')} →
                     </button>
                   </div>
                 )}
@@ -192,7 +192,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="John Doe"
+                        placeholder={t('booking.placeholder_name')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -202,7 +202,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder="john@example.com"
+                        placeholder={t('booking.placeholder_email')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -212,7 +212,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="tel"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
-                        placeholder="+1 234 567 8900"
+                        placeholder={t('booking.placeholder_phone')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -221,7 +221,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                       <textarea
                         value={special}
                         onChange={e => setSpecial(e.target.value)}
-                        placeholder="Late check-in, dietary requirements..."
+                        placeholder={t('booking.placeholder_special')}
                         rows={3}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                       />
@@ -231,23 +231,23 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     <div className="bg-gray-50 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <CreditCard size={16} className="text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">Payment Details</span>
+                        <span className="text-sm font-medium text-gray-700">{t('booking.payment_details')}</span>
                       </div>
                       <div className="space-y-3">
                         <input
                           type="text"
-                          placeholder="Card number: **** **** **** 4242"
+                          placeholder={t('booking.card_number')}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                         />
                         <div className="grid grid-cols-2 gap-3">
                           <input
                             type="text"
-                            placeholder="MM / YY"
+                            placeholder={t('booking.expiry')}
                             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                           />
                           <input
                             type="text"
-                            placeholder="CVC"
+                            placeholder={t('booking.cvc')}
                             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                           />
                         </div>

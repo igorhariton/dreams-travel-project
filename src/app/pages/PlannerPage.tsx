@@ -163,7 +163,7 @@ export default function PlannerPage() {
             {/* Trip Settings */}
             <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
               <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Calendar size={18} className="text-indigo-500" /> Trip Settings
+                <Calendar size={18} className="text-indigo-500" /> {t('planner.trip_settings')}
               </h3>
               <div className="space-y-4">
                 <div>
@@ -172,7 +172,7 @@ export default function PlannerPage() {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Destination</label>
+                  <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">{t('planner.destination')}</label>
                   <select value={selectedDest} onChange={e => setSelectedDest(e.target.value)}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                     {destinations.map(d => <option key={d.id} value={d.id}>{d.name}, {d.country}</option>)}
@@ -188,7 +188,7 @@ export default function PlannerPage() {
 
             {/* Budget Summary */}
             <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
-              <h3 className="font-bold text-gray-900 mb-4">💰 Budget Summary</h3>
+              <h3 className="font-bold text-gray-900 mb-4">💰 {t('planner.budget_summary')}</h3>
               <div className="space-y-2.5">
                 {(['flight', 'hotel', 'food', 'sightseeing', 'entertainment', 'other'] as ActivityType[]).map(type => {
                   const total = days.flatMap(d => d.activities).filter(a => a.type === type).reduce((s, a) => s + a.cost, 0);
@@ -205,7 +205,7 @@ export default function PlannerPage() {
                   );
                 })}
                 <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="font-bold text-gray-900">Total Budget</span>
+                  <span className="font-bold text-gray-900">{t('planner.total_budget')}</span>
                   <span className="font-black text-xl text-indigo-600">${totalBudget}</span>
                 </div>
               </div>
@@ -214,25 +214,25 @@ export default function PlannerPage() {
             {/* Destination Info */}
             {destOptions && (
               <div className="bg-gradient-to-br from-indigo-600 to-cyan-600 rounded-2xl p-5 text-white">
-                <div className="text-sm font-semibold opacity-80 mb-1">Planning for</div>
+                <div className="text-sm font-semibold opacity-80 mb-1">{t('planner.planning_for')}</div>
                 <div className="text-xl font-black mb-2">{destOptions.name}</div>
                 <div className="text-sm opacity-80 mb-3">{destOptions.country} · {destOptions.continent}</div>
                 <div className="flex items-center gap-2 mb-3">
                   <span>⭐</span>
                   <span className="font-semibold">{destOptions.rating}</span>
-                  <span className="opacity-70">({destOptions.reviews.toLocaleString()} reviews)</span>
+                  <span className="opacity-70">({destOptions.reviews.toLocaleString()} {t('common.reviews')})</span>
                 </div>
-                <div className="text-xs opacity-80">🗓️ Best: {destOptions.bestSeason}</div>
+                <div className="text-xs opacity-80">🗓️ {t('planner.best')}: {destOptions.bestSeason}</div>
               </div>
             )}
 
             {/* Actions */}
             <div className="flex gap-2">
               <button className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                <Share2 size={14} /> Share
+                <Share2 size={14} /> {t('planner.share')}
               </button>
               <button className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors">
-                <Download size={14} /> Export
+                <Download size={14} /> {t('planner.export')}
               </button>
             </div>
           </div>
@@ -263,7 +263,7 @@ export default function PlannerPage() {
                         D{dayIndex + 1}
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900">Day {dayIndex + 1}</div>
+                        <div className="font-bold text-gray-900">{t('planner.day')} {dayIndex + 1}</div>
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <Calendar size={10} /> {day.date}
                           <span className="mx-1">·</span>
@@ -274,7 +274,7 @@ export default function PlannerPage() {
                     <div className="flex items-center gap-2">
                       <button onClick={() => loadSuggestions(day.id)}
                         className="text-xs px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-medium">
-                        ✨ Suggest
+                        ✨ {t('planner.suggest')}
                       </button>
                       <button onClick={() => toggleDay(day.id)} className="p-1.5 hover:bg-white rounded-lg transition-colors text-gray-500">
                         {day.collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
@@ -325,17 +325,18 @@ export default function PlannerPage() {
                             <input type="time" value={newActivity.time} onChange={e => setNewActivity(p => ({ ...p, time: e.target.value }))}
                               className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500" />
                           </div>
-                          <input type="text" placeholder="Activity title *" value={newActivity.title} onChange={e => setNewActivity(p => ({ ...p, title: e.target.value }))}
+                          <input type="text" placeholder={t('planner.activity_title')} value={newActivity.title} onChange={e => setNewActivity(p => ({ ...p, title: e.target.value }))}
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500" />
+                          
                           <div className="grid grid-cols-2 gap-3">
-                            <input type="text" placeholder="Notes (optional)" value={newActivity.notes} onChange={e => setNewActivity(p => ({ ...p, notes: e.target.value }))}
+                            <input type="text" placeholder={t('planner.notes_optional')} value={newActivity.notes} onChange={e => setNewActivity(p => ({ ...p, notes: e.target.value }))}
                               className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500" />
-                            <input type="number" placeholder="Cost ($)" value={newActivity.cost} onChange={e => setNewActivity(p => ({ ...p, cost: e.target.value }))}
+                            <input type="number" placeholder={t('planner.cost')} value={newActivity.cost} onChange={e => setNewActivity(p => ({ ...p, cost: e.target.value }))}
                               className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500" />
                           </div>
                           <div className="flex gap-2">
-                            <button onClick={() => setEditingDay(null)} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-                            <button onClick={() => addActivity(day.id)} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">Add Activity</button>
+                            <button onClick={() => setEditingDay(null)} className="flex-1 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">{t('common.cancel')}</button>
+                            <button onClick={() => addActivity(day.id)} className="flex-1 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors">{t('planner.add_activity')}</button>
                           </div>
                         </div>
                       ) : (
