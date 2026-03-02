@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Star, MapPin, SlidersHorizontal, Wifi, Coffee, Car, Waves, Dumbbell, Utensils, X } from 'lucide-react';
+import { Search, Star, MapPin, SlidersHorizontal, Wifi, Car, Waves, Dumbbell, Utensils } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { hotels, destinations } from '../data/travelData';
+import { hotelsContentI18n } from '../data/hotelsContent.i18n';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 
@@ -16,7 +17,7 @@ const amenityIcons: Record<string, React.ReactNode> = {
 };
 
 export default function HotelsPage() {
-  const { t, addFavorite, removeFavorite, isFavorite } = useApp();
+  const { t, addFavorite, removeFavorite, isFavorite, language } = useApp();
   const [search, setSearch] = useState('');
   const [destFilter, setDestFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState(1000);
@@ -25,6 +26,23 @@ export default function HotelsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [bookingItem, setBookingItem] = useState<any>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const locale = language === 'ro' ? 'ro-RO' : language === 'ru' ? 'ru-RU' : 'en-US';
+
+  const getHotelTypeLabel = (type: string) => t(`hotels.type.${type}`);
+
+  const getLocalizedHotelDescription = (hotel: typeof hotels[number]) => {
+    if (language === 'ro' || language === 'ru') {
+      return hotelsContentI18n[language].descriptions[hotel.id] || hotel.description;
+    }
+    return hotel.description;
+  };
+
+  const getLocalizedAmenity = (amenity: string) => {
+    if (language === 'ro' || language === 'ru') {
+      return hotelsContentI18n[language].amenities[amenity] || amenity;
+    }
+    return amenity;
+  };
 
   let filtered = hotels.filter(h => {
     const matchSearch = h.name.toLowerCase().includes(search.toLowerCase()) || h.location.toLowerCase().includes(search.toLowerCase());
@@ -58,21 +76,21 @@ export default function HotelsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 flex-1">
               <Search size={15} className="text-gray-400" />
-              <input type="text" placeholder="Search hotels..." value={search} onChange={e => setSearch(e.target.value)}
+              <input type="text" placeholder={t('hotels.search_placeholder')} value={search} onChange={e => setSearch(e.target.value)}
                 className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
             </div>
 
             <select value={destFilter} onChange={e => setDestFilter(e.target.value)}
               className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-gray-50 outline-none cursor-pointer">
-              <option value="all">All Destinations</option>
+              <option value="all">{t('hotels.all_destinations')}</option>
               {destinations.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
 
             <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
               className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-gray-50 outline-none cursor-pointer">
-              <option value="rating">Top Rated</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
+              <option value="rating">{t('hotels.sort.top_rated')}</option>
+              <option value="price_asc">{t('hotels.sort.price_low_high')}</option>
+              <option value="price_desc">{t('hotels.sort.price_high_low')}</option>
             </select>
 
             <button onClick={() => setShowFilters(!showFilters)}
@@ -89,17 +107,17 @@ export default function HotelsPage() {
           {showFilters && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl grid grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Max Price: ${maxPrice}/night</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">{t('hotels.max_price')}: ${maxPrice}{t('hotels.per_night_short')}</label>
                 <input type="range" min={50} max={1000} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))}
                   className="w-full accent-blue-600" />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Min Stars</label>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">{t('hotels.min_stars')}</label>
                 <div className="flex gap-2">
                   {[0, 3, 4, 5].map(s => (
                     <button key={s} onClick={() => setMinStars(s)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${minStars === s ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
-                      {s === 0 ? 'Any' : `${s}★`}
+                      {s === 0 ? t('common.any') : `${s}★`}
                     </button>
                   ))}
                 </div>
@@ -111,7 +129,7 @@ export default function HotelsPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <p className="text-sm text-gray-500 mb-6">{filtered.length} hotels available</p>
+        <p className="text-sm text-gray-500 mb-6">{filtered.length} {t('hotels.available')}</p>
 
         {viewMode === 'grid' ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
@@ -122,7 +140,7 @@ export default function HotelsPage() {
                   <ImageCarousel images={hotel.images} className="h-56" />
                   <div className="absolute top-3 left-3 flex gap-2">
                     <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
-                      {hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1)}
+                      {getHotelTypeLabel(hotel.type)}
                     </span>
                   </div>
                   <button
@@ -149,15 +167,15 @@ export default function HotelsPage() {
                       <Star key={i} size={12} className="text-amber-400 fill-amber-400" />
                     ))}
                     <span className="text-sm font-semibold ml-1">{hotel.rating}</span>
-                    <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString()} {t('common.reviews')})</span>
+                    <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString(locale)} {t('common.reviews')})</span>
                   </div>
 
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{hotel.description}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{getLocalizedHotelDescription(hotel)}</p>
 
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {hotel.amenities.slice(0, 5).map(a => (
                       <span key={a} className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">
-                        {amenityIcons[a] || '•'} {a}
+                        {amenityIcons[a] || '•'} {getLocalizedAmenity(a)}
                       </span>
                     ))}
                   </div>
@@ -196,12 +214,12 @@ export default function HotelsPage() {
                         <Star key={i} size={11} className="text-amber-400 fill-amber-400" />
                       ))}
                       <span className="text-sm font-semibold ml-1">{hotel.rating}</span>
-                      <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString()})</span>
+                      <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString(locale)})</span>
                     </div>
-                    <p className="text-xs text-gray-500 line-clamp-1 mb-3">{hotel.description}</p>
+                    <p className="text-xs text-gray-500 line-clamp-1 mb-3">{getLocalizedHotelDescription(hotel)}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {hotel.amenities.slice(0, 6).map(a => (
-                        <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{a}</span>
+                        <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg">{getLocalizedAmenity(a)}</span>
                       ))}
                     </div>
                   </div>
@@ -209,7 +227,7 @@ export default function HotelsPage() {
                     <button
                       onClick={() => { if (isFavorite(hotel.id)) removeFavorite(hotel.id); else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location }); }}
                       className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${isFavorite(hotel.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                      {isFavorite(hotel.id) ? '❤️ Saved' : '🤍 Save'}
+                      {isFavorite(hotel.id) ? `❤️ ${t('hotels.saved')}` : `🤍 ${t('hotels.save')}`}
                     </button>
                     <button
                       onClick={() => setBookingItem({ name: hotel.name, location: hotel.location, pricePerNight: hotel.pricePerNight, rating: hotel.rating, image: hotel.images[0] })}
