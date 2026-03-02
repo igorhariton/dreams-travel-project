@@ -19,7 +19,7 @@ export function Footer() {
               <span className="text-white font-bold text-lg">Travel<span className="text-cyan-400">Dreams</span></span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5">
-              Your ultimate travel companion for discovering breathtaking destinations, booking luxury stays, and crafting unforgettable journeys.
+              {t('footer.brand_desc')}
             </p>
             <div className="flex gap-3">
               {[
@@ -37,7 +37,7 @@ export function Footer() {
 
           {/* Explore */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Explore</h4>
+            <h4 className="text-white font-semibold mb-4">{t('footer.explore')}</h4>
             <ul className="space-y-2 text-sm">
               {[
                 { to: '/destinations', label: t('nav.destinations') },
@@ -55,9 +55,16 @@ export function Footer() {
 
           {/* Top Destinations */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Top Destinations</h4>
+            <h4 className="text-white font-semibold mb-4">{t('footer.top_destinations')}</h4>
             <ul className="space-y-2 text-sm">
-              {['Santorini, Greece', 'Bali, Indonesia', 'Paris, France', 'Maldives', 'Tokyo, Japan', 'Dubai, UAE'].map(dest => (
+              {[
+                t('footer.dest.santorini'),
+                t('footer.dest.bali'),
+                t('footer.dest.paris'),
+                t('footer.dest.maldives'),
+                t('footer.dest.tokyo'),
+                t('footer.dest.dubai'),
+              ].map(dest => (
                 <li key={dest}>
                   <Link to="/destinations" className="hover:text-cyan-400 transition-colors">{dest}</Link>
                 </li>
@@ -67,7 +74,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Contact</h4>
+            <h4 className="text-white font-semibold mb-4">{t('footer.contact')}</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2.5">
                 <Mail size={15} className="text-cyan-400 shrink-0" />
@@ -79,18 +86,18 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin size={15} className="text-cyan-400 shrink-0 mt-0.5" />
-                <span>123 Explorer Avenue<br />San Francisco, CA 94102</span>
+                <span>{t('footer.address_line1')}<br />{t('footer.address_line2')}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <p>© 2026 TravelDreams. All rights reserved.</p>
+          <p>{t('footer.rights')}</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-gray-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">Cookie Policy</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{t('footer.privacy')}</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{t('footer.terms')}</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{t('footer.cookies')}</a>
           </div>
         </div>
       </div>
