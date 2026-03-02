@@ -1,38 +1,60 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map, Shield, Clock } from 'lucide-react';
+import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Map, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { destinations, hotels } from '../data/travelData';
+import { destinationDescriptionsI18n } from '../data/destinationDescriptions.i18n';
+import { hotelsContentI18n } from '../data/hotelsContent.i18n';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 
 export default function HomePage() {
-  const { t, addFavorite, isFavorite, removeFavorite } = useApp();
+  const { t, addFavorite, isFavorite, removeFavorite, language } = useApp();
   const navigate = useNavigate();
   const [bookingItem, setBookingItem] = useState<any>(null);
+  const locale = language === 'ro' ? 'ro-RO' : language === 'ru' ? 'ru-RU' : 'en-US';
 
   const featuredDestinations = destinations.slice(0, 4);
   const featuredHotels = hotels.slice(0, 3);
 
+  const getLocalizedDestinationDescription = (dest: typeof destinations[number]) => {
+    if (language === 'ro' || language === 'ru') {
+      return destinationDescriptionsI18n[language][dest.id] || dest.description;
+    }
+    return dest.description;
+  };
+
+  const getLocalizedAmenity = (amenity: string) => {
+    if (language === 'ro' || language === 'ru') {
+      return hotelsContentI18n[language].amenities[amenity] || amenity;
+    }
+    return amenity;
+  };
+
+  const getTagLabel = (tag: string) => {
+    const translated = t(`destinations.tag.${tag.toLowerCase()}`);
+    return translated === `destinations.tag.${tag.toLowerCase()}` ? tag : translated;
+  };
+
   const stats = [
-    { value: '50+', label: 'Countries', icon: <Map size={20} /> },
-    { value: '2,400+', label: 'Hotels', icon: <Hotel size={20} /> },
-    { value: '1.2M', label: 'Happy Travelers', icon: <Users size={20} /> },
-    { value: '4.9★', label: 'Average Rating', icon: <Star size={20} /> },
+    { value: '50+', label: t('home.stats.countries'), icon: <Map size={20} /> },
+    { value: '2,400+', label: t('home.stats.hotels'), icon: <Hotel size={20} /> },
+    { value: '1.2M', label: t('home.stats.travelers'), icon: <Users size={20} /> },
+    { value: '4.9★', label: t('home.stats.avg_rating'), icon: <Star size={20} /> },
   ];
 
   const howItWorks = [
-    { icon: <Search size={28} />, title: 'Search & Discover', desc: 'Browse hundreds of destinations, hotels, and unique rentals.' },
-    { icon: <Calendar size={28} />, title: 'Plan & Customize', desc: 'Build your perfect itinerary with our smart travel planner.' },
-    { icon: <Shield size={28} />, title: 'Book Securely', desc: 'Reserve with confidence — free cancellation on most bookings.' },
-    { icon: <Plane size={28} />, title: 'Travel & Enjoy', desc: 'Explore the world and create memories that last a lifetime.' },
+    { icon: <Search size={28} />, title: t('home.how.search_title'), desc: t('home.how.search_desc') },
+    { icon: <Calendar size={28} />, title: t('home.how.plan_title'), desc: t('home.how.plan_desc') },
+    { icon: <Shield size={28} />, title: t('home.how.book_title'), desc: t('home.how.book_desc') },
+    { icon: <Plane size={28} />, title: t('home.how.travel_title'), desc: t('home.how.travel_desc') },
   ];
 
   const cuisineItems = [
-    { img: '/images/_site/food-1.jpg', name: 'Asian Street Food', dest: 'Bangkok & Tokyo' },
-    { img: '/images/_site/food-2.jpg', name: 'Italian Cuisine', dest: 'Rome & Florence' },
-    { img: '/images/_site/food-3.jpg', name: 'Balinese Feasts', dest: 'Ubud, Bali' },
+    { img: '/images/_site/food-1.jpg', name: t('home.cuisine.item1_name'), dest: t('home.cuisine.item1_dest') },
+    { img: '/images/_site/food-2.jpg', name: t('home.cuisine.item2_name'), dest: t('home.cuisine.item2_dest') },
+    { img: '/images/_site/food-3.jpg', name: t('home.cuisine.item3_name'), dest: t('home.cuisine.item3_dest') },
   ];
 
   return (
@@ -100,7 +122,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
                     {dest.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{tag}</span>
+                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{getTagLabel(tag)}</span>
                     ))}
                   </div>
                   <button
@@ -131,13 +153,13 @@ export default function HomePage() {
                     <div className="flex items-center gap-1">
                       <Star size={14} className="text-amber-400 fill-amber-400" />
                       <span className="text-sm font-semibold">{dest.rating}</span>
-                      <span className="text-xs text-gray-400">({dest.reviews.toLocaleString()})</span>
+                      <span className="text-xs text-gray-400">({dest.reviews.toLocaleString(locale)})</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock size={12} /> {dest.bestSeason.split(' ')[0]}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">{dest.description}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2">{getLocalizedDestinationDescription(dest)}</p>
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex gap-1">
                       {dest.mustVisit.slice(0, 2).map(place => (
@@ -158,16 +180,16 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="text-cyan-500 font-semibold text-sm uppercase tracking-wide">Immerse Yourself</span>
+              <span className="text-cyan-500 font-semibold text-sm uppercase tracking-wide">{t('home.culture.badge')}</span>
               <h2 className="text-4xl font-black text-gray-900 mt-2 mb-4">{t('section.culture')} & {t('section.cuisine')}</h2>
               <p className="text-gray-500 leading-relaxed mb-8">
-                Every destination has a story told through its people, art, rituals, and food. From ancient temples to vibrant street markets, let us guide you to the heart of every culture.
+                {t('home.culture.description')}
               </p>
               <div className="space-y-4">
                 {[
-                  { icon: '🎭', title: 'Cultural Festivals', desc: 'Participate in local celebrations and traditional ceremonies' },
-                  { icon: '🍜', title: 'Culinary Tours', desc: 'Taste authentic dishes at hidden local restaurants' },
-                  { icon: '🏛️', title: 'Historical Sites', desc: 'Explore ancient ruins, museums and UNESCO heritage sites' },
+                  { icon: '🎭', title: t('home.culture.item1_title'), desc: t('home.culture.item1_desc') },
+                  { icon: '🍜', title: t('home.culture.item2_title'), desc: t('home.culture.item2_desc') },
+                  { icon: '🏛️', title: t('home.culture.item3_title'), desc: t('home.culture.item3_desc') },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
@@ -257,11 +279,11 @@ export default function HomePage() {
                   <div className="flex items-center gap-1 mb-3">
                     <Star size={13} className="text-amber-400 fill-amber-400" />
                     <span className="text-sm font-semibold">{hotel.rating}</span>
-                    <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString()} {t('common.reviews')})</span>
+                    <span className="text-xs text-gray-400">({hotel.reviews.toLocaleString(locale)} {t('common.reviews')})</span>
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {hotel.amenities.slice(0, 4).map(a => (
-                      <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">{a}</span>
+                      <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">{getLocalizedAmenity(a)}</span>
                     ))}
                   </div>
                   <button
@@ -282,7 +304,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-black text-gray-900">{t('section.how_it_works')}</h2>
-            <p className="text-gray-500 mt-2">Simple steps to your perfect journey</p>
+            <p className="text-gray-500 mt-2">{t('home.how.subtitle')}</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8 relative">
             <div className="hidden md:block absolute top-10 left-1/4 right-1/4 h-px bg-gradient-to-r from-blue-200 to-cyan-200" style={{ left: '12.5%', right: '12.5%' }} />
@@ -315,9 +337,9 @@ export default function HomePage() {
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-4xl font-black text-white mb-4">Start Planning Your Dream Trip</h2>
+            <h2 className="text-4xl font-black text-white mb-4">{t('home.cta.title')}</h2>
             <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-              Create a personalized travel itinerary in minutes with our AI-powered planner.
+              {t('home.cta.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/planner" className="inline-flex items-center gap-2 bg-white text-blue-700 px-8 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg">
