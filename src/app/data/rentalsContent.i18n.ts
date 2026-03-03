@@ -1,0 +1,78 @@
+export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<string, string>; amenities: Record<string, string> }> = {
+  "ro": {
+    "descriptions": {
+      "r1": "Casă peșteră tradițională sculptată în stânca vulcanică, cu o terasă privată, piscină mică și adâncă și vederi emblematice la caldeiră.",
+      "r2": "Uimitoare vilă din piatră din secolul al XVI-lea, cu piscină privată, plantații de măslini, vedere la vie și farmecul rustic italian autentic.",
+      "r3": "O căsuță în copac ridicată extraordinară, înconjurată de jungla tropicală, cu băi în aer liber, piscină infinită și vedere la orezul.",
+      "r4": "Chalet de lux cu acces direct la pârtiile de schi, cu vedere panoramică la munte, cadă cu hidromasaj onsen privată, focar și acces direct la pârtie.",
+      "r5": "Apartament elegant în stil Haussmann, cu vedere la Turnul Eiffel de la balcon, bucătărie completă și la câțiva pași de atracțiile de top.",
+      "r6": "Vila privată pe plajă, pe propria întindere curată de nisip alb, cu acces direct la ocean, serviciu de bucătar și echipament personal de snorkeling."
+    },
+    "amenities": {
+      "Plunge Pool": "Piscină mică",
+      "Kitchen": "Bucătărie",
+      "WiFi": "Wifi",
+      "AC": "AC",
+      "Terrace": "Terasă",
+      "Pool": "Piscină",
+      "Garden": "Grădină",
+      "Full Kitchen": "Bucătărie completă",
+      "Parking": "Parcare",
+      "BBQ": "grătar",
+      "Vineyard Access": "Acces la podgorie",
+      "Infinity Pool": "Piscina infinită",
+      "Outdoor Shower": "Duș în aer liber",
+      "Breakfast Included": "Mic dejun inclus",
+      "Yoga Deck": "Deck de yoga",
+      "Onsen": "Onsen",
+      "Ski-in/Ski-out": "Ski-in/Ski-out",
+      "Fire Pit": "Foc",
+      "Sauna": "Sauna",
+      "Balcony": "Balcon",
+      "Washer/Dryer": "Mașină de spălat/uscător",
+      "Elevator": "Lift",
+      "Private Beach": "Plaja privata",
+      "Chef": "bucătar",
+      "Water Sports": "Sporturi de apă",
+      "Butler Service": "Serviciul de majordom"
+    }
+  },
+  "ru": {
+    "descriptions": {
+      "r1": "Традиционный дом-пещера, высеченный в скале вулкана, с собственной террасой, небольшим бассейном и знаменитым видом на кальдеру.",
+      "r2": "Потрясающая каменная вилла 16-го века с частным бассейном, оливковыми рощами, видом на виноградники и настоящим итальянским деревенским шармом.",
+      "r3": "Необыкновенный дом на возвышении, окруженный тропическими джунглями, с ванными комнатами под открытым небом, пейзажным бассейном и видом на рисовые поля.",
+      "r4": "Роскошное шале с прямым доступом к лыжным склонам, панорамным видом на горы, собственной гидромассажной ванной онсэн, местом для костра и прямым доступом к склону.",
+      "r5": "Элегантные апартаменты в османском стиле с балконом с видом на Эйфелеву башню, полностью оборудованной кухней и в нескольких минутах ходьбы от главных достопримечательностей.",
+      "r6": "Частная пляжная вилла на собственном нетронутом участке белого песка с прямым выходом к океану, услугами шеф-повара и личным снаряжением для подводного плавания."
+    },
+    "amenities": {
+      "Plunge Pool": "Небольшой бассейн",
+      "Kitchen": "Кухня",
+      "WiFi": "Wi-Fi",
+      "AC": "переменного тока",
+      "Terrace": "Терраса",
+      "Pool": "Бассейн",
+      "Garden": "Сад",
+      "Full Kitchen": "Полноценная кухня",
+      "Parking": "Стоянка",
+      "BBQ": "БАРБЕКЮ",
+      "Vineyard Access": "Доступ к винограднику",
+      "Infinity Pool": "Бесконечный бассейн",
+      "Outdoor Shower": "Душ на открытом воздухе",
+      "Breakfast Included": "Завтрак включен",
+      "Yoga Deck": "Палуба для йоги",
+      "Onsen": "Онсэн",
+      "Ski-in/Ski-out": "Въезд/выезд на лыжах",
+      "Fire Pit": "Огненная яма",
+      "Sauna": "Сауна",
+      "Balcony": "Балкон",
+      "Washer/Dryer": "Стиральная машина/сушилка",
+      "Elevator": "Лифт",
+      "Private Beach": "Частный пляж",
+      "Chef": "Шеф-повар",
+      "Water Sports": "Водные виды спорта",
+      "Butler Service": "Услуги дворецкого"
+    }
+  }
+};

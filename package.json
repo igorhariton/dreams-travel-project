@@ -4,8 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "dev": "vite"
+    "build": "npm run i18n:sync && vite build",
+    "dev": "vite",
+    "i18n:sync": "node scripts/sync-content-i18n.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
