@@ -36,14 +36,20 @@ export function Navbar() {
             x: rect.left - navRect.left,
             width: rect.width,
           });
+          return;
         }
       }
+
+      setActiveTabRect(null);
     };
 
-    updateActiveTab();
+    const rafId = window.requestAnimationFrame(updateActiveTab);
     window.addEventListener('resize', updateActiveTab);
-    return () => window.removeEventListener('resize', updateActiveTab);
-  }, [location]);
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', updateActiveTab);
+    };
+  }, [location.pathname, language, role, favorites.length]);
 
   const navLinks = [
     { to: '/', label: t('nav.home'), icon: <Home size={16} /> },

@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TravelDreams — Ultra Hero Dark</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --sky1: #1a2f4a;
+  --sky2: #243955;
+  --sky3: #2a406a;
+  --ocean: #60a5fa;
+  --deep: #93c5fd;
+  --navy: #1e3a8a;
+  --gold: #fbbf24;
+  --gold2: #fcd34d;
+  --coral: #f87171;
+  --mint: #4ecdc4;
+  --lavender: #c4b5fd;
+  --rose: #f472b6;
+  --ink: #e2e8f0;
+  --ink2: #cbd5e1;
+  --glass: rgba(30,58,137,0.55);
+  --glass2: rgba(15,23,42,0.25);
+  --glass-border: rgba(148,163,184,0.3);
+  --shadow: rgba(15,23,42,0.35);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: none;
+  background: #0f1419;
+  color: #e2e8f0;
+}
+
+/* ── Cursor ── */
+#cur { position:fixed; pointer-events:none; z-index:9999; width:10px; height:10px; background:var(--coral); border-radius:50%; transform:translate(-50%,-50%); transition:width .2s,height .2s; mix-blend-mode:screen; }
+#cur-ring { position:fixed; pointer-events:none; z-index:9998; width:34px; height:34px; border:2px solid var(--gold); border-radius:50%; transform:translate(-50%,-50%); transition:width .3s,height .3s; opacity:0.6; }
+
+/* ── BG Canvas ── */
+#bgC { position:fixed; inset:0; width:100vw; height:100vh; }
+
+/* ── Stage ── */
+.stage {
+  position: fixed; inset: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  padding: 0 5vw;
+  gap: 2vw;
+  z-index: 10;
+}
+
+/* ══ LEFT ══ */
+.left { position: relative; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(30,58,137,0.4);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 40px;
+  padding: 6px 16px; margin-bottom: 24px;
+  font-size: 11px; font-weight: 600; color: var(--gold);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  box-shadow: 0 4px 20px rgba(15,23,42,0.4);
+  opacity: 0; animation: slideUp .7s .2s forwards;
+}
+.pill-dot { width: 7px; height: 7px; background: var(--coral); border-radius: 50%; animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.6)} }
+
+.headline {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(44px, 5vw, 76px);
+  line-height: 1.0;
+  color: var(--ink);
+  margin-bottom: 6px;
+  opacity: 0; animation: slideUp .8s .35s forwards;
+}
+.headline em {
+  font-style: italic;
+  background: linear-gradient(135deg, var(--deep) 0%, var(--ocean) 50%, var(--mint) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hl2 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 4vw, 60px);
+  color: var(--gold);
+  font-weight: 400; font-style: italic;
+  display: block; margin-bottom: 20px;
+  opacity: 0; animation: slideUp .8s .5s forwards;
+}
+
+.sub {
+  font-size: 15px; font-weight: 400; color: var(--ink2);
+  max-width: 400px; line-height: 1.75; margin-bottom: 32px;
+  opacity: 0; animation: slideUp .8s .65s forwards;
+}
+
+/* Search widget */
+.search-wrap {
+  background: rgba(30,58,137,0.5);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 8px;
+  box-shadow: 0 8px 40px rgba(15,23,42,0.3), 0 2px 8px rgba(148,163,184,0.1) inset;
+  max-width: 500px;
+  opacity: 0; animation: slideUp .8s .8s forwards;
+}
+.search-row { display: flex; align-items: stretch; gap: 0; }
+.sf {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; border-right: 1px solid rgba(148,163,184,0.15);
+  cursor: pointer; border-radius: 12px; transition: background .2s;
+}
+.sf:last-of-type { border-right: none; }
+.sf:hover { background: rgba(96,165,250,0.12); }
+.sf-lbl { font-size: 9px; font-weight: 700; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; }
+.sf-val { font-size: 13px; font-weight: 500; color: var(--ink); }
+.sf-val.typing::after { content:'|'; animation: cursor .6s step-end infinite; color: var(--deep); }
+@keyframes cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+.s-btn {
+  background: linear-gradient(135deg, var(--ocean), var(--deep));
+  color: #0f1419; border: none; border-radius: 13px;
+  padding: 0 20px; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 7px;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 16px rgba(96,165,250,0.35);
+  flex-shrink: 0;
+}
+.s-btn:hover { opacity: .9; transform: scale(.98); }
+
+/* Stats */
+.stats { display:flex; gap:0; margin-top:24px; opacity:0; animation:slideUp .8s 1s forwards; }
+.stat { flex:1; padding:14px 16px; background:rgba(30,58,137,0.35); backdrop-filter:blur(12px); border:1px solid var(--glass-border); }
+.stat:first-child { border-radius:14px 0 0 14px; }
+.stat:last-child { border-radius:0 14px 14px 0; }
+.stat + .stat { border-left: none; }
+.s-num { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:var(--ink); line-height:1; }
+.s-num .accent { color:var(--gold); font-size:16px; }
+.s-lbl { font-size:10px; font-weight:600; color:rgba(148,163,184,0.7); text-transform:uppercase; letter-spacing:.08em; margin-top:3px; }
+.stat:hover { background:rgba(30,58,137,0.5); }
+
+/* Tags */
+.tags { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; opacity:0; animation:slideUp .8s 1.2s forwards; }
+.tag {
+  display:flex; align-items:center; gap:6px; padding:7px 15px;
+  background:rgba(30,58,137,0.4); backdrop-filter:blur(10px);
+  border:1px solid rgba(148,163,184,0.2); border-radius:30px;
+  font-size:12px; font-weight:500; color:var(--ink2);
+  cursor:pointer; transition:all .25s;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.3);
+}
+.tag:hover { background:rgba(30,58,137,0.6); color:var(--ink); transform:translateY(-2px); box-shadow:0 6px 20px rgba(96,165,250,0.2); }
+.tag.on { background:linear-gradient(135deg,var(--ocean),var(--deep)); color:#0f1419; border-color:transparent; box-shadow:0 4px 16px rgba(96,165,250,0.4); }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+/* ══ RIGHT ══ */
+.right {
+  position:relative; display:flex; align-items:center; justify-content:center;
+  height:100vh;
+  opacity:0; animation:fadeIn 1.2s .4s forwards;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+#gC { border-radius:50%; position:relative; z-index:2; cursor:grab; }
+#gC:active { cursor:grabbing; }
+
+/* Globe halo rings */
+.halo {
+  position:absolute; top:50%; left:50%; border-radius:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none; z-index:1;
+}
+.halo-1 { width:82%; padding-top:82%; background:radial-gradient(ellipse,rgba(96,165,250,.1) 0%, transparent 70%); animation:haloBreath 4s ease-in-out infinite; }
+.halo-2 { width:96%; padding-top:96%; border:1px dashed rgba(96,165,250,0.15); animation:haloSpin 40s linear infinite; }
+.halo-3 { width:106%; padding-top:106%; border:1px solid rgba(148,163,184,0.15); animation:haloSpin 60s linear infinite reverse; }
+.halo-dot { width:10px; height:10px; background:var(--coral); border-radius:50%; position:absolute; top:-5px; left:50%; transform:translateX(-50%); box-shadow:0 0 12px 4px rgba(248,113,113,0.4); }
+@keyframes haloBreath { 0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.07)} }
+@keyframes haloSpin { from{transform:translate(-50%,-50%) rotate(0deg)} to{transform:translate(-50%,-50%) rotate(360deg)} }
+
+/* Floating UI cards */
+.fcard {
+  position:absolute; z-index:20; pointer-events:none;
+  background:rgba(30,58,137,0.5);
+  backdrop-filter:blur(22px);
+  border:1px solid rgba(148,163,184,0.2);
+  border-radius:18px;
+  box-shadow:0 8px 32px rgba(15,23,42,0.4), 0 2px 6px rgba(96,165,250,0.1) inset;
+  opacity:0;
+}
+.fc-a { top:6%; right:-4%; min-width:185px; padding:15px; animation:fcFloat 9s ease-in-out 1.8s infinite; }
+.fc-b { bottom:18%; left:-6%; min-width:200px; padding:15px; animation:fcFloat 10s ease-in-out 3.5s infinite; }
+.fc-c { top:44%; right:-5%; min-width:195px; padding:14px; animation:fcFloat 11s ease-in-out 6s infinite; }
+.fc-d { top:18%; left:-2%; min-width:160px; padding:12px; animation:fcFloat 8s ease-in-out 8s infinite; }
+
+@keyframes fcFloat {
+  0%   { opacity:0; transform:translateY(12px) scale(.97); }
+  12%  { opacity:1; transform:translateY(0) scale(1); }
+  85%  { opacity:1; transform:translateY(-8px) scale(1); }
+  100% { opacity:0; transform:translateY(-14px) scale(.97); }
+}
+
+.fc-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.fc-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.fc-icon.blue { background:linear-gradient(135deg,#1e3a8a,#1e40af); }
+.fc-icon.teal { background:linear-gradient(135deg,#134e4a,#155e75); }
+.fc-icon.coral { background:linear-gradient(135deg,#7c2d12,#92400e); }
+.fc-icon.gold { background:linear-gradient(135deg,#78350f,#92400e); }
+.fc-icon.lav  { background:linear-gradient(135deg,#312e81,#3730a3); }
+.fc-name { font-size:13px; font-weight:700; color:var(--ink); }
+.fc-loc  { font-size:10px; color:rgba(148,163,184,.7); margin-top:1px; }
+
+.fc-price { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:var(--gold); }
+.fc-price small { font-family:'Plus Jakarta Sans',sans-serif; font-size:11px; font-weight:400; color:rgba(148,163,184,.6); }
+.fc-badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-top:7px; }
+.fc-badge.hot { background:rgba(248,113,113,.2); color:#fca5a5; }
+.fc-badge.ok  { background:rgba(34,197,94,.2); color:#86efac; }
+.fc-badge.new { background:rgba(168,85,247,.2); color:#d8b4fe; }
+.fc-badge.live { background:rgba(251,191,36,.2); color:#fcd34d; }
+
+.fc-divider { height:1px; background:rgba(148,163,184,.15); margin:10px 0; }
+
+.fc-row { display:flex; align-items:center; justify-content:space-between; }
+.fc-tag { font-size:10px; color:rgba(148,163,184,.6); }
+.fc-val { font-size:12px; font-weight:600; color:var(--ink); }
+
+.fc-stars { color:#fbbf24; font-size:11px; letter-spacing:-1px; }
+.fc-review { font-size:10px; color:rgba(148,163,184,.5); }
+
+/* Flight route card */
+.route-row { display:flex; align-items:center; gap:6px; margin-top:10px; }
+.route-code { font-size:18px; font-weight:800; color:var(--ink); font-family:'Playfair Display',serif; }
+.route-line { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.route-dash { height:1px; width:100%; background:linear-gradient(to right,var(--ocean),var(--mint)); border-radius:2px; }
+.route-plane { font-size:14px; animation:planeWiggle 2s ease-in-out infinite; }
+.route-dur { font-size:9px; color:rgba(148,163,184,.6); font-weight:500; }
+@keyframes planeWiggle { 0%,100%{transform:translateX(-2px)} 50%{transform:translateX(2px)} }
+
+/* Mini map dots */
+.minimap { display:flex; gap:5px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+.mmdot { width:7px; height:7px; border-radius:50%; }
+
+/* Weather bar */
+.wx-bar {
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+  background:rgba(30,58,137,0.6); backdrop-filter:blur(28px);
+  border:1px solid rgba(148,163,184,.2); border-radius:50px;
+  padding:12px 28px; display:flex; gap:22px; align-items:center;
+  z-index:100;
+  box-shadow:0 8px 32px rgba(15,23,42,.4), 0 1px 4px rgba(96,165,250,.1) inset;
+  opacity:0; animation:slideUp .8s 2.2s forwards;
+  white-space: nowrap;
+}
+.wx { display:flex; align-items:center; gap:6px; }
+.wx-em { font-size:17px; }
+.wx-d { display:flex; flex-direction:column; }
+.wx-city { font-size:9px; font-weight:700; color:rgba(148,163,184,.6); letter-spacing:.08em; text-transform:uppercase; }
+.wx-t { font-size:13px; font-weight:600; color:var(--ink); }
+.wx-sep { width:1px; height:28px; background:rgba(148,163,184,.15); }
+
+/* Live badge */
+.live {
+  position:fixed; bottom:22px; left:22px; z-index:101;
+  display:flex; align-items:center; gap:8px;
+  background:rgba(30,58,137,0.5); backdrop-filter:blur(16px);
+  border:1px solid rgba(148,163,184,.2); border-radius:40px;
+  padding:8px 16px;
+  box-shadow:0 4px 20px rgba(15,23,42,.3);
+  opacity:0; animation:fadeIn 1s 2.5s forwards;
+  font-size:12px; color:var(--ink2);
+}
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--coral); animation:blink 1s ease-in-out infinite; }
+.live strong { color:var(--ink); font-weight:700; }
+
+/* Booking toast */
+.toast {
+  position:fixed; bottom:70px; left:22px; z-index:200;
+  background:rgba(30,58,137,0.6); backdrop-filter:blur(20px);
+  border:1px solid rgba(148,163,184,.2); border-radius:16px;
+  padding:14px 18px; max-width:280px;
+  box-shadow:0 8px 32px rgba(15,23,42,.4);
+  display:flex; gap:12px; align-items:center;
+  opacity:0; animation:toastAnim 5s 3s ease-in-out infinite;
+}
+@keyframes toastAnim {
+  0%  { opacity:0; transform:translateX(-30px); }
+  10% { opacity:1; transform:translateX(0); }
+  80% { opacity:1; transform:translateX(0); }
+  100%{ opacity:0; transform:translateX(-30px); }
+}
+.toast-icon { width:38px; height:38px; background:linear-gradient(135deg,rgba(34,197,94,.3),rgba(34,197,94,.2)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.toast-title { font-size:13px; font-weight:700; color:var(--ink); }
+.toast-sub { font-size:11px; color:rgba(148,163,184,.6); margin-top:2px; }
+
+/* Nav dots */
+.ndots {
+  position:fixed; right:16px; top:50%; transform:translateY(-50%);
+  display:flex; flex-direction:column; gap:9px; z-index:101;
+  opacity:0; animation:fadeIn 1s 2.8s forwards;
+}
+.nd { width:6px; height:6px; border-radius:50%; background:rgba(96,165,250,.25); cursor:pointer; transition:all .3s; }
+.nd.on { background:var(--ocean); transform:scale(1.5); }
+.nd:hover { background:var(--deep); }
+
+/* Progress line top */
+.pbar { position:fixed; top:0; left:0; height:3px; background:linear-gradient(to right,var(--gold),var(--ocean),var(--mint)); z-index:999; animation:pbarAnim 10s ease-in-out infinite; border-radius:0 3px 3px 0; }
+@keyframes pbarAnim { 0%{width:0;opacity:1} 75%{width:100%;opacity:1} 100%{width:100%;opacity:0} }
+
+/* Grain */
+.grain { position:fixed; inset:0; z-index:50; pointer-events:none; opacity:.04; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px 200px; }
+
+/* Animated mesh gradient overlay on top of canvas */
+#mesh {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background: 
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(30,58,137,0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%, rgba(96,165,250,0.2) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 60% 80%, rgba(59,130,246,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 35% at 10% 70%, rgba(78,205,196,0.12) 0%, transparent 50%);
+  animation: meshShift 12s ease-in-out infinite alternate;
+}
+@keyframes meshShift {
+  0%   { opacity: 0.5; transform: scale(1) translate(0,0); }
+  33%  { opacity: 0.7; transform: scale(1.02) translate(10px,-5px); }
+  66%  { opacity: 0.55; transform: scale(0.99) translate(-8px,8px); }
+  100% { opacity: 0.65; transform: scale(1.01) translate(5px,-10px); }
+}
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="pbar"></div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<canvas id="bgC"></canvas>
+<div id="mesh"></div>
+
+<!-- TOAST -->
+<div class="toast">
+  <div class="toast-icon">✈️</div>
+  <div>
+    <div class="toast-title">Booking Confirmed!</div>
+    <div class="toast-sub">Santorini · Oct 14 – Oct 21 · 2 guests</div>
+  </div>
+</div>
+
+<div class="stage">
+  <!-- ── LEFT ── -->
+  <div class="left">
+    <div class="pill"><span class="pill-dot"></span>50+ Destinations · Curated for You</div>
+
+    <h1 class="headline">Discover<br><em>The World</em></h1>
+    <span class="hl2">Your story starts here.</span>
+
+    <p class="sub">Handpicked destinations, seamless booking, and journeys that transform. From hidden coastlines to ancient cities — we craft every detail.</p>
+
+    <div class="search-wrap">
+      <div class="search-row">
+        <div class="sf">
+          <span class="sf-lbl">📍 Where to?</span>
+          <span class="sf-val typing" id="typeEl">Santorini, Greece</span>
+        </div>
+        <div class="sf" style="max-width:128px;">
+          <span class="sf-lbl">📅 Dates</span>
+          <span class="sf-val">Oct 14 – 21</span>
+        </div>
+        <div class="sf" style="max-width:100px;">
+          <span class="sf-lbl">👥 Guests</span>
+          <span class="sf-val">2 Adults</span>
+        </div>
+        <button class="s-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Search
+        </button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="s-num"><span id="c1">0</span><span class="accent">+</span></div><div class="s-lbl">Countries</div></div>
+      <div class="stat"><div class="s-num"><span id="c2">0</span><span class="accent">k</span></div><div class="s-lbl">Hotels</div></div>
+      <div class="stat"><div class="s-num"><span id="c3">0</span><span class="accent">M</span></div><div class="s-lbl">Travelers</div></div>
+      <div class="stat"><div class="s-num">4.9<span class="accent">★</span></div><div class="s-lbl">Rating</div></div>
+    </div>
+
+    <div class="tags">
+      <div class="tag on">🏖️ Beach</div>
+      <div class="tag">🏔️ Mountain</div>
+      <div class="tag">🏛️ Culture</div>
+      <div class="tag">🌿 Eco Travel</div>
+      <div class="tag">🍷 Gastronomy</div>
+      <div class="tag">🌸 Romance</div>
+      <div class="tag">🎒 Adventure</div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT ── -->
+  <div class="right" id="rp">
+    <div class="halo halo-1"></div>
+    <div class="halo halo-2"><div class="halo-dot"></div></div>
+    <div class="halo halo-3"></div>
+    <canvas id="gC"></canvas>
+
+    <!-- Card A: Destination price -->
+    <div class="fcard fc-a">
+      <div class="fc-head">
+        <div class="fc-icon teal">🏝️</div>
+        <div><div class="fc-name">Santorini, Greece</div><div class="fc-loc">🇬🇷 Cyclades Islands</div></div>
+      </div>
+      <div class="fc-price">$2,840 <small>/ person</small></div>
+      <div class="fc-badge hot">🔥 Only 3 left</div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-stars">★★★★★</div>
+        <div class="fc-review">4.9 (2,841 reviews)</div>
+      </div>
+    </div>
+
+    <!-- Card B: Flight info -->
+    <div class="fcard fc-b">
+      <div class="fc-head">
+        <div class="fc-icon blue">✈️</div>
+        <div><div class="fc-name">Direct Flight</div><div class="fc-loc">Non-stop · Economy</div></div>
+      </div>
+      <div class="route-row">
+        <div><div class="route-code">LHR</div><div class="fc-tag">London</div></div>
+        <div class="route-line">
+          <div class="route-plane">✈</div>
+          <div class="route-dash"></div>
+          <div class="route-dur">6h 30m</div>
+        </div>
+        <div style="text-align:right"><div class="route-code">ATH</div><div class="fc-tag">Athens</div></div>
+      </div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-badge ok">Available</div>
+        <div class="fc-val">from $342</div>
+      </div>
+    </div>
+
+    <!-- Card C: Review -->
+    <div class="fcard fc-c">
+      <div class="fc-head">
+        <div class="fc-icon coral">💬</div>
+        <div><div class="fc-name">Sarah M.</div><div class="fc-loc">Traveled to Bali, 2024</div></div>
+      </div>
+      <div style="font-size:12px; color:var(--ink2); line-height:1.6; font-style:italic;">"Absolutely magical. TravelDreams made every detail perfect — from the villa to the hidden waterfalls."</div>
+      <div class="fc-divider"></div>
+      <div class="fc-row">
+        <div class="fc-stars">★★★★★</div>
+        <div class="fc-badge new">Verified</div>
+      </div>
+    </div>
+
+    <!-- Card D: Mini deal -->
+    <div class="fcard fc-d">
+      <div class="fc-head">
+        <div class="fc-icon gold">⚡</div>
+        <div><div class="fc-name">Flash Deal</div><div class="fc-loc">Expires in 02:47</div></div>
+      </div>
+      <div class="fc-price" style="font-size:20px;">$1,190 <small>was $1,680</small></div>
+      <div class="minimap">
+        <div class="mmdot" style="background:#f87171;"></div>
+        <div class="mmdot" style="background:#4ecdc4;"></div>
+        <div class="mmdot" style="background:#c4b5fd;"></div>
+        <div class="mmdot" style="background:#fbbf24;"></div>
+        <div style="font-size:10px;color:rgba(148,163,184,.6);">Maldives · 5 nights</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Weather bar — fixed at bottom center -->
+<div class="wx-bar">
+  <div class="wx"><span class="wx-em">☀️</span><div class="wx-d"><div class="wx-city">Santorini</div><div class="wx-t">26°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌤️</span><div class="wx-d"><div class="wx-city">Bali</div><div class="wx-t">29°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">⛅</span><div class="wx-d"><div class="wx-city">Tokyo</div><div class="wx-t">18°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌊</span><div class="wx-d"><div class="wx-city">Maldives</div><div class="wx-t">31°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🌺</span><div class="wx-d"><div class="wx-city">Hawaii</div><div class="wx-t">27°C</div></div></div>
+  <div class="wx-sep"></div>
+  <div class="wx"><span class="wx-em">🗼</span><div class="wx-d"><div class="wx-city">Paris</div><div class="wx-t">14°C</div></div></div>
+</div>
+
+<!-- Nav dots -->
+<div class="ndots">
+  <div class="nd on"></div><div class="nd"></div><div class="nd"></div><div class="nd"></div><div class="nd"></div>
+</div>
+
+<!-- Live -->
+<div class="live">
+  <div class="live-dot"></div>
+  <div><strong id="liveN">1,384</strong> travelers online now</div>
+</div>
+
+<script>
+// ── Cursor
+const cur = document.getElementById('cur'), curR = document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+(function ac(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.13;ry+=(my-ry)*.13;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(ac);})();
+
+// ── Counters
+function count(id,val,dur,dec=0){
+  const el=document.getElementById(id);
+  if(!el){return;}
+  el.textContent=dec?'0.0':'0';
+  let s=null;
+  (function step(ts){
+    if(!s)s=ts;
+    const p=Math.min((ts-s)/dur,1),e=1-Math.pow(1-p,3),v=val*e;
+    el.textContent=dec?v.toFixed(dec):Math.floor(v);
+    if(p<1)requestAnimationFrame(step);
+  })(performance.now());
+}
+window.addEventListener('load',()=>{
+  setTimeout(()=>{count('c1',50,1800);count('c2',2.4,2000,1);count('c3',1.2,2200,1);},600);
+});
+
+// ── Live counter
+setInterval(()=>{ document.getElementById('liveN').textContent=(1300+Math.floor(Math.random()*300)).toLocaleString(); },3200);
+
+// ── Typing
+const dests=['Santorini, Greece','Bali, Indonesia','Kyoto, Japan','Maldives Islands','Amalfi Coast, Italy','Machu Picchu, Peru','Safari, Kenya','Iceland Aurora'];
+let di=0,ci=0,del=false;
+const tel=()=>document.getElementById("typeEl");
+function type(){const el=tel();if(!el)return;const d=dests[di];if(!del){ci++;el.textContent=d.slice(0,ci);if(ci===d.length){del=true;setTimeout(type,2000);return;}setTimeout(type,55+Math.random()*45);}else{ci--;el.textContent=d.slice(0,ci);if(ci===0){del=false;di=(di+1)%dests.length;setTimeout(type,400);return;}setTimeout(type,30);}}
+setTimeout(type,2000);
+
+// ── Tags
+document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tag').forEach(x=>x.classList.remove('on'));t.classList.add('on');}));
+document.querySelectorAll('.nd').forEach((d,i)=>d.addEventListener('click',()=>{document.querySelectorAll('.nd').forEach((x,j)=>x.classList.toggle('on',j===i));}));
+
+// ── Countdown timer
+(function cd(){const loc=document.querySelector('.fc-d .fc-loc');if(!loc)return;let s=167;setInterval(()=>{s--;if(s<0)s=300;const m=Math.floor(s/60).toString().padStart(2,'0'),sec=(s%60).toString().padStart(2,'0');loc.textContent=`Expires in ${m}:${sec}`;},1000);})();
+
+// ══════════════════════════════════════════
+// BG CANVAS — Dark theme map
+// ══════════════════════════════════════════
+const bgC = document.getElementById('bgC'), bgX = bgC.getContext('2d');
+let BW, BH;
+function rbg(){ BW = bgC.width = window.innerWidth; BH = bgC.height = window.innerHeight; }
+rbg(); window.addEventListener('resize', rbg);
+
+const mapNodes = [
+  {name:'New York',    lon:-74.0, lat:40.7,  col:'#f87171'},
+  {name:'London',      lon:-0.1,  lat:51.5,  col:'#60a5fa'},
+  {name:'Paris',       lon:2.3,   lat:48.8,  col:'#fbbf24'},
+  {name:'Dubai',       lon:55.3,  lat:25.2,  col:'#f59e0b'},
+  {name:'Mumbai',      lon:72.8,  lat:19.0,  col:'#f87171'},
+  {name:'Singapore',   lon:103.8, lat:1.3,   col:'#4ecdc4'},
+  {name:'Tokyo',       lon:139.7, lat:35.7,  col:'#f472b6'},
+  {name:'Sydney',      lon:151.2, lat:-33.9, col:'#34d399'},
+  {name:'Bali',        lon:115.2, lat:-8.7,  col:'#c4b5fd'},
+  {name:'Cairo',       lon:31.2,  lat:30.0,  col:'#fbbf24'},
+  {name:'Cape Town',   lon:18.4,  lat:-33.9, col:'#4ecdc4'},
+  {name:'São Paulo',   lon:-46.6, lat:-23.5, col:'#f97316'},
+  {name:'Los Angeles', lon:-118.2,lat:34.0,  col:'#60a5fa'},
+  {name:'Toronto',     lon:-79.4, lat:43.7,  col:'#34d399'},
+  {name:'Mexico City', lon:-99.1, lat:19.4,  col:'#f472b6'},
+  {name:'Santorini',   lon:25.4,  lat:36.4,  col:'#60a5fa'},
+  {name:'Maldives',    lon:73.5,  lat:4.2,   col:'#06b6d4'},
+  {name:'Nairobi',     lon:36.8,  lat:-1.3,  col:'#84cc16'},
+  {name:'Bangkok',     lon:100.5, lat:13.8,  col:'#f59e0b'},
+  {name:'Amsterdam',   lon:4.9,   lat:52.4,  col:'#e879f9'},
+  {name:'Barcelona',   lon:2.1,   lat:41.4,  col:'#fb923c'},
+  {name:'Reykjavik',   lon:-22.0, lat:64.1,  col:'#93c5fd'},
+  {name:'Marrakech',   lon:-8.0,  lat:31.6,  col:'#fcd34d'},
+];
+
+function geoProject(lon, lat) {
+  const x = (lon + 180) / 360 * BW;
+  const y = (90 - lat) / 180 * BH;
+  return [x, y];
+}
+
+function updateNodePositions(){
+  for(const n of mapNodes){
+    [n.x, n.y] = geoProject(n.lon, n.lat);
+  }
+}
+updateNodePositions();
+window.addEventListener('resize', updateNodePositions);
+
+const routePairs = [
+  [0,1],[1,6],[0,3],[2,9],[3,5],[5,7],[6,8],[1,3],[4,5],
+  [11,0],[12,5],[13,1],[10,9],[14,12],[15,2],[16,5],[17,9],
+  [18,5],[1,19],[20,1],[2,21],[0,13],[6,7],[3,8],[2,15]
+];
+const planes = routePairs.map(r => ({
+  from:r[0], to:r[1],
+  t: Math.random(),
+  speed: .0008 + Math.random()*.001,
+  active: Math.random() > .35,
+  trail: []
+}));
+
+const stamps = [
+  {lon:-74,  lat:50,  label:'BOARDED',   sub:'JFK → CDG',       rot:-8, col:'#f87171', delay:0},
+  {lon:139,  lat:44,  label:'VISITED',   sub:'TOKYO',            rot: 6, col:'#60a5fa', delay:1.5},
+  {lon:-46,  lat:-30, label:'ARRIVED',   sub:'RIO DE JANEIRO',   rot:-5, col:'#34d399', delay:3},
+  {lon:150,  lat:-40, label:'EXPLORED',  sub:'SYDNEY',           rot: 9, col:'#c4b5fd', delay:4.5},
+  {lon:2,    lat:56,  label:'CHECKED IN',sub:'PARIS',            rot:-4, col:'#fbbf24', delay:6},
+];
+
+const postcards = [
+  {lon:-140, lat:20,  dest:'🏝️ MALDIVES', price:'from $1,240', rot:-6, delay:2},
+  {lon:160,  lat:50,  dest:'🗼 PARIS',     price:'from $890',   rot: 7, delay:5},
+  {lon:-170, lat:-20, dest:'🌸 KYOTO',     price:'from $1,100', rot:-3, delay:8},
+];
+
+let worldFeatures = null;
+let bgT = 0;
+
+(async function loadMap(){
+  try {
+    const [topoResp] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    ]);
+    const topo = await topoResp.json();
+    const ts = window.topojson;
+    if(ts){
+      worldFeatures = ts.feature(topo, topo.objects.land);
+    }
+  } catch(e) {
+    console.warn('Map load failed:', e);
+  }
+  requestAnimationFrame(drawBg);
+})();
+
+function drawGeoPath(feature) {
+  if(!feature) return;
+  const geoms = feature.type === 'FeatureCollection' ? feature.features.map(f=>f.geometry)
+               : feature.type === 'Feature' ? [feature.geometry]
+               : [feature];
+  for(const geom of geoms){
+    if(!geom) continue;
+    const polys = geom.type === 'Polygon' ? [geom.coordinates]
+                : geom.type === 'MultiPolygon' ? geom.coordinates : [];
+    for(const poly of polys){
+      for(const ring of poly){
+        bgX.beginPath();
+        for(let i=0;i<ring.length;i++){
+          const [px,py] = geoProject(ring[i][0], ring[i][1]);
+          i===0 ? bgX.moveTo(px,py) : bgX.lineTo(px,py);
+        }
+        bgX.closePath();
+        bgX.fill();
+      }
+    }
+  }
+}
+
+function drawBg(){
+  bgX.clearRect(0,0,BW,BH);
+  bgT += .005;
+
+  const base = bgX.createLinearGradient(0,0,BW,BH);
+  base.addColorStop(0,   '#0f1419');
+  base.addColorStop(.5,  '#1a2f4a');
+  base.addColorStop(1,   '#162240');
+  bgX.fillStyle = base;
+  bgX.fillRect(0,0,BW,BH);
+
+  const vig = bgX.createRadialGradient(BW*.5,BH*.5,BH*.1, BW*.5,BH*.5,BW*.85);
+  vig.addColorStop(0,  'rgba(15,20,25,0)');
+  vig.addColorStop(.7, 'rgba(30,58,137,.12)');
+  vig.addColorStop(1,  'rgba(15,23,42,.35)');
+  bgX.fillStyle = vig; bgX.fillRect(0,0,BW,BH);
+
+  bgX.save();
+  bgX.strokeStyle = 'rgba(96,165,250,.06)';
+  bgX.lineWidth = .6;
+  bgX.setLineDash([3,8]);
+  for(let i=1;i<8;i++){ bgX.beginPath(); bgX.moveTo(0,BH*i/8); bgX.lineTo(BW,BH*i/8); bgX.stroke(); }
+  for(let i=1;i<14;i++){ bgX.beginPath(); bgX.moveTo(BW*i/14,0); bgX.lineTo(BW*i/14,BH); bgX.stroke(); }
+  bgX.setLineDash([]);
+  bgX.restore();
+
+  if(worldFeatures){
+    bgX.save();
+    bgX.translate(6, 5);
+    bgX.globalAlpha = 0.08;
+    bgX.fillStyle = '#1a2f4a';
+    drawGeoPath(worldFeatures);
+    bgX.restore();
+    bgX.save();
+    bgX.globalAlpha = 0.15;
+    bgX.fillStyle = '#1e3a8a';
+    drawGeoPath(worldFeatures);
+    bgX.globalAlpha = 0.05;
+    bgX.strokeStyle = '#60a5fa';
+    bgX.lineWidth = .7;
+    bgX.stroke && (() => {
+      bgX.globalAlpha = 0.04;
+      bgX.strokeStyle = '#60a5fa';
+      drawGeoPath(worldFeatures);
+    })();
+    bgX.restore();
+  }
+
+  drawCompass(BW*.07, BH*.84, Math.min(BW,BH)*.055, bgT*.3);
+  drawScaleBar(BW*.80, BH*.92);
+
+  updateNodePositions();
+  for(const pl of planes){
+    if(!pl.active) continue;
+    pl.t += pl.speed;
+    if(pl.t > 1){ pl.t = 0; pl.trail=[]; pl.active = Math.random() > .2; continue; }
+
+    const n1=mapNodes[pl.from], n2=mapNodes[pl.to];
+    const x1=n1.x, y1=n1.y, x2=n2.x, y2=n2.y;
+    const mx=(x1+x2)/2, my=(y1+y2)/2 - Math.hypot(x2-x1,y2-y1)*.16;
+
+    bgX.save();
+    bgX.strokeStyle = n1.col+'44';
+    bgX.lineWidth = 1.2;
+    bgX.setLineDash([5,7]);
+    bgX.beginPath(); bgX.moveTo(x1,y1); bgX.quadraticCurveTo(mx,my,x2,y2); bgX.stroke();
+    bgX.setLineDash([]);
+
+    const t=pl.t;
+    const bx=(1-t)*(1-t)*x1+2*(1-t)*t*mx+t*t*x2;
+    const by=(1-t)*(1-t)*y1+2*(1-t)*t*my+t*t*y2;
+    pl.trail.push({x:bx,y:by});
+    if(pl.trail.length>20) pl.trail.shift();
+    for(let i=0;i<pl.trail.length;i++){
+      bgX.globalAlpha=(i/pl.trail.length)*.5;
+      bgX.fillStyle=n1.col;
+      bgX.beginPath(); bgX.arc(pl.trail[i].x,pl.trail[i].y,.8+(i/pl.trail.length)*1.5,0,Math.PI*2); bgX.fill();
+    }
+    const angle=Math.atan2(2*(1-t)*(my-y1)+2*t*(y2-my), 2*(1-t)*(mx-x1)+2*t*(x2-mx));
+    bgX.globalAlpha=.9; bgX.translate(bx,by); bgX.rotate(angle);
+    drawPlaneIcon(n1.col, 5);
+    bgX.restore();
+  }
+  if(Math.random()<.008){ const p=planes[Math.floor(Math.random()*planes.length)]; if(!p.active){p.active=true;p.t=0;p.trail=[];} }
+
+  for(const node of mapNodes){
+    const pulse=.4+.6*Math.abs(Math.sin(bgT*1.5+node.lon*.05));
+    bgX.save();
+    bgX.globalAlpha=.16*pulse;
+    bgX.strokeStyle=node.col; bgX.lineWidth=1.5;
+    bgX.beginPath(); bgX.arc(node.x,node.y,11+pulse*5,0,Math.PI*2); bgX.stroke();
+    bgX.globalAlpha=.8;
+    bgX.fillStyle='white'; bgX.beginPath(); bgX.arc(node.x,node.y,4.5,0,Math.PI*2); bgX.fill();
+    bgX.fillStyle=node.col; bgX.beginPath(); bgX.arc(node.x,node.y,3,0,Math.PI*2); bgX.fill();
+    if(pulse>.7){
+      bgX.globalAlpha=.55;
+      bgX.font='500 9px Plus Jakarta Sans'; bgX.textAlign='center';
+      const tw=bgX.measureText(node.name).width;
+      bgX.fillStyle='rgba(15,23,42,.8)';
+      bgX.beginPath(); bgX.roundRect?bgX.roundRect(node.x-tw/2-3,node.y+7,tw+6,12,3):bgX.rect(node.x-tw/2-3,node.y+7,tw+6,12);
+      bgX.fill();
+      bgX.fillStyle=node.col; bgX.fillText(node.name,node.x,node.y+16);
+    }
+    bgX.restore();
+  }
+
+  for(const s of stamps){
+    const [sx2,sy2] = geoProject(s.lon, s.lat);
+    const t=(bgT-s.delay)%18;
+    if(t<0||t>12) continue;
+    const alpha=t<1?t:t>10?(12-t)/2:1;
+    bgX.save();
+    bgX.translate(sx2,sy2); bgX.rotate(s.rot*Math.PI/180);
+    bgX.globalAlpha=alpha*.5;
+    bgX.strokeStyle=s.col; bgX.lineWidth=2.5;
+    bgX.strokeRect(-44,-22,88,44);
+    bgX.lineWidth=1; bgX.globalAlpha=alpha*.35;
+    bgX.strokeRect(-40,-18,80,36);
+    bgX.globalAlpha=alpha*.6;
+    bgX.fillStyle=s.col; bgX.font='bold 10px Plus Jakarta Sans'; bgX.textAlign='center';
+    bgX.fillText(s.label,0,-5);
+    bgX.fillStyle='#93c5fd'; bgX.font='400 8px Plus Jakarta Sans';
+    bgX.fillText(s.sub,0,7);
+    bgX.restore();
+  }
+
+  for(const pc of postcards){
+    const [pcx,pcy] = geoProject(pc.lon, pc.lat);
+    const t=(bgT-pc.delay)%20;
+    if(t<0||t>14) continue;
+    const alpha=t<1.5?t/1.5:t>12?(14-t)/2:1;
+    const fy=Math.sin(bgT*.8+pc.delay)*5;
+    bgX.save();
+    bgX.translate(pcx,pcy+fy); bgX.rotate(pc.rot*Math.PI/180);
+    bgX.globalAlpha=alpha*.6;
+    bgX.shadowColor='rgba(0,0,0,.4)'; bgX.shadowBlur=10; bgX.shadowOffsetY=3;
+    bgX.fillStyle='rgba(30,58,137,.7)';
+    bgX.beginPath(); bgX.roundRect?bgX.roundRect(-45,-26,90,52,6):bgX.rect(-45,-26,90,52); bgX.fill();
+    bgX.shadowBlur=0;
+    bgX.fillStyle='rgba(226,232,240,.8)'; bgX.font='bold 11px Plus Jakarta Sans'; bgX.textAlign='center';
+    bgX.fillText(pc.dest,0,-8);
+    bgX.fillStyle='rgba(148,163,184,.8)'; bgX.font='400 9px Plus Jakarta Sans';
+    bgX.fillText(pc.price,0,8);
+    bgX.strokeStyle='rgba(248,113,113,.3)'; bgX.lineWidth=.8;
+    bgX.beginPath(); bgX.moveTo(-38,0); bgX.lineTo(38,0); bgX.stroke();
+    bgX.restore();
+  }
+
+  bgX.save();
+  bgX.globalAlpha=.04;
+  bgX.font=`bold ${BW*.055}px Playfair Display`;
+  bgX.fillStyle='#60a5fa'; bgX.textAlign='center';
+  bgX.fillText('TRAVEL DREAMS', BW*.5, BH*.54);
+  bgX.restore();
+
+  requestAnimationFrame(drawBg);
+}
+
+function drawPlaneIcon(col,size){
+  bgX.fillStyle=col;
+  bgX.beginPath();
+  bgX.moveTo(size,0); bgX.lineTo(-size*.6,-size*.4); bgX.lineTo(-size*.3,0); bgX.lineTo(-size*.6,size*.4); bgX.closePath(); bgX.fill();
+  bgX.beginPath(); bgX.moveTo(0,0); bgX.lineTo(-size*.1,-size*.9); bgX.lineTo(-size*.5,-size*.4); bgX.lineTo(-size*.2,0); bgX.closePath(); bgX.fill();
+  bgX.beginPath(); bgX.moveTo(0,0); bgX.lineTo(-size*.1,size*.9); bgX.lineTo(-size*.5,size*.4); bgX.lineTo(-size*.2,0); bgX.closePath(); bgX.fill();
+}
+
+function drawCompass(cx,cy,r,rot){
+  bgX.save(); bgX.translate(cx,cy); bgX.rotate(rot); bgX.globalAlpha=.15;
+  bgX.strokeStyle='#60a5fa'; bgX.lineWidth=1.5;
+  bgX.beginPath(); bgX.arc(0,0,r,0,Math.PI*2); bgX.stroke();
+  bgX.beginPath(); bgX.arc(0,0,r*.82,0,Math.PI*2); bgX.stroke();
+  for(let i=0;i<16;i++){
+    const a=i*Math.PI/8, len=i%2===0?r*.14:r*.07;
+    bgX.lineWidth=i%4===0?1.8:.8;
+    bgX.beginPath(); bgX.moveTo(Math.cos(a)*r*.82,Math.sin(a)*r*.82);
+    bgX.lineTo(Math.cos(a)*(r*.82-len),Math.sin(a)*(r*.82-len)); bgX.stroke();
+  }
+  const dirs=[[0,'N','#f87171'],[Math.PI,'S','#60a5fa'],[Math.PI/2,'E','#60a5fa'],[-Math.PI/2,'W','#60a5fa']];
+  for(const[a,lbl,col] of dirs){
+    bgX.fillStyle=col;
+    bgX.beginPath(); bgX.moveTo(Math.cos(a)*r*.62,Math.sin(a)*r*.62);
+    bgX.lineTo(Math.cos(a+Math.PI/2)*r*.07,Math.sin(a+Math.PI/2)*r*.07);
+    bgX.lineTo(Math.cos(a-Math.PI/2)*r*.07,Math.sin(a-Math.PI/2)*r*.07);
+    bgX.closePath(); bgX.fill();
+    bgX.font=`bold ${r*.2}px Plus Jakarta Sans`; bgX.fillStyle='#e2e8f0'; bgX.textAlign='center';
+    bgX.fillText(lbl,Math.cos(a)*r*.9,Math.sin(a)*r*.9+r*.07);
+  }
+  bgX.fillStyle='#60a5fa'; bgX.globalAlpha=.35;
+  bgX.beginPath(); bgX.arc(0,0,r*.07,0,Math.PI*2); bgX.fill();
+  bgX.restore();
+}
+
+function drawScaleBar(x,y){
+  bgX.save(); bgX.globalAlpha=.25; bgX.strokeStyle='#93c5fd'; bgX.lineWidth=1.5; bgX.lineCap='square';
+  bgX.beginPath(); bgX.moveTo(x,y); bgX.lineTo(x+80,y); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x,y-4); bgX.lineTo(x,y+4); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+80,y-4); bgX.lineTo(x+80,y+4); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+40,y-2); bgX.lineTo(x+40,y+2); bgX.stroke();
+  bgX.font='400 8px Plus Jakarta Sans'; bgX.fillStyle='#93c5fd'; bgX.textAlign='center';
+  bgX.fillText('5,000 km',x+40,y-6);
+  bgX.restore();
+}
+
+// ══════════════════════════════════════════
+// GLOBE — Dark ocean theme
+// ══════════════════════════════════════════
+const gCv=document.getElementById('gC'),gX=gCv.getContext('2d');
+let GW,GH,GR,GCX,GCY;
+function rg(){
+  const p=document.getElementById('rp');
+  const sz=Math.min(p.clientWidth,p.clientHeight)*.68;
+  gCv.width=gCv.height=sz*window.devicePixelRatio;
+  gCv.style.width=gCv.style.height=sz+'px';
+  GW=GH=gCv.width;GR=GW*.45;GCX=GCY=GW/2;
+}
+rg();window.addEventListener('resize',rg);
+
+const cities=[
+  {name:'Paris',lat:48.8,lon:2.3,col:'#fbbf24',emoji:'🗼'},
+  {name:'Bali',lat:-8.3,lon:115,col:'#4ecdc4',emoji:'🌴'},
+  {name:'Tokyo',lat:35.7,lon:139.7,col:'#f87171',emoji:'🗾'},
+  {name:'New York',lat:40.7,lon:-74,col:'#c4b5fd',emoji:'🗽'},
+  {name:'Sydney',lat:-33.9,lon:151.2,col:'#34d399',emoji:'🦘'},
+  {name:'Dubai',lat:25.2,lon:55.3,col:'#fbbf24',emoji:'🌇'},
+  {name:'Santorini',lat:36.4,lon:25.4,col:'#60a5fa',emoji:'🏛️'},
+  {name:'Maldives',lat:3.2,lon:73.2,col:'#06b6d4',emoji:'🏝️'},
+  {name:'Rio',lat:-22.9,lon:-43.2,col:'#fcd34d',emoji:'🎭'},
+  {name:'London',lat:51.5,lon:-.1,col:'#8b5cf6',emoji:'🎡'},
+  {name:'Singapore',lat:1.3,lon:103.8,col:'#f472b6',emoji:'🦁'},
+  {name:'Marrakech',lat:31.6,lon:-8,col:'#f87171',emoji:'🕌'},
+  {name:'Cape Town',lat:-33.9,lon:18.4,col:'#10b981',emoji:'🌍'},
+  {name:'Vancouver',lat:49.3,lon:-123.1,col:'#6366f1',emoji:'🍁'},
+];
+
+const routes=[[0,6],[1,7],[2,4],[3,9],[5,2],[8,3],[10,1],[11,0],[12,4],[13,3],[6,5],[7,10]];
+const routeAnims=routes.map((_,i)=>({p:0,dir:1,offset:i*.25,speed:.004+Math.random()*.003}));
+
+let rotY=0,rotSpeed=.0025,drag=false,lastX=0,autoRot=true,gT=0;
+
+function ll3d(lat,lon,r,ry){
+  const phi=(90-lat)*Math.PI/180;
+  const theta=(lon+ry*180/Math.PI)*Math.PI/180;
+  return{x:r*Math.sin(phi)*Math.cos(theta),y:-r*Math.cos(phi),z:r*Math.sin(phi)*Math.sin(theta)};
+}
+function proj(p){const f=GR*3.5,z=p.z+f,s=f/z;return{x:GCX+p.x*s,y:GCY+p.y*s,z:p.z,s};}
+
+const land=[];
+function seedLand(la0,la1,lo0,lo1,n,j=12){for(let i=0;i<n;i++)land.push({lat:la0+(la1-la0)*Math.random()+(Math.random()-.5)*j,lon:lo0+(lo1-lo0)*Math.random()+(Math.random()-.5)*j});}
+seedLand(36,70,-10,40,90,7);
+seedLand(25,70,-130,-60,110,9);
+seedLand(-55,12,-80,-35,75,8);
+seedLand(-35,37,-18,50,100,9);
+seedLand(0,70,40,145,200,10);
+seedLand(-45,-10,115,153,55,6);
+seedLand(60,72,20,50,20,4);
+seedLand(30,45,130,145,25,3);
+
+function drawGlobe(){
+  gX.clearRect(0,0,GW,GH);
+
+  const base=gX.createRadialGradient(GCX-GR*.2,GCY-GR*.2,0,GCX,GCY,GR);
+  base.addColorStop(0,'#1e40af');
+  base.addColorStop(.3,'#1e3a8a');
+  base.addColorStop(.7,'#1b3a8a');
+  base.addColorStop(1,'#082f4b');
+  gX.save();gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.fillStyle=base;gX.fill();gX.restore();
+
+  gX.save();gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.clip();
+  const depth=gX.createRadialGradient(GCX,GCY*.8,0,GCX,GCY,GR*1.1);
+  depth.addColorStop(0,'transparent');
+  depth.addColorStop(.7,'rgba(15,23,42,.18)');
+  depth.addColorStop(1,'rgba(7,18,32,.35)');
+  gX.fillStyle=depth;gX.fillRect(0,0,GW,GH);gX.restore();
+
+  gX.save();gX.strokeStyle='rgba(96,165,250,0.25)';gX.lineWidth=.6;
+  for(let lat=-75;lat<=75;lat+=15){
+    gX.beginPath();let first=true;
+    for(let lon=0;lon<=360;lon+=3){
+      const p3=ll3d(lat,lon,GR,rotY),p2=proj(p3);
+      if(p3.z>-GR*.15){first?gX.moveTo(p2.x,p2.y):gX.lineTo(p2.x,p2.y);first=false;}else first=true;
+    }gX.stroke();
+  }
+  for(let lon=0;lon<360;lon+=20){
+    gX.beginPath();let first=true;
+    for(let lat=-90;lat<=90;lat+=3){
+      const p3=ll3d(lat,lon,GR,rotY),p2=proj(p3);
+      if(p3.z>-GR*.15){first?gX.moveTo(p2.x,p2.y):gX.lineTo(p2.x,p2.y);first=false;}else first=true;
+    }gX.stroke();
+  }
+  gX.restore();
+
+  for(const pt of land){
+    const p3=ll3d(pt.lat,pt.lon,GR*.999,rotY);
+    if(p3.z<-GR*.2)continue;
+    const p2=proj(p3);
+    const df=Math.max(0,(p3.z+GR*.3)/(GR*1.3));
+    gX.save();gX.globalAlpha=df*.65;
+    gX.fillStyle='rgba(34,197,94,.5)';
+    gX.beginPath();gX.arc(p2.x,p2.y,2.8*p2.s*.0038*GR,0,Math.PI*2);gX.fill();
+    gX.restore();
+  }
+
+  gT+=.016;
+  routes.forEach((route,i)=>{
+    const a=routeAnims[i];
+    a.p+=a.dir*a.speed;
+    if(a.p>1)a.dir=-1;if(a.p<0)a.dir=1;
+    const c1=cities[route[0]],c2=cities[route[1]];
+    gX.save();
+    gX.strokeStyle=c1.col;gX.lineWidth=1.5;
+    gX.shadowColor=c1.col;gX.shadowBlur=8;
+    gX.globalAlpha=.7;
+    const steps=80,drawSteps=Math.floor(steps*a.p);
+    gX.beginPath();let pen=false;
+    for(let s=0;s<=drawSteps;s++){
+      const t=s/steps;
+      const lat=c1.lat+(c2.lat-c1.lat)*t;
+      const lon=c1.lon+(c2.lon-c1.lon)*t;
+      const lift=1+Math.sin(t*Math.PI)*.18;
+      const p3=ll3d(lat,lon,GR*lift,rotY),p2=proj(p3);
+      if(p3.z>-GR*.2){pen?gX.lineTo(p2.x,p2.y):gX.moveTo(p2.x,p2.y);pen=true;}else pen=false;
+    }
+    gX.stroke();
+    if(a.p>.04){
+      const ht=Math.min(a.p,.97);
+      const lat=c1.lat+(c2.lat-c1.lat)*ht,lon=c1.lon+(c2.lon-c1.lon)*ht;
+      const lift=1+Math.sin(ht*Math.PI)*.18;
+      const p3=ll3d(lat,lon,GR*lift,rotY);
+      if(p3.z>-GR*.15){
+        const p2=proj(p3);
+        gX.globalAlpha=1;gX.fillStyle=c1.col;
+        gX.beginPath();gX.arc(p2.x,p2.y,4,0,Math.PI*2);gX.fill();
+        gX.globalAlpha=.25;gX.beginPath();gX.arc(p2.x,p2.y,9,0,Math.PI*2);gX.fill();
+      }
+    }
+    gX.restore();
+  });
+
+  for(const city of cities){
+    const p3=ll3d(city.lat,city.lon,GR,rotY);
+    if(p3.z<-GR*.05)continue;
+    const p2=proj(p3);
+    const df=Math.max(.2,(p3.z+GR)/(GR*2));
+    const pulse=(Math.sin(gT*2.5+city.lon*.08)*.5+.5);
+
+    gX.save();gX.globalAlpha=df*.35*pulse;
+    const glowG=gX.createRadialGradient(p2.x,p2.y,0,p2.x,p2.y,16+pulse*8);
+    glowG.addColorStop(0,city.col);glowG.addColorStop(1,'transparent');
+    gX.fillStyle=glowG;gX.fillRect(p2.x-30,p2.y-30,60,60);
+
+    gX.globalAlpha=df*.5*(1-pulse*.3);
+    gX.strokeStyle=city.col;gX.lineWidth=1.2;
+    gX.beginPath();gX.arc(p2.x,p2.y,7+pulse*4,0,Math.PI*2);gX.stroke();
+
+    gX.globalAlpha=df;gX.fillStyle='white';
+    gX.beginPath();gX.arc(p2.x,p2.y,4,0,Math.PI*2);gX.fill();
+    gX.fillStyle=city.col;
+    gX.beginPath();gX.arc(p2.x,p2.y,2.5,0,Math.PI*2);gX.fill();
+
+    if(df>.55&&p2.s>.75){
+      gX.globalAlpha=df*.9;
+      gX.font=`600 ${Math.round(10*p2.s)}px Plus Jakarta Sans`;
+      gX.textAlign='center';
+      const tw=gX.measureText(city.name).width;
+      gX.fillStyle='rgba(15,23,42,0.9)';
+      gX.beginPath();gX.roundRect?gX.roundRect(p2.x-tw/2-4,p2.y-22,tw+8,14,4):gX.rect(p2.x-tw/2-4,p2.y-22,tw+8,14);
+      gX.fill();
+      gX.fillStyle=city.col;
+      gX.fillText(city.name,p2.x,p2.y-11);
+    }
+    gX.restore();
+  }
+
+  gX.save();
+  gX.beginPath();gX.arc(GCX,GCY,GR,0,Math.PI*2);gX.clip();
+  const spec=gX.createRadialGradient(GCX-GR*.3,GCY-GR*.3,0,GCX-GR*.3,GCY-GR*.3,GR*.65);
+  spec.addColorStop(0,'rgba(255,255,255,.15)');spec.addColorStop(.5,'rgba(255,255,255,.04)');spec.addColorStop(1,'transparent');
+  gX.fillStyle=spec;gX.fillRect(0,0,GW,GH);
+  gX.restore();
+
+  gX.save();
+  const rim=gX.createRadialGradient(GCX,GCY,GR*.82,GCX,GCY,GR*1.02);
+  rim.addColorStop(0,'transparent');rim.addColorStop(.5,'rgba(96,165,250,.08)');rim.addColorStop(1,'rgba(15,23,42,.25)');
+  gX.beginPath();gX.arc(GCX,GCY,GR*1.01,0,Math.PI*2);gX.fillStyle=rim;gX.fill();
+  gX.restore();
+
+  if(autoRot)rotY+=rotSpeed;
+  requestAnimationFrame(drawGlobe);
+}
+requestAnimationFrame(drawGlobe);
+
+gCv.addEventListener('mousedown',e=>{drag=true;lastX=e.clientX;autoRot=false;});
+window.addEventListener('mouseup',()=>{drag=false;autoRot=true;});
+window.addEventListener('mousemove',e=>{if(drag){rotY+=(e.clientX-lastX)*.005;lastX=e.clientX;}});
+
+gCv.addEventListener('touchstart',e=>{drag=true;lastX=e.touches[0].clientX;autoRot=false;},{passive:true});
+window.addEventListener('touchend',()=>{drag=false;autoRot=true;});
+window.addEventListener('touchmove',e=>{if(drag){rotY+=(e.touches[0].clientX-lastX)*.005;lastX=e.touches[0].clientX;}},{passive:true});
+</script>
+</body>
+</html>
