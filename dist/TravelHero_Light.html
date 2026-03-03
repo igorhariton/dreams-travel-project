@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TravelDreams — Ultra Hero</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -281,7 +282,7 @@ html, body {
 
 /* Booking toast */
 .toast {
-  position:fixed; top:24px; right:24px; z-index:200;
+  position:fixed; bottom:70px; left:22px; z-index:200;
   background:rgba(255,255,255,.85); backdrop-filter:blur(20px);
   border:1px solid rgba(255,255,255,.9); border-radius:16px;
   padding:14px 18px; max-width:280px;
@@ -290,10 +291,10 @@ html, body {
   opacity:0; animation:toastAnim 5s 3s ease-in-out infinite;
 }
 @keyframes toastAnim {
-  0%  { opacity:0; transform:translateX(30px); }
+  0%  { opacity:0; transform:translateX(-30px); }
   10% { opacity:1; transform:translateX(0); }
   80% { opacity:1; transform:translateX(0); }
-  100%{ opacity:0; transform:translateX(30px); }
+  100%{ opacity:0; transform:translateX(-30px); }
 }
 .toast-icon { width:38px; height:38px; background:linear-gradient(135deg,#DCFCE7,#BBF7D0); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
 .toast-title { font-size:13px; font-weight:700; color:var(--ink); }
@@ -547,595 +548,348 @@ document.querySelectorAll('.nd').forEach((d,i)=>d.addEventListener('click',()=>{
 (function cd(){const loc=document.querySelector('.fc-d .fc-loc');if(!loc)return;let s=167;setInterval(()=>{s--;if(s<0)s=300;const m=Math.floor(s/60).toString().padStart(2,'0'),sec=(s%60).toString().padStart(2,'0');loc.textContent=`Expires in ${m}:${sec}`;},1000);})();
 
 // ══════════════════════════════════════════
-// BG CANVAS — Animated World Map
+// BG CANVAS — World Map (D3 + TopoJSON real data)
 // ══════════════════════════════════════════
-const bgC=document.getElementById('bgC'),bgX=bgC.getContext('2d');
-let BW,BH;
-function rbg(){BW=bgC.width=window.innerWidth;BH=bgC.height=window.innerHeight;}
-rbg();window.addEventListener('resize',rbg);
+const bgC = document.getElementById('bgC'), bgX = bgC.getContext('2d');
+let BW, BH;
+function rbg(){ BW = bgC.width = window.innerWidth; BH = bgC.height = window.innerHeight; }
+rbg(); window.addEventListener('resize', rbg);
 
-// ── Map nodes: major world cities (normalized x,y for map projection)
+// ── Map nodes with real geo coordinates
 const mapNodes = [
-  {name:'New York',    x:.095, y:.46,  col:'#E8705A'},
-  {name:'London',      x:.418, y:.30,  col:'#2A7FAB'},
-  {name:'Paris',       x:.430, y:.33,  col:'#D4A84B'},
-  {name:'Dubai',       x:.582, y:.46,  col:'#F0A500'},
-  {name:'Mumbai',      x:.585, y:.52,  col:'#E8705A'},
-  {name:'Singapore',   x:.652, y:.60,  col:'#4ECDC4'},
-  {name:'Tokyo',       x:.724, y:.30,  col:'#FC5185'},
-  {name:'Sydney',      x:.720, y:.80,  col:'#34D399'},
-  {name:'Bali',        x:.680, y:.68,  col:'#A78BFA'},
-  {name:'Cairo',       x:.492, y:.42,  col:'#D4A84B'},
-  {name:'Cape Town',   x:.455, y:.84,  col:'#4ECDC4'},
-  {name:'São Paulo',   x:.165, y:.72,  col:'#F97316'},
-  {name:'Los Angeles', x:.040, y:.40,  col:'#60A5FA'},
-  {name:'Toronto',     x:.112, y:.35,  col:'#34D399'},
-  {name:'Mexico City', x:.085, y:.50,  col:'#FC5185'},
-  {name:'Santorini',   x:.480, y:.36,  col:'#60A5FA'},
-  {name:'Maldives',    x:.600, y:.58,  col:'#06B6D4'},
-  {name:'Nairobi',     x:.520, y:.58,  col:'#84CC16'},
-  {name:'Bangkok',     x:.648, y:.52,  col:'#F59E0B'},
-  {name:'Amsterdam',   x:.438, y:.26,  col:'#E879F9'},
-  {name:'Barcelona',   x:.426, y:.36,  col:'#FB923C'},
-  {name:'Reykjavik',   x:.378, y:.22,  col:'#93C5FD'},
-  {name:'Marrakech',   x:.418, y:.44,  col:'#FCD34D'},
+  {name:'New York',    lon:-74.0, lat:40.7,  col:'#E8705A'},
+  {name:'London',      lon:-0.1,  lat:51.5,  col:'#2A7FAB'},
+  {name:'Paris',       lon:2.3,   lat:48.8,  col:'#D4A84B'},
+  {name:'Dubai',       lon:55.3,  lat:25.2,  col:'#F0A500'},
+  {name:'Mumbai',      lon:72.8,  lat:19.0,  col:'#E8705A'},
+  {name:'Singapore',   lon:103.8, lat:1.3,   col:'#4ECDC4'},
+  {name:'Tokyo',       lon:139.7, lat:35.7,  col:'#FC5185'},
+  {name:'Sydney',      lon:151.2, lat:-33.9, col:'#34D399'},
+  {name:'Bali',        lon:115.2, lat:-8.7,  col:'#A78BFA'},
+  {name:'Cairo',       lon:31.2,  lat:30.0,  col:'#D4A84B'},
+  {name:'Cape Town',   lon:18.4,  lat:-33.9, col:'#4ECDC4'},
+  {name:'São Paulo',   lon:-46.6, lat:-23.5, col:'#F97316'},
+  {name:'Los Angeles', lon:-118.2,lat:34.0,  col:'#60A5FA'},
+  {name:'Toronto',     lon:-79.4, lat:43.7,  col:'#34D399'},
+  {name:'Mexico City', lon:-99.1, lat:19.4,  col:'#FC5185'},
+  {name:'Santorini',   lon:25.4,  lat:36.4,  col:'#60A5FA'},
+  {name:'Maldives',    lon:73.5,  lat:4.2,   col:'#06B6D4'},
+  {name:'Nairobi',     lon:36.8,  lat:-1.3,  col:'#84CC16'},
+  {name:'Bangkok',     lon:100.5, lat:13.8,  col:'#F59E0B'},
+  {name:'Amsterdam',   lon:4.9,   lat:52.4,  col:'#E879F9'},
+  {name:'Barcelona',   lon:2.1,   lat:41.4,  col:'#FB923C'},
+  {name:'Reykjavik',   lon:-22.0, lat:64.1,  col:'#93C5FD'},
+  {name:'Marrakech',   lon:-8.0,  lat:31.6,  col:'#FCD34D'},
 ];
 
-// ── Flight routes between nodes
+// ── Equirectangular projection (matches Natural Earth 110m default)
+function geoProject(lon, lat) {
+  const x = (lon + 180) / 360 * BW;
+  const y = (90 - lat) / 180 * BH;
+  return [x, y];
+}
+
+// ── Add x,y to mapNodes
+function updateNodePositions(){
+  for(const n of mapNodes){
+    [n.x, n.y] = geoProject(n.lon, n.lat);
+  }
+}
+updateNodePositions();
+window.addEventListener('resize', updateNodePositions);
+
+// ── Flight routes
 const routePairs = [
   [0,1],[1,6],[0,3],[2,9],[3,5],[5,7],[6,8],[1,3],[4,5],
   [11,0],[12,5],[13,1],[10,9],[14,12],[15,2],[16,5],[17,9],
-  [18,5],[1,20],[21,1],[2,22],[0,13],[6,7],[3,8],[2,15]
+  [18,5],[1,19],[20,1],[2,21],[0,13],[6,7],[3,8],[2,15]
 ];
-
-// ── Animated planes on routes
-const planes = routePairs.map((r,i) => ({
-  from: r[0], to: r[1],
+const planes = routePairs.map(r => ({
+  from:r[0], to:r[1],
   t: Math.random(),
   speed: .0008 + Math.random()*.001,
   active: Math.random() > .35,
   trail: []
 }));
 
-// ── Floating passport stamps
+// ── Passport stamps
 const stamps = [
-  {x:.12, y:.18, label:'BOARDED', sub:'JFK → CDG', rot:-8,  col:'#E8705A', delay:0},
-  {x:.82, y:.14, label:'VISITED', sub:'TOKYO',      rot: 6,  col:'#2A7FAB', delay:1.5},
-  {x:.08, y:.72, label:'ARRIVED', sub:'RIO DE JANEIRO', rot:-5, col:'#34D399', delay:3},
-  {x:.88, y:.75, label:'EXPLORED', sub:'SYDNEY',    rot: 9,  col:'#A78BFA', delay:4.5},
-  {x:.50, y:.08, label:'CHECKED IN',sub:'PARIS',    rot:-4,  col:'#D4A84B', delay:6},
+  {lon:-74,  lat:50,  label:'BOARDED',   sub:'JFK → CDG',       rot:-8, col:'#E8705A', delay:0},
+  {lon:139,  lat:44,  label:'VISITED',   sub:'TOKYO',            rot: 6, col:'#2A7FAB', delay:1.5},
+  {lon:-46,  lat:-30, label:'ARRIVED',   sub:'RIO DE JANEIRO',   rot:-5, col:'#34D399', delay:3},
+  {lon:150,  lat:-40, label:'EXPLORED',  sub:'SYDNEY',           rot: 9, col:'#A78BFA', delay:4.5},
+  {lon:2,    lat:56,  label:'CHECKED IN',sub:'PARIS',            rot:-4, col:'#D4A84B', delay:6},
 ];
 
 // ── Floating postcards
 const postcards = [
-  {x:.05, y:.44, dest:'🏝️ MALDIVES',    price:'from $1,240', rot:-6,  delay:2},
-  {x:.90, y:.38, dest:'🗼 PARIS',        price:'from $890',   rot: 7,  delay:5},
-  {x:.50, y:.85, dest:'🌸 KYOTO',        price:'from $1,100', rot:-3,  delay:8},
+  {lon:-140, lat:20,  dest:'🏝️ MALDIVES', price:'from $1,240', rot:-6, delay:2},
+  {lon:160,  lat:50,  dest:'🗼 PARIS',     price:'from $890',   rot: 7, delay:5},
+  {lon:-170, lat:-20, dest:'🌸 KYOTO',     price:'from $1,100', rot:-3, delay:8},
 ];
 
-// ── Grid lines (map parallels & meridians)
+// ── World map: load via TopoJSON from CDN
+let worldFeatures = null;
 let bgT = 0;
+
+(async function loadMap(){
+  try {
+    const [topoResp] = await Promise.all([
+      fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    ]);
+    const topo = await topoResp.json();
+    // Convert topojson to geojson features
+    const ts = window.topojson;
+    if(ts){
+      worldFeatures = ts.feature(topo, topo.objects.land);
+    }
+  } catch(e) {
+    console.warn('Map load failed:', e);
+  }
+  requestAnimationFrame(drawBg);
+})();
+
+function drawGeoPath(feature) {
+  if(!feature) return;
+  const geoms = feature.type === 'FeatureCollection' ? feature.features.map(f=>f.geometry)
+               : feature.type === 'Feature' ? [feature.geometry]
+               : [feature];
+  for(const geom of geoms){
+    if(!geom) continue;
+    const polys = geom.type === 'Polygon' ? [geom.coordinates]
+                : geom.type === 'MultiPolygon' ? geom.coordinates : [];
+    for(const poly of polys){
+      for(const ring of poly){
+        bgX.beginPath();
+        for(let i=0;i<ring.length;i++){
+          const [px,py] = geoProject(ring[i][0], ring[i][1]);
+          i===0 ? bgX.moveTo(px,py) : bgX.lineTo(px,py);
+        }
+        bgX.closePath();
+        bgX.fill();
+      }
+    }
+  }
+}
 
 function drawBg(){
   bgX.clearRect(0,0,BW,BH);
   bgT += .005;
 
-  // ── 1. PAPER TEXTURE BASE — warm cream/ivory
+  // ── 1. Paper texture base
   const base = bgX.createLinearGradient(0,0,BW,BH);
   base.addColorStop(0,   '#F8F4ED');
-  base.addColorStop(.25, '#F5F0E6');
   base.addColorStop(.5,  '#F2EDE3');
-  base.addColorStop(.75, '#F5F0E6');
   base.addColorStop(1,   '#EDE8DF');
   bgX.fillStyle = base;
   bgX.fillRect(0,0,BW,BH);
 
-  // ── 2. Aged paper vignette (darker edges, lighter center)
-  const paperVig = bgX.createRadialGradient(BW*.5,BH*.5,BH*.1, BW*.5,BH*.5,BW*.85);
-  paperVig.addColorStop(0,   'rgba(255,250,240,.0)');
-  paperVig.addColorStop(.55, 'rgba(200,180,140,.07)');
-  paperVig.addColorStop(.8,  'rgba(160,130,90,.14)');
-  paperVig.addColorStop(1,   'rgba(120,90,50,.22)');
-  bgX.fillStyle = paperVig; bgX.fillRect(0,0,BW,BH);
+  // ── 2. Paper vignette
+  const vig = bgX.createRadialGradient(BW*.5,BH*.5,BH*.1, BW*.5,BH*.5,BW*.85);
+  vig.addColorStop(0,  'rgba(255,250,240,0)');
+  vig.addColorStop(.7, 'rgba(180,150,100,.06)');
+  vig.addColorStop(1,  'rgba(120,90,50,.18)');
+  bgX.fillStyle = vig; bgX.fillRect(0,0,BW,BH);
 
-  // ── 3. Paper noise (subtle grain)
+  // ── 3. Grid lines
   bgX.save();
-  bgX.globalAlpha = .028;
-  for(let i=0;i<400;i++){
-    const nx=Math.random()*BW, ny=Math.random()*BH, nr=Math.random()*1.8;
-    const grey = 80+Math.floor(Math.random()*80);
-    bgX.fillStyle=`rgb(${grey},${grey-10},${grey-20})`;
-    bgX.beginPath(); bgX.arc(nx,ny,nr,0,Math.PI*2); bgX.fill();
-  }
-  bgX.restore();
-
-  // ── 4. MAP GRID — latitude/longitude lines
-  bgX.save();
-  bgX.strokeStyle = 'rgba(42,127,171,.1)';
-  bgX.lineWidth = .7;
-  bgX.setLineDash([4,8]);
-  // Horizontals (parallels)
-  for(let i=1;i<8;i++){
-    const y = BH * i/8;
-    bgX.beginPath(); bgX.moveTo(0,y); bgX.lineTo(BW,y); bgX.stroke();
-  }
-  // Verticals (meridians)
-  for(let i=1;i<14;i++){
-    const x = BW * i/14;
-    bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x,BH); bgX.stroke();
-  }
+  bgX.strokeStyle = 'rgba(42,127,171,.08)';
+  bgX.lineWidth = .6;
+  bgX.setLineDash([3,8]);
+  for(let i=1;i<8;i++){ bgX.beginPath(); bgX.moveTo(0,BH*i/8); bgX.lineTo(BW,BH*i/8); bgX.stroke(); }
+  for(let i=1;i<14;i++){ bgX.beginPath(); bgX.moveTo(BW*i/14,0); bgX.lineTo(BW*i/14,BH); bgX.stroke(); }
   bgX.setLineDash([]);
   bgX.restore();
 
-  // ── 5. Decorative compass rose (bottom left)
-  drawCompass(BW*.08, BH*.82, Math.min(BW,BH)*.065, bgT*.3);
+  // ── 4. WORLD MAP (TopoJSON real data)
+  if(worldFeatures){
+    // Shadow
+    bgX.save();
+    bgX.translate(6, 5);
+    bgX.globalAlpha = 0.09;
+    bgX.fillStyle = '#1A3558';
+    drawGeoPath(worldFeatures);
+    bgX.restore();
+    // Main fill
+    bgX.save();
+    bgX.globalAlpha = 0.22;
+    bgX.fillStyle = '#2C5F84';
+    drawGeoPath(worldFeatures);
+    // Edge highlight
+    bgX.globalAlpha = 0.08;
+    bgX.strokeStyle = '#FFFFFF';
+    bgX.lineWidth = .7;
+    bgX.stroke && (() => {
+      // re-stroke
+      bgX.globalAlpha = 0.06;
+      bgX.strokeStyle = '#fff';
+      drawGeoPath(worldFeatures);
+    })();
+    bgX.restore();
+  }
 
-  // ── 6. Map scale bar (bottom right)
-  drawScaleBar(BW*.78, BH*.92);
+  // ── 5. Compass rose
+  drawCompass(BW*.07, BH*.84, Math.min(BW,BH)*.055, bgT*.3);
 
-  // ── 7. CONTINENT SILHOUETTES (stylized, simplified paths)
-  drawContinents();
+  // ── 6. Scale bar
+  drawScaleBar(BW*.80, BH*.92);
 
-  // ── 8. FLIGHT ROUTE ARCS
+  // ── 7. Flight routes
+  updateNodePositions();
   for(const pl of planes){
     if(!pl.active) continue;
     pl.t += pl.speed;
-    if(pl.t > 1){ pl.t -= 1; pl.trail = []; pl.active = Math.random() > .15; }
+    if(pl.t > 1){ pl.t = 0; pl.trail=[]; pl.active = Math.random() > .2; continue; }
 
-    const n1 = mapNodes[pl.from], n2 = mapNodes[pl.to];
-    const x1=n1.x*BW, y1=n1.y*BH, x2=n2.x*BW, y2=n2.y*BH;
+    const n1=mapNodes[pl.from], n2=mapNodes[pl.to];
+    const x1=n1.x, y1=n1.y, x2=n2.x, y2=n2.y;
+    const mx=(x1+x2)/2, my=(y1+y2)/2 - Math.hypot(x2-x1,y2-y1)*.16;
 
-    // Arc path
-    const mx=(x1+x2)/2, my=(y1+y2)/2 - Math.hypot(x2-x1,y2-y1)*.18;
-
-    // Draw dashed arc
     bgX.save();
-    bgX.strokeStyle = `${n1.col}55`;
+    bgX.strokeStyle = n1.col+'44';
     bgX.lineWidth = 1.2;
     bgX.setLineDash([5,7]);
-    bgX.beginPath();
-    bgX.moveTo(x1,y1); bgX.quadraticCurveTo(mx,my,x2,y2);
-    bgX.stroke();
+    bgX.beginPath(); bgX.moveTo(x1,y1); bgX.quadraticCurveTo(mx,my,x2,y2); bgX.stroke();
     bgX.setLineDash([]);
-    bgX.restore();
 
-    // Plane position along bezier
-    const bt = pl.t;
-    const bx = (1-bt)*(1-bt)*x1 + 2*(1-bt)*bt*mx + bt*bt*x2;
-    const by = (1-bt)*(1-bt)*y1 + 2*(1-bt)*bt*my + bt*bt*y2;
-
-    // Trail
-    pl.trail.push({x:bx, y:by, a:1});
-    if(pl.trail.length > 22) pl.trail.shift();
-
-    // Draw trail
+    const t=pl.t;
+    const bx=(1-t)*(1-t)*x1+2*(1-t)*t*mx+t*t*x2;
+    const by=(1-t)*(1-t)*y1+2*(1-t)*t*my+t*t*y2;
+    pl.trail.push({x:bx,y:by});
+    if(pl.trail.length>20) pl.trail.shift();
     for(let i=0;i<pl.trail.length;i++){
-      const ta = (i/pl.trail.length)*.5;
-      bgX.save();
-      bgX.globalAlpha = ta;
-      bgX.fillStyle = n1.col;
-      bgX.beginPath(); bgX.arc(pl.trail[i].x, pl.trail[i].y, .8+ta*1.5, 0, Math.PI*2); bgX.fill();
-      bgX.restore();
+      bgX.globalAlpha=(i/pl.trail.length)*.5;
+      bgX.fillStyle=n1.col;
+      bgX.beginPath(); bgX.arc(pl.trail[i].x,pl.trail[i].y,.8+(i/pl.trail.length)*1.5,0,Math.PI*2); bgX.fill();
     }
-
-    // Plane icon
-    const angle = Math.atan2(
-      2*(1-bt)*(my-y1) + 2*bt*(y2-my),
-      2*(1-bt)*(mx-x1) + 2*bt*(x2-mx)
-    );
-    bgX.save();
-    bgX.translate(bx,by); bgX.rotate(angle);
-    bgX.globalAlpha = .9;
-    drawPlaneIcon(n1.col, 6);
+    const angle=Math.atan2(2*(1-t)*(my-y1)+2*t*(y2-my), 2*(1-t)*(mx-x1)+2*t*(x2-mx));
+    bgX.globalAlpha=.9; bgX.translate(bx,by); bgX.rotate(angle);
+    drawPlaneIcon(n1.col, 5);
     bgX.restore();
   }
+  if(Math.random()<.008){ const p=planes[Math.floor(Math.random()*planes.length)]; if(!p.active){p.active=true;p.t=0;p.trail=[];} }
 
-  // Reactivate inactive planes occasionally
-  if(Math.random() < .008){ const p=planes[Math.floor(Math.random()*planes.length)]; if(!p.active){p.active=true;p.t=0;p.trail=[];} }
-
-  // ── 9. CITY NODES
+  // ── 8. City nodes
   for(const node of mapNodes){
-    const nx=node.x*BW, ny=node.y*BH;
-    const pulse = .4 + .6*Math.abs(Math.sin(bgT*1.5 + node.x*8));
-
-    // Outer ring
+    const pulse=.4+.6*Math.abs(Math.sin(bgT*1.5+node.lon*.05));
     bgX.save();
-    bgX.globalAlpha = .18 * pulse;
-    bgX.strokeStyle = node.col;
-    bgX.lineWidth = 1.5;
-    bgX.beginPath(); bgX.arc(nx,ny,12+pulse*5,0,Math.PI*2); bgX.stroke();
-
-    // Inner dot
-    bgX.globalAlpha = .7;
-    bgX.fillStyle = 'white';
-    bgX.beginPath(); bgX.arc(nx,ny,5,0,Math.PI*2); bgX.fill();
-    bgX.fillStyle = node.col;
-    bgX.globalAlpha = .9;
-    bgX.beginPath(); bgX.arc(nx,ny,3.5,0,Math.PI*2); bgX.fill();
-
-    // City label
-    bgX.globalAlpha = .55;
-    bgX.font = '500 10px Plus Jakarta Sans';
-    bgX.fillStyle = '#2C4A6E';
-    bgX.textAlign = 'center';
-    // Pill background
-    const tw = bgX.measureText(node.name).width;
-    bgX.globalAlpha = .35;
-    bgX.fillStyle = 'rgba(255,255,255,.8)';
-    bgX.beginPath();
-    bgX.roundRect ? bgX.roundRect(nx-tw/2-4, ny+8, tw+8, 13, 3) : bgX.rect(nx-tw/2-4,ny+8,tw+8,13);
-    bgX.fill();
-    bgX.globalAlpha = .6;
-    bgX.fillStyle = '#1A2E44';
-    bgX.fillText(node.name, nx, ny+18);
+    bgX.globalAlpha=.16*pulse;
+    bgX.strokeStyle=node.col; bgX.lineWidth=1.5;
+    bgX.beginPath(); bgX.arc(node.x,node.y,11+pulse*5,0,Math.PI*2); bgX.stroke();
+    bgX.globalAlpha=.8;
+    bgX.fillStyle='white'; bgX.beginPath(); bgX.arc(node.x,node.y,4.5,0,Math.PI*2); bgX.fill();
+    bgX.fillStyle=node.col; bgX.beginPath(); bgX.arc(node.x,node.y,3,0,Math.PI*2); bgX.fill();
+    if(pulse>.7){
+      bgX.globalAlpha=.55;
+      bgX.font='500 9px Plus Jakarta Sans'; bgX.textAlign='center';
+      const tw=bgX.measureText(node.name).width;
+      bgX.fillStyle='rgba(255,255,255,.8)';
+      bgX.beginPath(); bgX.roundRect?bgX.roundRect(node.x-tw/2-3,node.y+7,tw+6,12,3):bgX.rect(node.x-tw/2-3,node.y+7,tw+6,12);
+      bgX.fill();
+      bgX.fillStyle='#1A2E44'; bgX.fillText(node.name,node.x,node.y+16);
+    }
     bgX.restore();
   }
 
-  // ── 10. PASSPORT STAMPS
+  // ── 9. Passport stamps
   for(const s of stamps){
-    const t = (bgT - s.delay) % 18;
-    if(t < 0 || t > 12) continue;
-    const alpha = t < 1 ? t : t > 10 ? (12-t)/2 : 1;
-    const sx2 = s.x*BW, sy2 = s.y*BH;
+    const [sx2,sy2] = geoProject(s.lon, s.lat);
+    const t=(bgT-s.delay)%18;
+    if(t<0||t>12) continue;
+    const alpha=t<1?t:t>10?(12-t)/2:1;
     bgX.save();
     bgX.translate(sx2,sy2); bgX.rotate(s.rot*Math.PI/180);
-    bgX.globalAlpha = alpha * .55;
-    // Stamp box
-    bgX.strokeStyle = s.col;
-    bgX.lineWidth = 2.5;
-    const sw=88, sh=44;
-    bgX.strokeRect(-sw/2,-sh/2,sw,sh);
-    // Inner double border
-    bgX.lineWidth = 1; bgX.globalAlpha = alpha*.4;
-    bgX.strokeRect(-sw/2+4,-sh/2+4,sw-8,sh-8);
-    // Text
-    bgX.globalAlpha = alpha*.65;
-    bgX.fillStyle = s.col;
-    bgX.font = 'bold 10px Plus Jakarta Sans';
-    bgX.textAlign = 'center';
-    bgX.fillText(s.label, 0, -6);
-    bgX.font = '400 8px Plus Jakarta Sans';
-    bgX.fillStyle = '#2C4A6E';
-    bgX.fillText(s.sub, 0, 7);
+    bgX.globalAlpha=alpha*.5;
+    bgX.strokeStyle=s.col; bgX.lineWidth=2.5;
+    bgX.strokeRect(-44,-22,88,44);
+    bgX.lineWidth=1; bgX.globalAlpha=alpha*.35;
+    bgX.strokeRect(-40,-18,80,36);
+    bgX.globalAlpha=alpha*.6;
+    bgX.fillStyle=s.col; bgX.font='bold 10px Plus Jakarta Sans'; bgX.textAlign='center';
+    bgX.fillText(s.label,0,-5);
+    bgX.fillStyle='#2C4A6E'; bgX.font='400 8px Plus Jakarta Sans';
+    bgX.fillText(s.sub,0,7);
     bgX.restore();
   }
 
-  // ── 11. FLOATING POSTCARDS
+  // ── 10. Postcards
   for(const pc of postcards){
-    const t = (bgT - pc.delay) % 20;
-    if(t < 0 || t > 14) continue;
-    const alpha = t < 1.5 ? t/1.5 : t > 12 ? (14-t)/2 : 1;
-    const floatY = Math.sin(bgT*.8 + pc.delay)*6;
-    const pcx=pc.x*BW, pcy=pc.y*BH+floatY;
+    const [pcx,pcy] = geoProject(pc.lon, pc.lat);
+    const t=(bgT-pc.delay)%20;
+    if(t<0||t>14) continue;
+    const alpha=t<1.5?t/1.5:t>12?(14-t)/2:1;
+    const fy=Math.sin(bgT*.8+pc.delay)*5;
     bgX.save();
-    bgX.translate(pcx,pcy); bgX.rotate(pc.rot*Math.PI/180);
-    bgX.globalAlpha = alpha * .6;
-    // Card shadow
-    bgX.shadowColor='rgba(0,0,0,.12)'; bgX.shadowBlur=12; bgX.shadowOffsetY=4;
-    bgX.fillStyle='rgba(255,255,255,.88)';
-    const cw=90,ch=52;
-    bgX.beginPath();
-    bgX.roundRect ? bgX.roundRect(-cw/2,-ch/2,cw,ch,6) : bgX.rect(-cw/2,-ch/2,cw,ch);
-    bgX.fill();
+    bgX.translate(pcx,pcy+fy); bgX.rotate(pc.rot*Math.PI/180);
+    bgX.globalAlpha=alpha*.6;
+    bgX.shadowColor='rgba(0,0,0,.1)'; bgX.shadowBlur=10; bgX.shadowOffsetY=3;
+    bgX.fillStyle='rgba(255,255,255,.9)';
+    bgX.beginPath(); bgX.roundRect?bgX.roundRect(-45,-26,90,52,6):bgX.rect(-45,-26,90,52); bgX.fill();
     bgX.shadowBlur=0;
-    // Stamp corner
-    bgX.fillStyle='rgba(42,127,171,.15)';
-    bgX.fillRect(cw/2-20,-ch/2+4,16,14);
-    bgX.strokeStyle='rgba(42,127,171,.3)'; bgX.lineWidth=.5;
-    bgX.strokeRect(cw/2-20,-ch/2+4,16,14);
-    // Postcard lines
-    bgX.fillStyle='rgba(42,79,120,.55)';
-    bgX.font='bold 11px Plus Jakarta Sans';
-    bgX.textAlign='center';
+    bgX.fillStyle='rgba(42,79,120,.6)'; bgX.font='bold 11px Plus Jakarta Sans'; bgX.textAlign='center';
     bgX.fillText(pc.dest,0,-8);
-    bgX.font='400 9px Plus Jakarta Sans';
-    bgX.fillStyle='rgba(42,127,171,.7)';
+    bgX.fillStyle='rgba(42,127,171,.7)'; bgX.font='400 9px Plus Jakarta Sans';
     bgX.fillText(pc.price,0,8);
-    // Red divider line
-    bgX.strokeStyle='rgba(232,112,90,.5)'; bgX.lineWidth=1;
-    bgX.beginPath(); bgX.moveTo(-cw/2+8,2); bgX.lineTo(cw/2-8,2); bgX.stroke();
+    bgX.strokeStyle='rgba(232,112,90,.4)'; bgX.lineWidth=.8;
+    bgX.beginPath(); bgX.moveTo(-38,0); bgX.lineTo(38,0); bgX.stroke();
     bgX.restore();
   }
 
-  // ── 12. Paper fold lines (subtle diagonal)
+  // ── 11. Watermark
   bgX.save();
-  bgX.strokeStyle='rgba(160,130,90,.06)';
-  bgX.lineWidth=.8;
-  bgX.beginPath(); bgX.moveTo(0,BH*.33); bgX.lineTo(BW,BH*.35); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(0,BH*.66); bgX.lineTo(BW,BH*.67); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(BW*.33,0); bgX.lineTo(BW*.34,BH); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(BW*.66,0); bgX.lineTo(BW*.67,BH); bgX.stroke();
-  bgX.restore();
-
-  // ── 13. Title watermark (very subtle)
-  bgX.save();
-  bgX.globalAlpha = .04;
-  bgX.font = `bold ${BW*.06}px Playfair Display`;
-  bgX.fillStyle = '#2A7FAB';
-  bgX.textAlign = 'center';
+  bgX.globalAlpha=.03;
+  bgX.font=`bold ${BW*.055}px Playfair Display`;
+  bgX.fillStyle='#2A7FAB'; bgX.textAlign='center';
   bgX.fillText('TRAVEL DREAMS', BW*.5, BH*.54);
   bgX.restore();
 
   requestAnimationFrame(drawBg);
 }
 
-function drawPlaneIcon(col, size){
-  bgX.fillStyle = col;
+function drawPlaneIcon(col,size){
+  bgX.fillStyle=col;
   bgX.beginPath();
-  // Simple plane silhouette
-  bgX.moveTo(size, 0);
-  bgX.lineTo(-size*.6, -size*.45);
-  bgX.lineTo(-size*.3, 0);
-  bgX.lineTo(-size*.6, size*.45);
-  bgX.closePath(); bgX.fill();
-  // Wings
-  bgX.beginPath();
-  bgX.moveTo(size*.1, 0);
-  bgX.lineTo(-size*.1, -size*.9);
-  bgX.lineTo(-size*.5, -size*.4);
-  bgX.lineTo(-size*.2, 0);
-  bgX.closePath(); bgX.fill();
-  bgX.beginPath();
-  bgX.moveTo(size*.1, 0);
-  bgX.lineTo(-size*.1, size*.9);
-  bgX.lineTo(-size*.5, size*.4);
-  bgX.lineTo(-size*.2, 0);
-  bgX.closePath(); bgX.fill();
+  bgX.moveTo(size,0); bgX.lineTo(-size*.6,-size*.4); bgX.lineTo(-size*.3,0); bgX.lineTo(-size*.6,size*.4); bgX.closePath(); bgX.fill();
+  bgX.beginPath(); bgX.moveTo(0,0); bgX.lineTo(-size*.1,-size*.9); bgX.lineTo(-size*.5,-size*.4); bgX.lineTo(-size*.2,0); bgX.closePath(); bgX.fill();
+  bgX.beginPath(); bgX.moveTo(0,0); bgX.lineTo(-size*.1,size*.9); bgX.lineTo(-size*.5,size*.4); bgX.lineTo(-size*.2,0); bgX.closePath(); bgX.fill();
 }
 
 function drawCompass(cx,cy,r,rot){
-  bgX.save(); bgX.translate(cx,cy); bgX.rotate(rot);
-  bgX.globalAlpha = .22;
-  // Outer circle
+  bgX.save(); bgX.translate(cx,cy); bgX.rotate(rot); bgX.globalAlpha=.2;
   bgX.strokeStyle='#2A7FAB'; bgX.lineWidth=1.5;
   bgX.beginPath(); bgX.arc(0,0,r,0,Math.PI*2); bgX.stroke();
   bgX.beginPath(); bgX.arc(0,0,r*.82,0,Math.PI*2); bgX.stroke();
-  // 8 tick marks
   for(let i=0;i<16;i++){
-    const a=i*Math.PI/8, len=i%2===0?r*.15:r*.08;
-    bgX.lineWidth=i%4===0?2:1;
-    bgX.beginPath();
-    bgX.moveTo(Math.cos(a)*r*.82, Math.sin(a)*r*.82);
-    bgX.lineTo(Math.cos(a)*(r*.82-len), Math.sin(a)*(r*.82-len));
-    bgX.stroke();
+    const a=i*Math.PI/8, len=i%2===0?r*.14:r*.07;
+    bgX.lineWidth=i%4===0?1.8:.8;
+    bgX.beginPath(); bgX.moveTo(Math.cos(a)*r*.82,Math.sin(a)*r*.82);
+    bgX.lineTo(Math.cos(a)*(r*.82-len),Math.sin(a)*(r*.82-len)); bgX.stroke();
   }
-  // N/S/E/W arrows
-  const arrowDirs = [[0,'N','#E8705A'],[Math.PI,'S','#2A7FAB'],[Math.PI/2,'E','#2A7FAB'],[-Math.PI/2,'W','#2A7FAB']];
-  for(const[a,lbl,col] of arrowDirs){
+  const dirs=[[0,'N','#E8705A'],[Math.PI,'S','#2A7FAB'],[Math.PI/2,'E','#2A7FAB'],[-Math.PI/2,'W','#2A7FAB']];
+  for(const[a,lbl,col] of dirs){
     bgX.fillStyle=col;
-    bgX.beginPath();
-    bgX.moveTo(Math.cos(a)*r*.65, Math.sin(a)*r*.65);
-    bgX.lineTo(Math.cos(a+Math.PI/2)*r*.08, Math.sin(a+Math.PI/2)*r*.08);
-    bgX.lineTo(Math.cos(a-Math.PI/2)*r*.08, Math.sin(a-Math.PI/2)*r*.08);
+    bgX.beginPath(); bgX.moveTo(Math.cos(a)*r*.62,Math.sin(a)*r*.62);
+    bgX.lineTo(Math.cos(a+Math.PI/2)*r*.07,Math.sin(a+Math.PI/2)*r*.07);
+    bgX.lineTo(Math.cos(a-Math.PI/2)*r*.07,Math.sin(a-Math.PI/2)*r*.07);
     bgX.closePath(); bgX.fill();
-    bgX.font=`bold ${r*.22}px Plus Jakarta Sans`;
-    bgX.fillStyle='#1A2E44'; bgX.textAlign='center';
-    bgX.fillText(lbl, Math.cos(a)*r*.9, Math.sin(a)*r*.9+r*.08);
+    bgX.font=`bold ${r*.2}px Plus Jakarta Sans`; bgX.fillStyle='#1A2E44'; bgX.textAlign='center';
+    bgX.fillText(lbl,Math.cos(a)*r*.9,Math.sin(a)*r*.9+r*.07);
   }
-  // Center dot
-  bgX.fillStyle='#2A7FAB'; bgX.globalAlpha=.4;
-  bgX.beginPath(); bgX.arc(0,0,r*.08,0,Math.PI*2); bgX.fill();
+  bgX.fillStyle='#2A7FAB'; bgX.globalAlpha=.35;
+  bgX.beginPath(); bgX.arc(0,0,r*.07,0,Math.PI*2); bgX.fill();
   bgX.restore();
 }
 
 function drawScaleBar(x,y){
-  bgX.save(); bgX.globalAlpha=.3;
-  bgX.strokeStyle='#2C4A6E'; bgX.lineWidth=1.5; bgX.lineCap='square';
-  const w=80;
-  bgX.beginPath(); bgX.moveTo(x,y); bgX.lineTo(x+w,y); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(x,y-5); bgX.lineTo(x,y+5); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(x+w,y-5); bgX.lineTo(x+w,y+5); bgX.stroke();
-  bgX.beginPath(); bgX.moveTo(x+w/2,y-3); bgX.lineTo(x+w/2,y+3); bgX.stroke();
-  bgX.font='400 9px Plus Jakarta Sans'; bgX.fillStyle='#2C4A6E'; bgX.textAlign='center';
-  bgX.fillText('5,000 km', x+w/2, y-8);
+  bgX.save(); bgX.globalAlpha=.28; bgX.strokeStyle='#2C4A6E'; bgX.lineWidth=1.5; bgX.lineCap='square';
+  bgX.beginPath(); bgX.moveTo(x,y); bgX.lineTo(x+80,y); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x,y-4); bgX.lineTo(x,y+4); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+80,y-4); bgX.lineTo(x+80,y+4); bgX.stroke();
+  bgX.beginPath(); bgX.moveTo(x+40,y-2); bgX.lineTo(x+40,y+2); bgX.stroke();
+  bgX.font='400 8px Plus Jakarta Sans'; bgX.fillStyle='#2C4A6E'; bgX.textAlign='center';
+  bgX.fillText('5,000 km',x+40,y-6);
   bgX.restore();
 }
-
-function drawContinents(){
-  // Real Natural Earth simplified paths, projected into a 1000x500 viewBox
-  // then scaled to BW x BH
-  const sx = BW/1000, sy = BH/500;
-  const p = new Path2D();
-
-  // ── NORTH AMERICA
-  p.moveTo(sx*158,sy*52); p.lineTo(sx*148,sy*62); p.lineTo(sx*135,sy*58);
-  p.lineTo(sx*118,sy*65); p.lineTo(sx*100,sy*60); p.lineTo(sx*88,sy*68);
-  p.lineTo(sx*80,sy*62); p.lineTo(sx*76,sy*70); p.lineTo(sx*70,sy*68);
-  p.lineTo(sx*66,sy*75); p.lineTo(sx*58,sy*72); p.lineTo(sx*52,sy*80);
-  p.lineTo(sx*50,sy*90); p.lineTo(sx*58,sy*100); p.lineTo(sx*62,sy*115);
-  p.lineTo(sx*70,sy*120); p.lineTo(sx*68,sy*132); p.lineTo(sx*75,sy*140);
-  p.lineTo(sx*72,sy*152); p.lineTo(sx*80,sy*165); p.lineTo(sx*85,sy*180);
-  p.lineTo(sx*95,sy*190); p.lineTo(sx*100,sy*205); p.lineTo(sx*108,sy*215);
-  p.lineTo(sx*115,sy*228); p.lineTo(sx*122,sy*235); p.lineTo(sx*128,sy*248);
-  p.lineTo(sx*132,sy*258); p.lineTo(sx*140,sy*262); p.lineTo(sx*148,sy*270);
-  p.lineTo(sx*152,sy*282); p.lineTo(sx*148,sy*292); p.lineTo(sx*142,sy*298);
-  p.lineTo(sx*138,sy*308); p.lineTo(sx*130,sy*315); p.lineTo(sx*122,sy*322);
-  p.lineTo(sx*118,sy*332); p.lineTo(sx*112,sy*338); p.lineTo(sx*108,sy*348);
-  p.lineTo(sx*100,sy*355); p.lineTo(sx*92,sy*360); p.lineTo(sx*88,sy*372);
-  p.lineTo(sx*80,sy*378); p.lineTo(sx*75,sy*388); p.lineTo(sx*72,sy*370);
-  p.lineTo(sx*68,sy*362); p.lineTo(sx*60,sy*368); p.lineTo(sx*56,sy*358);
-  p.lineTo(sx*52,sy*348); p.lineTo(sx*48,sy*338); p.lineTo(sx*44,sy*325);
-  p.lineTo(sx*40,sy*315); p.lineTo(sx*38,sy*302); p.lineTo(sx*36,sy*290);
-  p.lineTo(sx*32,sy*278); p.lineTo(sx*28,sy*265); p.lineTo(sx*25,sy*252);
-  p.lineTo(sx*22,sy*238); p.lineTo(sx*20,sy*225); p.lineTo(sx*18,sy*210);
-  p.lineTo(sx*16,sy*195); p.lineTo(sx*18,sy*180); p.lineTo(sx*22,sy*168);
-  p.lineTo(sx*28,sy*155); p.lineTo(sx*35,sy*142); p.lineTo(sx*40,sy*128);
-  p.lineTo(sx*48,sy*115); p.lineTo(sx*55,sy*102); p.lineTo(sx*62,sy*90);
-  p.lineTo(sx*70,sy*80); p.lineTo(sx*78,sy*70); p.lineTo(sx*86,sy*62);
-  p.lineTo(sx*96,sy*55); p.lineTo(sx*108,sy*50); p.lineTo(sx*120,sy*45);
-  p.lineTo(sx*132,sy*42); p.lineTo(sx*145,sy*44); p.lineTo(sx*158,sy*52);
-  p.closePath();
-
-  // Greenland
-  p.moveTo(sx*195,sy*25); p.lineTo(sx*215,sy*18); p.lineTo(sx*235,sy*22);
-  p.lineTo(sx*248,sy*30); p.lineTo(sx*252,sy*42); p.lineTo(sx*240,sy*50);
-  p.lineTo(sx*225,sy*55); p.lineTo(sx*210,sy*52); p.lineTo(sx*200,sy*42);
-  p.lineTo(sx*195,sy*25); p.closePath();
-
-  // ── SOUTH AMERICA
-  p.moveTo(sx*148,sy*355); p.lineTo(sx*158,sy*348); p.lineTo(sx*168,sy*352);
-  p.lineTo(sx*178,sy*360); p.lineTo(sx*185,sy*372); p.lineTo(sx*190,sy*385);
-  p.lineTo(sx*195,sy*400); p.lineTo(sx*198,sy*415); p.lineTo(sx*195,sy*432);
-  p.lineTo(sx*190,sy*448); p.lineTo(sx*185,sy*460); p.lineTo(sx*178,sy*472);
-  p.lineTo(sx*170,sy*480); p.lineTo(sx*162,sy*488); p.lineTo(sx*155,sy*494);
-  p.lineTo(sx*148,sy*490); p.lineTo(sx*142,sy*482); p.lineTo(sx*138,sy*470);
-  p.lineTo(sx*135,sy*455); p.lineTo(sx*132,sy*440); p.lineTo(sx*130,sy*425);
-  p.lineTo(sx*128,sy*410); p.lineTo(sx*126,sy*395); p.lineTo(sx*124,sy*380);
-  p.lineTo(sx*128,sy*368); p.lineTo(sx*135,sy*358); p.lineTo(sx*142,sy*352);
-  p.lineTo(sx*148,sy*355); p.closePath();
-
-  // ── EUROPE
-  p.moveTo(sx*430,sy*82); p.lineTo(sx*445,sy*78); p.lineTo(sx*460,sy*80);
-  p.lineTo(sx*472,sy*85); p.lineTo(sx*480,sy*95); p.lineTo(sx*488,sy*105);
-  p.lineTo(sx*495,sy*115); p.lineTo(sx*492,sy*128); p.lineTo(sx*485,sy*138);
-  p.lineTo(sx*478,sy*148); p.lineTo(sx*470,sy*155); p.lineTo(sx*462,sy*162);
-  p.lineTo(sx*452,sy*168); p.lineTo(sx*442,sy*172); p.lineTo(sx*432,sy*178);
-  p.lineTo(sx*422,sy*182); p.lineTo(sx*415,sy*175); p.lineTo(sx*408,sy*165);
-  p.lineTo(sx*402,sy*155); p.lineTo(sx*398,sy*145); p.lineTo(sx*395,sy*132);
-  p.lineTo(sx*398,sy*120); p.lineTo(sx*405,sy*110); p.lineTo(sx*412,sy*100);
-  p.lineTo(sx*420,sy*90); p.lineTo(sx*430,sy*82); p.closePath();
-
-  // Scandinavia
-  p.moveTo(sx*448,sy*55); p.lineTo(sx*458,sy*48); p.lineTo(sx*470,sy*52);
-  p.lineTo(sx*478,sy*62); p.lineTo(sx*472,sy*72); p.lineTo(sx*462,sy*78);
-  p.lineTo(sx*452,sy*72); p.lineTo(sx*445,sy*65); p.lineTo(sx*448,sy*55); p.closePath();
-
-  // British Isles
-  p.moveTo(sx*410,sy*88); p.lineTo(sx*418,sy*84); p.lineTo(sx*424,sy*90);
-  p.lineTo(sx*420,sy*98); p.lineTo(sx*412,sy*100); p.lineTo(sx*406,sy*95);
-  p.lineTo(sx*410,sy*88); p.closePath();
-
-  // ── AFRICA
-  p.moveTo(sx*420,sy*182); p.lineTo(sx*432,sy*178); p.lineTo(sx*445,sy*180);
-  p.lineTo(sx*458,sy*185); p.lineTo(sx*470,sy*192); p.lineTo(sx*480,sy*202);
-  p.lineTo(sx*488,sy*215); p.lineTo(sx*495,sy*228); p.lineTo(sx*500,sy*242);
-  p.lineTo(sx*504,sy*258); p.lineTo(sx*506,sy*272); p.lineTo(sx*508,sy*288);
-  p.lineTo(sx*508,sy*305); p.lineTo(sx*506,sy*322); p.lineTo(sx*502,sy*338);
-  p.lineTo(sx*498,sy*355); p.lineTo(sx*492,sy*368); p.lineTo(sx*485,sy*380);
-  p.lineTo(sx*478,sy*390); p.lineTo(sx*470,sy*400); p.lineTo(sx*462,sy*408);
-  p.lineTo(sx*453,sy*414); p.lineTo(sx*445,sy*420); p.lineTo(sx*438,sy*426);
-  p.lineTo(sx*432,sy*434); p.lineTo(sx*428,sy*445); p.lineTo(sx*424,sy*455);
-  p.lineTo(sx*420,sy*462); p.lineTo(sx*415,sy*455); p.lineTo(sx*410,sy*445);
-  p.lineTo(sx*406,sy*432); p.lineTo(sx*402,sy*418); p.lineTo(sx*398,sy*402);
-  p.lineTo(sx*395,sy*385); p.lineTo(sx*393,sy*368); p.lineTo(sx*392,sy*350);
-  p.lineTo(sx*392,sy*332); p.lineTo(sx*394,sy*315); p.lineTo(sx*396,sy*298);
-  p.lineTo(sx*400,sy*282); p.lineTo(sx*404,sy*268); p.lineTo(sx*408,sy*255);
-  p.lineTo(sx*412,sy*242); p.lineTo(sx*415,sy*228); p.lineTo(sx*416,sy*215);
-  p.lineTo(sx*415,sy*202); p.lineTo(sx*412,sy*192); p.lineTo(sx*416,sy*185);
-  p.lineTo(sx*420,sy*182); p.closePath();
-
-  // Madagascar
-  p.moveTo(sx*512,sy*340); p.lineTo(sx*518,sy*332); p.lineTo(sx*524,sy*340);
-  p.lineTo(sx*522,sy*355); p.lineTo(sx*516,sy*362); p.lineTo(sx*510,sy*355);
-  p.lineTo(sx*512,sy*340); p.closePath();
-
-  // ── ASIA (split into regions for accuracy)
-  // Main Asia body
-  p.moveTo(sx*490,sy*80); p.lineTo(sx*508,sy*72); p.lineTo(sx*525,sy*68);
-  p.lineTo(sx*542,sy*65); p.lineTo(sx*558,sy*62); p.lineTo(sx*575,sy*60);
-  p.lineTo(sx*592,sy*58); p.lineTo(sx*608,sy*56); p.lineTo(sx*622,sy*55);
-  p.lineTo(sx*638,sy*58); p.lineTo(sx*652,sy*62); p.lineTo(sx*665,sy*68);
-  p.lineTo(sx*678,sy*75); p.lineTo(sx*690,sy*85); p.lineTo(sx*700,sy*95);
-  p.lineTo(sx*708,sy*108); p.lineTo(sx*715,sy*122); p.lineTo(sx*720,sy*138);
-  p.lineTo(sx*722,sy*152); p.lineTo(sx*725,sy*168); p.lineTo(sx*722,sy*182);
-  p.lineTo(sx*718,sy*195); p.lineTo(sx*712,sy*208); p.lineTo(sx*705,sy*220);
-  p.lineTo(sx*698,sy*232); p.lineTo(sx*690,sy*242); p.lineTo(sx*680,sy*252);
-  p.lineTo(sx*670,sy*258); p.lineTo(sx*660,sy*262); p.lineTo(sx*650,sy*268);
-  p.lineTo(sx*640,sy*275); p.lineTo(sx*630,sy*282); p.lineTo(sx*622,sy*290);
-  p.lineTo(sx*615,sy*300); p.lineTo(sx*608,sy*310); p.lineTo(sx*600,sy*320);
-  p.lineTo(sx*592,sy*328); p.lineTo(sx*582,sy*335); p.lineTo(sx*572,sy*340);
-  p.lineTo(sx*562,sy*345); p.lineTo(sx*552,sy*348); p.lineTo(sx*542,sy*350);
-  p.lineTo(sx*532,sy*352); p.lineTo(sx*522,sy*350); p.lineTo(sx*512,sy*345);
-  p.lineTo(sx*505,sy*338); p.lineTo(sx*500,sy*328); p.lineTo(sx*496,sy*318);
-  p.lineTo(sx*492,sy*305); p.lineTo(sx*490,sy*292); p.lineTo(sx*490,sy*278);
-  p.lineTo(sx*492,sy*265); p.lineTo(sx*494,sy*252); p.lineTo(sx*496,sy*238);
-  p.lineTo(sx*495,sy*225); p.lineTo(sx*490,sy*215); p.lineTo(sx*485,sy*205);
-  p.lineTo(sx*482,sy*195); p.lineTo(sx*480,sy*182); p.lineTo(sx*482,sy*168);
-  p.lineTo(sx*484,sy*155); p.lineTo(sx*486,sy*142); p.lineTo(sx*488,sy*128);
-  p.lineTo(sx*490,sy*115); p.lineTo(sx*490,sy*100); p.lineTo(sx*490,sy*80);
-  p.closePath();
-
-  // Indian subcontinent
-  p.moveTo(sx*580,sy*200); p.lineTo(sx*592,sy*195); p.lineTo(sx*604,sy*198);
-  p.lineTo(sx*612,sy*208); p.lineTo(sx*618,sy*222); p.lineTo(sx*620,sy*238);
-  p.lineTo(sx*618,sy*254); p.lineTo(sx*612,sy*268); p.lineTo(sx*605,sy*280);
-  p.lineTo(sx*598,sy*292); p.lineTo(sx*592,sy*302); p.lineTo(sx*586,sy*310);
-  p.lineTo(sx*580,sy*316); p.lineTo(sx*575,sy*308); p.lineTo(sx*570,sy*295);
-  p.lineTo(sx*566,sy*280); p.lineTo(sx*564,sy*265); p.lineTo(sx*566,sy*250);
-  p.lineTo(sx*570,sy*235); p.lineTo(sx*574,sy*220); p.lineTo(sx*580,sy*200);
-  p.closePath();
-
-  // Japan
-  p.moveTo(sx*718,sy*120); p.lineTo(sx*724,sy*115); p.lineTo(sx*730,sy*120);
-  p.lineTo(sx*728,sy*132); p.lineTo(sx*722,sy*138); p.lineTo(sx*716,sy*132);
-  p.lineTo(sx*718,sy*120); p.closePath();
-
-  // Southeast Asia / Malaysia
-  p.moveTo(sx*640,sy*282); p.lineTo(sx*652,sy*278); p.lineTo(sx*662,sy*285);
-  p.lineTo(sx*668,sy*298); p.lineTo(sx*665,sy*312); p.lineTo(sx*655,sy*320);
-  p.lineTo(sx*644,sy*315); p.lineTo(sx*636,sy*305); p.lineTo(sx*634,sy*292);
-  p.lineTo(sx*640,sy*282); p.closePath();
-
-  // Sri Lanka
-  p.moveTo(sx*598,sy*318); p.lineTo(sx*604,sy*315); p.lineTo(sx*608,sy*322);
-  p.lineTo(sx*604,sy*330); p.lineTo(sx*598,sy*328); p.lineTo(sx*595,sy*322);
-  p.lineTo(sx*598,sy*318); p.closePath();
-
-  // ── AUSTRALIA
-  p.moveTo(sx*682,sy*340); p.lineTo(sx*698,sy*332); p.lineTo(sx*714,sy*328);
-  p.lineTo(sx*730,sy*325); p.lineTo(sx*745,sy*328); p.lineTo(sx*758,sy*335);
-  p.lineTo(sx*768,sy*345); p.lineTo(sx*776,sy*358); p.lineTo(sx*780,sy*372);
-  p.lineTo(sx*782,sy*388); p.lineTo(sx*780,sy*405); p.lineTo(sx*775,sy*420);
-  p.lineTo(sx*768,sy*434); p.lineTo(sx*758,sy*446); p.lineTo(sx*748,sy*455);
-  p.lineTo(sx*735,sy*462); p.lineTo(sx*722,sy*465); p.lineTo(sx*708,sy*465);
-  p.lineTo(sx*695,sy*462); p.lineTo(sx*682,sy*456); p.lineTo(sx*670,sy*448);
-  p.lineTo(sx*660,sy*438); p.lineTo(sx*652,sy*425); p.lineTo(sx*646,sy*412);
-  p.lineTo(sx*642,sy*398); p.lineTo(sx*640,sy*382); p.lineTo(sx*642,sy*368);
-  p.lineTo(sx*648,sy*355); p.lineTo(sx*658,sy*344); p.lineTo(sx*670,sy*338);
-  p.lineTo(sx*682,sy*340); p.closePath();
-
-  // New Zealand
-  p.moveTo(sx*800,sy*430); p.lineTo(sx*808,sy*424); p.lineTo(sx*814,sy*432);
-  p.lineTo(sx*810,sy*442); p.lineTo(sx*802,sy*445); p.lineTo(sx*796,sy*438);
-  p.lineTo(sx*800,sy*430); p.closePath();
-
-  // ── RUSSIA / SIBERIA (simplified northern mass)
-  p.moveTo(sx*492,sy*55); p.lineTo(sx*510,sy*48); p.lineTo(sx*530,sy*42);
-  p.lineTo(sx*550,sy*38); p.lineTo(sx*575,sy*34); p.lineTo(sx*600,sy*30);
-  p.lineTo(sx*625,sy*28); p.lineTo(sx*650,sy*26); p.lineTo(sx*675,sy*28);
-  p.lineTo(sx*698,sy*32); p.lineTo(sx*718,sy*38); p.lineTo(sx*736,sy*46);
-  p.lineTo(sx*750,sy*56); p.lineTo(sx*742,sy*64); p.lineTo(sx*728,sy*62);
-  p.lineTo(sx*710,sy*58); p.lineTo(sx*692,sy*56); p.lineTo(sx*672,sy*54);
-  p.lineTo(sx*650,sy*52); p.lineTo(sx*628,sy*52); p.lineTo(sx*606,sy*52);
-  p.lineTo(sx*582,sy*54); p.lineTo(sx*558,sy*56); p.lineTo(sx*536,sy*58);
-  p.lineTo(sx*515,sy*60); p.lineTo(sx*500,sy*64); p.lineTo(sx*492,sy*55);
-  p.closePath();
-
-  bgX.save();
-
-  // Shadow layer (like in reference image — offset shapes)
-  bgX.save();
-  bgX.translate(6, 6);
-  bgX.globalAlpha = 0.07;
-  bgX.fillStyle = '#1A3A5C';
-  bgX.fill(p);
-  bgX.restore();
-
-  // Main continent fill
-  bgX.globalAlpha = 0.18;
-  bgX.fillStyle = '#2A5F8A';
-  bgX.fill(p);
-
-  // Subtle inner highlight
-  bgX.globalAlpha = 0.06;
-  bgX.strokeStyle = '#FFFFFF';
-  bgX.lineWidth = 1;
-  bgX.stroke(p);
-
-  bgX.restore();
-}
-
-requestAnimationFrame(drawBg);
 
 // ══════════════════════════════════════════
 // GLOBE — Light ocean theme

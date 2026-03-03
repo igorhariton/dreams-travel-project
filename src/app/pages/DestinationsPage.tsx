@@ -15,6 +15,9 @@ export default function DestinationsPage() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [selectedDest, setSelectedDest] = useState<typeof destinations[0] | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'culture' | 'cuisine' | 'mustvisit'>('overview');
+  const [sortBy, setSortBy] = useState<'rating' | 'name' | 'trending'>('rating');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
 
   const filtered = destinations.filter(d => {
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) || d.country.toLowerCase().includes(search.toLowerCase());
@@ -22,6 +25,15 @@ export default function DestinationsPage() {
     const matchTags = activeTags.length === 0 || activeTags.some(tag => d.tags.includes(tag));
     return matchSearch && matchContinent && matchTags;
   });
+
+  let sorted = [...filtered];
+  if (sortBy === 'rating') {
+    sorted.sort((a, b) => b.rating - a.rating);
+  } else if (sortBy === 'name') {
+    sorted.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortBy === 'trending') {
+    sorted.sort((a, b) => b.reviews - a.reviews);
+  }
 
   const toggleTag = (tag: string) => {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
@@ -36,7 +48,10 @@ export default function DestinationsPage() {
           alt="Destinations"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/70 to-blue-900/50" />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, rgba(2,6,23,0.72) 0%, rgba(2,6,23,0.5) 100%)' }}
+        />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white mb-3">{t('section.top_destinations')}</h1>
           <p className="text-white/80 text-lg max-w-lg">{t('section.top_destinations_sub')}</p>
@@ -73,30 +88,81 @@ export default function DestinationsPage() {
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="flex gap-2 mt-3 flex-wrap">
-            {tags.map(tag => (
+          {/* Controls: Sort, Filter, View Mode */}
+          <div className="flex items-center gap-3 mt-4">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value as any)}
+              className="px-4 py-2.5 border border-gray-200 rounded-2xl text-sm text-gray-700 bg-white outline-none cursor-pointer hover:border-gray-300 transition-colors shadow-sm appearance-none"
+            >
+              <option value="rating">Top Rated</option>
+              <option value="trending">Trending</option>
+              <option value="name">A-Z</option>
+            </select>
+
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                showFilters
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <Filter size={16} /> Filter
+            </button>
+
+            <div className="ml-auto flex rounded-xl border border-gray-200 overflow-hidden bg-white">
               <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTags.includes(tag) ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-cyan-50 hover:text-cyan-600'}`}
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
               >
-                {tag}
-                {activeTags.includes(tag) && <X size={10} className="inline ml-1" />}
+                ⊞
               </button>
-            ))}
-            {activeTags.length > 0 && (
-              <button onClick={() => setActiveTags([])} className="text-xs text-red-500 hover:underline ml-1">Clear all</button>
-            )}
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                ☰
+              </button>
+            </div>
           </div>
+
+          {/* Tags */}
+          {showFilters && (
+            <div className="flex gap-2 mt-3 flex-wrap animate-in fade-in duration-300">
+              {tags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTags.includes(tag) ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-cyan-50 hover:text-cyan-600'}`}
+                >
+                  {tag}
+                  {activeTags.includes(tag) && <X size={10} className="inline ml-1" />}
+                </button>
+              ))}
+              {activeTags.length > 0 && (
+                <button onClick={() => setActiveTags([])} className="text-xs text-red-500 hover:underline ml-1">Clear all</button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <p className="text-sm text-gray-500 mb-6">{filtered.length} destinations found</p>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filtered.map((dest, i) => (
+        <p className="text-sm text-gray-500 mb-6">{sorted.length} destinations found</p>
+        
+        {viewMode === 'grid' ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sorted.map((dest, i) => (
             <motion.div
               key={dest.id}
               initial={{ opacity: 0, y: 20 }}
@@ -107,7 +173,10 @@ export default function DestinationsPage() {
             >
               <div className="relative h-60 overflow-hidden">
                 <ImageCarousel images={dest.images} className="h-60" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }}
+                />
                 <div className="absolute top-3 right-3">
                   <button
                     onClick={e => {
@@ -157,7 +226,64 @@ export default function DestinationsPage() {
               </div>
             </motion.div>
           ))}
-        </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sorted.map((dest, i) => (
+              <motion.div
+                key={dest.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                onClick={() => setSelectedDest(dest)}
+                className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex gap-4 p-4 border border-gray-100"
+              >
+                <div className="w-40 h-32 shrink-0 rounded-xl overflow-hidden">
+                  <ImageCarousel images={dest.images} className="h-32" />
+                </div>
+                <div className="flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">{dest.name}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin size={14} className="text-gray-500" />
+                      <span className="text-sm text-gray-600">{dest.country}</span>
+                      <span className="text-gray-300 mx-1">•</span>
+                      <Star size={12} className="text-amber-400 fill-amber-400" />
+                      <span className="text-sm font-medium">{dest.rating}</span>
+                      <span className="text-xs text-gray-500">({dest.reviews.toLocaleString()})</span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">{dest.description}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {dest.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="text-xs bg-blue-50 text-blue-700 font-medium px-2 py-0.5 rounded-full">{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isFavorite(dest.id)) {
+                      removeFavorite(dest.id);
+                    } else {
+                      addFavorite({
+                        id: dest.id,
+                        type: 'destination',
+                        name: dest.name,
+                        image: dest.images[0],
+                        rating: dest.rating,
+                        location: dest.country
+                      });
+                    }
+                  }}
+                  className="p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <span className={isFavorite(dest.id) ? 'text-red-500 text-xl' : 'text-gray-300 text-xl'}>{isFavorite(dest.id) ? '❤️' : '🤍'}</span>
+                </button>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Destination Detail Modal */}
@@ -179,7 +305,10 @@ export default function DestinationsPage() {
             >
               <div className="relative h-72">
                 <ImageCarousel images={selectedDest.images} className="h-72" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }}
+                />
                 <button
                   onClick={() => setSelectedDest(null)}
                   className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow"

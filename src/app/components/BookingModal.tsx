@@ -26,7 +26,7 @@ const PRICE_CALENDAR: Record<string, number> = {
 };
 
 export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
-  const { t } = useApp();
+  const { t, formatPrice, getCurrencySymbol, getPriceWithoutFormat } = useApp();
   const [step, setStep] = useState(1);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -44,10 +44,25 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
     : 3;
 
   const multiplier = checkIn ? (PRICE_CALENDAR[checkIn] || 1.0) : 1.0;
-  const pricePerNight = Math.round(item.pricePerNight * multiplier);
+  const basePrice = Math.round(item.pricePerNight * multiplier);
+  const pricePerNight = getPriceWithoutFormat(basePrice);
   const subtotal = pricePerNight * nights;
   const taxes = Math.round(subtotal * 0.12);
   const total = subtotal + taxes;
+  
+  // Helper to format price with currency
+  const formatPriceDisplay = (price: number): string => {
+    const symbol = getCurrencySymbol();
+    if (t('common.per_night').includes('lei')) {
+      // Romanian format: number lei
+      return `${price} ${symbol}`;
+    } else if (symbol === '₽') {
+      // Russian format: number₽
+      return `${price}${symbol}`;
+    }
+    // Default US format: $number
+    return `${symbol}${price}`;
+  };
 
   const handleConfirm = () => {
     setConfirmed(true);
@@ -108,7 +123,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     </div>
                   </div>
                   <div className="ml-auto text-right">
-                    <div className="text-lg font-bold text-gray-900">${pricePerNight}</div>
+                    <div className="text-lg font-bold text-gray-900">{formatPriceDisplay(pricePerNight)}</div>
                     <div className="text-xs text-gray-500">{t('common.per_night')}</div>
                     {multiplier !== 1.0 && (
                       <div className={`text-xs mt-1 font-medium ${multiplier > 1 ? 'text-red-500' : 'text-green-500'}`}>
@@ -162,16 +177,16 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     {/* Price summary */}
                     <div className="bg-blue-50 rounded-xl p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">${pricePerNight} × {nights} {t('common.nights')}</span>
-                        <span className="font-medium">${subtotal}</span>
+                        <span className="text-gray-600">{formatPriceDisplay(pricePerNight)} × {nights} {t('common.nights')}</span>
+                        <span className="font-medium">{formatPriceDisplay(subtotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Taxes & fees (12%)</span>
-                        <span className="font-medium">${taxes}</span>
+                        <span className="font-medium">{formatPriceDisplay(taxes)}</span>
                       </div>
                       <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-blue-200">
                         <span>{t('common.total')}</span>
-                        <span>${total}</span>
+                        <span>{formatPriceDisplay(total)}</span>
                       </div>
                     </div>
 

@@ -12,7 +12,7 @@ const typeConfig = {
 };
 
 export default function FavoritesPage() {
-  const { t, favorites, removeFavorite } = useApp();
+  const { t, favorites, removeFavorite, formatPrice } = useApp();
   const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
   const [bookingItem, setBookingItem] = useState<any>(null);
 
@@ -119,7 +119,7 @@ export default function FavoritesPage() {
                         </div>
                         {item.price && (
                           <div className="text-right">
-                            <span className="text-lg font-black text-gray-900">${item.price}</span>
+                            <span className="text-lg font-black text-gray-900">{formatPrice(item.price)}</span>
                             <span className="text-xs text-gray-400 ml-1">{t('common.per_night')}</span>
                           </div>
                         )}

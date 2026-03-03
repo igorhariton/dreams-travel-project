@@ -8,7 +8,7 @@ import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 
 export default function HomePage() {
-  const { t, addFavorite, isFavorite, removeFavorite } = useApp();
+  const { t, addFavorite, isFavorite, removeFavorite, formatPrice } = useApp();
   const navigate = useNavigate();
   const [bookingItem, setBookingItem] = useState<any>(null);
 
@@ -250,7 +250,7 @@ export default function HomePage() {
                       </p>
                     </div>
                     <div className="text-right shrink-0 ml-2">
-                      <div className="text-lg font-black text-gray-900">${hotel.pricePerNight}</div>
+                      <div className="text-lg font-black text-gray-900">{formatPrice(hotel.pricePerNight)}</div>
                       <div className="text-xs text-gray-400">{t('common.per_night')}</div>
                     </div>
                   </div>

@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
 import { useApp, Language, UserRole } from '../context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
-  const { language, setLanguage, role, setRole, favorites, t } = useApp();
+  const { language, setLanguage, role, setRole, favorites, t, theme } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
+  const [activeTabRect, setActiveTabRect] = useState<{ x: number; width: number } | null>(null);
+  const navRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
   useEffect(() => {
@@ -20,6 +23,26 @@ export function Navbar() {
 
   useEffect(() => {
     setMobileOpen(false);
+  }, [location]);
+
+  useEffect(() => {
+    const updateActiveTab = () => {
+      if (navRef.current) {
+        const activeLink = navRef.current.querySelector('a[data-active="true"]') as HTMLElement;
+        if (activeLink) {
+          const rect = activeLink.getBoundingClientRect();
+          const navRect = navRef.current.getBoundingClientRect();
+          setActiveTabRect({
+            x: rect.left - navRect.left,
+            width: rect.width,
+          });
+        }
+      }
+    };
+
+    updateActiveTab();
+    window.addEventListener('resize', updateActiveTab);
+    return () => window.removeEventListener('resize', updateActiveTab);
   }, [location]);
 
   const navLinks = [
@@ -54,6 +77,14 @@ export function Navbar() {
     return location.pathname.startsWith(to);
   };
 
+  // Get gradient based on theme for smooth transitions
+  const getBubbleGradient = () => {
+    if (theme === 'dark') {
+      return 'linear-gradient(to right, rgb(6, 182, 212), rgb(14, 165, 233))';
+    }
+    return 'linear-gradient(to right, rgb(34, 211, 238), rgb(76, 195, 255))';
+  };
+
   // When we are on the Home page and the user is at the top, the navbar used to be
   // fully transparent (so you would see the hero background). A glass/solid navbar
   // keeps the menu readable regardless of the background.
@@ -64,10 +95,14 @@ export function Navbar() {
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-lg'
+          ? theme === 'dark'
+            ? 'bg-slate-900/95 backdrop-blur-md shadow-lg'
+            : 'bg-white/95 backdrop-blur-md shadow-lg'
           : darkNav
             ? 'bg-black/35 backdrop-blur-md'
-            : 'bg-white/95 backdrop-blur-md shadow-sm'
+            : theme === 'dark'
+              ? 'bg-slate-900/90 backdrop-blur-md shadow-sm'
+              : 'bg-white/95 backdrop-blur-md shadow-sm'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -78,25 +113,51 @@ export function Navbar() {
               <span className="text-white text-lg">✈</span>
             </div>
             <div className="hidden sm:block">
-              <span className={`font-bold text-lg ${darkNav ? 'text-white' : 'text-gray-900'}`}>Travel</span>
+              <span className={`font-bold text-lg ${darkNav ? 'text-white' : theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>Travel</span>
               <span className="font-bold text-lg text-cyan-400">Dreams</span>
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-1 relative" ref={navRef}>
+            {/* Morphing background */}
+            {activeTabRect && (
+              <motion.div
+                className="absolute top-1/2 -translate-y-1/2 h-10 rounded-lg pointer-events-none shadow-2xl z-0"
+                layoutId="morphBackground"
+                initial={false}
+                animate={{
+                  x: activeTabRect.x,
+                  width: activeTabRect.width,
+                }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 380,
+                  damping: 30,
+                }}
+                style={{
+                  backgroundImage: getBubbleGradient(),
+                  transition: 'background-image 0.5s ease-in-out',
+                }}
+              />
+            )}
             {navLinks.map(link => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1.5
+                data-active={isActive(link.to)}
+                className={`relative px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1.5 z-10
                   ${isActive(link.to)
-                    ? (darkNav ? 'text-white bg-white/15' : 'text-cyan-500 bg-cyan-50')
+                    ? (darkNav ? 'text-white font-semibold' : 'text-white font-semibold')
                     : scrolled
-                      ? 'text-gray-700 hover:text-cyan-500 hover:bg-gray-50'
+                      ? theme === 'dark'
+                        ? 'text-slate-300 hover:text-slate-100'
+                        : 'text-gray-700 hover:text-gray-900'
                       : darkNav
-                        ? 'text-white/90 hover:text-white hover:bg-white/10'
-                        : 'text-gray-700 hover:text-cyan-500 hover:bg-gray-50'
+                        ? 'text-white/90 hover:text-white'
+                        : theme === 'dark'
+                          ? 'text-slate-300 hover:text-slate-100'
+                          : 'text-gray-700 hover:text-gray-900'
                   }`}
               >
                 {link.label}
@@ -127,13 +188,13 @@ export function Navbar() {
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    className={`absolute right-0 top-full mt-2 w-40 rounded-xl shadow-xl border overflow-hidden z-50 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}
                   >
                     {roles.map(r => (
                       <button
                         key={r.value}
                         onClick={() => { setRole(r.value); setRoleOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors ${role === r.value ? 'bg-gray-50' : ''}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${theme === 'dark' ? `hover:bg-slate-700 ${role === r.value ? 'bg-slate-700' : ''}` : `hover:bg-gray-50 ${role === r.value ? 'bg-gray-50' : ''}`}`}
                       >
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${r.color}`}>{r.label}</span>
                       </button>
@@ -149,14 +210,18 @@ export function Navbar() {
                 onClick={() => { setLangOpen(!langOpen); setRoleOpen(false); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                   scrolled
-                    ? 'text-gray-700 hover:bg-gray-100'
+                    ? theme === 'dark'
+                      ? 'text-slate-300 hover:bg-slate-700'
+                      : 'text-gray-700 hover:bg-gray-100'
                     : darkNav
                       ? 'text-white/90 hover:bg-white/10'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      : theme === 'dark'
+                        ? 'text-slate-300 hover:bg-slate-700'
+                        : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Globe size={14} />
-                {currentLang.flag} {currentLang.code.toUpperCase()}
+                <span className="text-lg">{currentLang.flag}</span>
                 <ChevronDown size={12} />
               </button>
               <AnimatePresence>
@@ -165,15 +230,16 @@ export function Navbar() {
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="absolute right-0 top-full mt-2 w-36 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50"
+                    className={`absolute right-0 top-full mt-2 w-36 rounded-xl shadow-xl border overflow-hidden z-50 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}
                   >
                     {languages.map(lang => (
                       <button
                         key={lang.code}
                         onClick={() => { setLanguage(lang.code); setLangOpen(false); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 hover:bg-gray-50 transition-colors ${language === lang.code ? 'bg-cyan-50 text-cyan-600 font-medium' : 'text-gray-700'}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${theme === 'dark' ? `hover:bg-slate-700 ${language === lang.code ? 'bg-cyan-600/30 text-cyan-400 font-medium' : 'text-slate-300'}` : `hover:bg-gray-50 ${language === lang.code ? 'bg-cyan-50 text-cyan-600 font-medium' : 'text-gray-700'}`}`}
                       >
-                        <span>{lang.flag}</span> {lang.label}
+                        <span className="text-lg">{lang.flag}</span> 
+                        <span>{lang.label}</span>
                       </button>
                     ))}
                   </motion.div>
@@ -181,29 +247,14 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <Link
-              to="/favorites"
-              className={`relative p-2 rounded-full transition-all ${
-                scrolled
-                  ? 'text-gray-700 hover:bg-gray-100'
-                  : darkNav
-                    ? 'text-white/90 hover:bg-white/10'
-                    : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <Heart size={20} />
-              {favorites.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {favorites.length}
-                </span>
-              )}
-            </Link>
+            {/* Theme toggle */}
+            <ThemeToggle />
           </div>
 
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className={`lg:hidden p-2 rounded-lg transition-colors ${scrolled ? 'text-gray-700' : darkNav ? 'text-white' : 'text-gray-700'}`}
+            className={`lg:hidden p-2 rounded-lg transition-colors ${scrolled ? theme === 'dark' ? 'text-slate-300' : 'text-gray-700' : darkNav ? 'text-white' : theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}
           >
             {mobileOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -217,14 +268,14 @@ export function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white/95 backdrop-blur-md border-t border-gray-100"
+            className={`lg:hidden backdrop-blur-md border-t ${theme === 'dark' ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-gray-100'}`}
           >
             <div className="px-4 py-3 space-y-1">
               {navLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(link.to) ? 'bg-cyan-50 text-cyan-600' : 'text-gray-700 hover:bg-gray-50'}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${theme === 'dark' ? `${isActive(link.to) ? 'bg-cyan-600/30 text-cyan-400' : 'text-slate-300 hover:bg-slate-700'}` : `${isActive(link.to) ? 'bg-cyan-50 text-cyan-600' : 'text-gray-700 hover:bg-gray-50'}`}`}
                 >
                   {link.label}
                   {link.badge !== undefined && link.badge > 0 && (
@@ -232,12 +283,12 @@ export function Navbar() {
                   )}
                 </Link>
               ))}
-              <div className="pt-2 border-t border-gray-100 flex gap-2 flex-wrap">
+              <div className={`pt-2 border-t flex gap-2 flex-wrap ${theme === 'dark' ? 'border-slate-700' : 'border-gray-100'}`}>
                 {languages.map(lang => (
                   <button
                     key={lang.code}
                     onClick={() => setLanguage(lang.code)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${language === lang.code ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${theme === 'dark' ? `${language === lang.code ? 'bg-cyan-500 text-white' : 'bg-slate-700 text-slate-300'}` : `${language === lang.code ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600'}`}`}
                   >
                     {lang.flag} {lang.code.toUpperCase()}
                   </button>

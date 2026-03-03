@@ -174,7 +174,7 @@ export default function PlannerPage() {
                 <div>
                   <label className="text-xs font-semibold text-gray-500 uppercase mb-1.5 block">Destination</label>
                   <select value={selectedDest} onChange={e => setSelectedDest(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white hover:border-gray-300 transition-colors appearance-none">
                     {destinations.map(d => <option key={d.id} value={d.id}>{d.name}, {d.country}</option>)}
                   </select>
                 </div>
@@ -319,7 +319,7 @@ export default function PlannerPage() {
                         <div className="border-2 border-dashed border-indigo-200 rounded-xl p-4 bg-indigo-50/50 space-y-3">
                           <div className="grid grid-cols-2 gap-3">
                             <select value={newActivity.type} onChange={e => setNewActivity(p => ({ ...p, type: e.target.value as ActivityType }))}
-                              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500">
+                              className="px-3 py-2 border border-gray-200 rounded-2xl text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-500 hover:border-gray-300 transition-colors appearance-none">
                               {Object.keys(activityConfig).map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                             </select>
                             <input type="time" value={newActivity.time} onChange={e => setNewActivity(p => ({ ...p, time: e.target.value }))}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageCarouselProps {
@@ -26,11 +26,29 @@ export function ImageCarousel({ images, className = '', showIndicators = true }:
     setFailedImages(prev => new Set(prev).add(index));
   };
 
+  // Autoplay: advance to the next image every 5 seconds, looping back to start
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const id = setInterval(() => {
+      setCurrent(c => (c + 1) % images.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [images.length]);
+
+  // Clamp current index if `images` array changes and length becomes smaller
+  useEffect(() => {
+    if (!images || images.length === 0) {
+      setCurrent(0);
+    } else {
+      setCurrent(c => c % images.length);
+    }
+  }, [images.length]);
+
 const fallbackForIndex = (i: number) => `/images/_fallback/${(i % images.length) + 1}.jpg`;
 
   return (
     <div
-      className={`relative overflow-hidden ${className}`}
+      className={`relative overflow-hidden rounded-2xl ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

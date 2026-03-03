@@ -4,10 +4,10 @@ import { Instagram, Twitter, Facebook, Youtube, Mail, Phone, MapPin } from 'luci
 import { useApp } from '../context/AppContext';
 
 export function Footer() {
-  const { t } = useApp();
+  const { t, theme } = useApp();
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className={`${theme === 'dark' ? 'bg-slate-900 text-slate-300' : 'bg-gray-900 text-gray-300'}`}>
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}

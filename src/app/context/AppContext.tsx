@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type Language = 'en' | 'ro' | 'ru';
 export type UserRole = 'user' | 'host' | 'admin';
+export type Theme = 'light' | 'dark';
 
 export interface FavoriteItem {
   id: string;
@@ -18,11 +19,17 @@ interface AppContextType {
   setLanguage: (lang: Language) => void;
   role: UserRole;
   setRole: (role: UserRole) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   favorites: FavoriteItem[];
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
   t: (key: string) => string;
+  formatPrice: (price: number) => string;
+  getPriceWithoutFormat: (price: number) => number;
+  getCurrencySymbol: () => string;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -291,13 +298,78 @@ const translations: Record<Language, Record<string, string>> = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Exchange rates relative to USD (base currency)
+const EXCHANGE_RATES: Record<Language, number> = {
+  'en': 1.0,      // USD
+  'ro': 4.97,     // RON (Romanian Lei)
+  'ru': 98.50,    // RUB (Russian Ruble)
+};
+
+const CURRENCY_SYMBOLS: Record<Language, string> = {
+  'en': '$',      // USD
+  'ro': 'lei',    // Romanian Lei
+  'ru': '₽',      // Russian Ruble
+};
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>('en');
   const [role, setRole] = useState<UserRole>('user');
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    }
+    return 'light';
+  });
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+
+  // Apply theme on mount and when it changes
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    if (theme === 'dark') {
+      htmlElement.classList.add('dark');
+    } else {
+      htmlElement.classList.remove('dark');
+    }
+    // Force a reflow to ensure CSS variables are recalculated
+    htmlElement.style.colorScheme = theme;
+  }, [theme]);
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem('theme', newTheme);
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
 
   const t = (key: string): string => {
     return translations[language][key] || translations['en'][key] || key;
+  };
+
+  const getCurrencySymbol = (): string => {
+    return CURRENCY_SYMBOLS[language];
+  };
+
+  const getPriceWithoutFormat = (price: number): number => {
+    const exchangeRate = EXCHANGE_RATES[language];
+    return Math.round(price * exchangeRate);
+  };
+
+  const formatPrice = (price: number): string => {
+    const convertedPrice = getPriceWithoutFormat(price);
+    const symbol = CURRENCY_SYMBOLS[language];
+    
+    // Format based on currency
+    if (language === 'en') {
+      return `${symbol}${convertedPrice}`;
+    } else if (language === 'ro') {
+      return `${convertedPrice} ${symbol}`;
+    } else if (language === 'ru') {
+      return `${convertedPrice}${symbol}`;
+    }
+    return `${symbol}${convertedPrice}`;
   };
 
   const addFavorite = (item: FavoriteItem) => {
@@ -314,7 +386,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, role, setRole, favorites, addFavorite, removeFavorite, isFavorite, t }}>
+    <AppContext.Provider value={{ language, setLanguage, role, setRole, theme, setTheme, toggleTheme, favorites, addFavorite, removeFavorite, isFavorite, t, formatPrice, getPriceWithoutFormat, getCurrencySymbol }}>
       {children}
     </AppContext.Provider>
   );
