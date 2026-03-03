@@ -8,12 +8,13 @@ import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 
 export default function HomePage() {
-  const { t, addFavorite, isFavorite, removeFavorite, formatPrice } = useApp();
+  const { t, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
   const navigate = useNavigate();
   const [bookingItem, setBookingItem] = useState<any>(null);
 
   const featuredDestinations = destinations.slice(0, 4);
   const featuredHotels = hotels.slice(0, 3);
+  const heroSrc = theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html';
 
   const stats = [
     { value: '50+', label: 'Countries', icon: <Map size={20} /> },
@@ -40,8 +41,9 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative min-h-screen overflow-hidden">
         <iframe
+          key={theme}
           title="Travel hero"
-          src="/TravelHero_Light.html"
+          src={heroSrc}
           className="absolute inset-0 w-full h-full border-0 pointer-events-none"
           aria-hidden="true"
         />
