@@ -60,8 +60,13 @@ export default function ChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -98,7 +103,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
       <div className="max-w-5xl mx-auto px-4 py-6 h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-5 mb-4 flex items-center justify-between">
@@ -125,7 +130,7 @@ export default function ChatPage() {
             <button
               key={q}
               onClick={() => sendMessage(q.slice(2))}
-              className="shrink-0 bg-white border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50 text-gray-700 hover:text-cyan-700 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm"
+              className="shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-300 hover:bg-cyan-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-cyan-700 dark:hover:text-cyan-400 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm"
             >
               {q}
             </button>
@@ -133,7 +138,7 @@ export default function ChatPage() {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
           <AnimatePresence>
             {messages.map(msg => (
               <motion.div
@@ -153,11 +158,11 @@ export default function ChatPage() {
                     className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                       msg.role === 'user'
                         ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-tr-sm'
-                        : 'bg-gray-50 text-gray-800 border border-gray-100 rounded-tl-sm'
+                        : 'bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 rounded-tl-sm'
                     }`}
                     dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
                   />
-                  <span className="text-xs text-gray-400 mt-1 mx-1">
+                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 mx-1">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -172,11 +177,11 @@ export default function ChatPage() {
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
                   <Bot size={16} className="text-white" />
                 </div>
-                <div className="bg-gray-50 border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                <div className="bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                   <div className="flex gap-1 items-center">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </motion.div>
@@ -187,10 +192,10 @@ export default function ChatPage() {
         </div>
 
         {/* Input */}
-        <div className="mt-4 bg-white rounded-2xl border border-gray-200 shadow-sm p-2 flex gap-2">
+        <div className="mt-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-2 flex gap-2">
           <button
             onClick={() => setIsListening(!isListening)}
-            className={`p-3 rounded-xl transition-all ${isListening ? 'bg-red-50 text-red-500' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+            className={`p-3 rounded-xl transition-all ${isListening ? 'bg-red-50 dark:bg-red-900 text-red-500' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
           >
             <Mic size={18} />
           </button>
@@ -200,7 +205,7 @@ export default function ChatPage() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder={t('chat.placeholder')}
-            className="flex-1 outline-none text-sm text-gray-800 placeholder-gray-400 bg-transparent py-2"
+            className="flex-1 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent py-2"
           />
           <button
             onClick={() => sendMessage()}
