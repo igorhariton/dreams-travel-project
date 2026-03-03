@@ -24,26 +24,6 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "culture": "Un amestec de tradiții emirate și influențe globale, cu souk-uri de aur, safari în deșert și galerii de artă modernă.",
       "cuisine": "Tartine meze, shawarma, ouzi de miel, dulciuri arabe precum baklava și mese rafinate la restaurantele cu stele Michelin."
     },
-    "abu-dhabi": {
-      "culture": "Un amestec bogat de tradiții emirate, rădăcini beduine, moștenire islamică și instituții culturale moderne precum Luvru Abu Dhabi.",
-      "cuisine": "Orez condimentat Machboos, fructe de mare la grătar, dulciuri luqaimat, platouri mezze și experiențe culinare internaționale de lux."
-    },
-    "doha": {
-      "culture": "Moștenirea Qatarului, istoria scufundărilor de perle, arta islamică, tradițiile ospitalității majlis și o identitate culturală globală modernă.",
-      "cuisine": "Mâncăruri de orez Machbous, carne la grătar, dulciuri cu șofran, curmale proaspete, cafea arabă și mese fusion contemporane."
-    },
-    "tel-aviv": {
-      "culture": "Un amestec cosmopolit de influențe din Orientul Mijlociu și mediteraneene, Jaffa istorică, arte contemporane și viața urbană condusă de startup-uri.",
-      "cuisine": "Hummus, shakshuka, sabich, fructe de mare proaspete, salate israeliene, piețe vibrante de mâncare stradală și brutării artizanale."
-    },
-    "amman": {
-      "culture": "Un amestec de tradiții arabe, levantine și beduine cu arheologie bogată, obiceiuri de ospitalitate și o scenă de artă contemporană în creștere.",
-      "cuisine": "Mansaf, falafel, hummus, mutabbal, knafeh și cafea arabă aromată servite în adunări tradiționale."
-    },
-    "riyadh": {
-      "culture": "Moștenirea Najdi, viața tradițională din souq, ritualuri de cafea saudite și o renaștere culturală modernă prin muzee, festivaluri și artă publică.",
-      "cuisine": "Orez Kabsa, jareesh, carne la grătar, curmale, mutabbaq și cafea saudită de specialitate combinate cu dulciuri regionale."
-    },
     "barcelona": {
       "culture": "Identitate catalană, arhitectură modernistă, flamenco și o pasiune pentru fotbal adânc înrădăcinată în viața de zi cu zi.",
       "cuisine": "Tapas, patatas bravas, pan con tomate, paella, fructe de mare proaspete și vin spumant Cava."
@@ -289,26 +269,6 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     "dubai": {
       "culture": "Плавильный котел эмиратских традиций и мировых влияний с золотыми базарами, сафари по пустыне и галереями современного искусства.",
       "cuisine": "Меззе, шаурма, узи из баранины, арабские сладости, такие как пахлава, и изысканные блюда в ресторанах, отмеченных звездами Мишлен."
-    },
-    "abu-dhabi": {
-      "culture": "Богатое сочетание эмиратских традиций, бедуинских корней, исламского наследия и современных культурных учреждений, таких как Лувр Абу-Даби.",
-      "cuisine": "Рис с пряностями махбу, морепродукты на гриле, сладости лукаймат, меззе и высококлассные блюда интернациональной кухни."
-    },
-    "doha": {
-      "culture": "Катарское наследие, история добычи жемчуга, исламское искусство, традиции гостеприимства меджлиса и современная глобальная культурная самобытность.",
-      "cuisine": "Блюда из риса махбу, мясо на гриле, шафрановые сладости, свежие финики, арабский кофе и блюда современной кухни фьюжн."
-    },
-    "tel-aviv": {
-      "culture": "Космополитическая смесь ближневосточных и средиземноморских влияний, исторического Яффо, современного искусства и городской жизни, основанной на стартапах.",
-      "cuisine": "Хумус, шакшука, сабич, свежие морепродукты, израильские салаты, оживленные уличные продовольственные рынки и ремесленные пекарни."
-    },
-    "amman": {
-      "culture": "Смесь арабских, левантийских и бедуинских традиций с богатой археологией, обычаями гостеприимства и растущей сценой современного искусства.",
-      "cuisine": "Мансаф, фалафель, хумус, мутаббал, кнафе и ароматный арабский кофе подаются на традиционных встречах."
-    },
-    "riyadh": {
-      "culture": "Наследие Наджди, традиционная базарная жизнь, саудовские кофейные ритуалы и современное культурное возрождение через музеи, фестивали и паблик-арт.",
-      "cuisine": "Рис Кабса, Джариш, мясо на гриле, финики, мутаббак и фирменный саудовский кофе в сочетании с региональными сладостями."
     },
     "barcelona": {
       "culture": "Каталонская идентичность, архитектура модернизма, фламенко и страсть к футболу глубоко укоренились в повседневной жизни.",
