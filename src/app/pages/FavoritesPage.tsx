@@ -12,7 +12,7 @@ const typeConfig = {
 };
 
 export default function FavoritesPage() {
-  const { t, favorites, removeFavorite, formatPrice } = useApp();
+  const { t, translateDynamic, favorites, removeFavorite, formatPrice } = useApp();
   const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
   const [bookingItem, setBookingItem] = useState<any>(null);
 
@@ -30,7 +30,7 @@ export default function FavoritesPage() {
           <p className="text-white/80">{t('favorites.subtitle')}</p>
           {favorites.length > 0 && (
             <div className="mt-4 inline-flex items-center gap-2 bg-white/20 rounded-full px-5 py-2 text-white text-sm">
-              {favorites.length} saved {favorites.length === 1 ? 'place' : 'places'}
+              {favorites.length} {translateDynamic('saved')} {favorites.length === 1 ? translateDynamic('place') : translateDynamic('places')}
             </div>
           )}
         </div>
@@ -46,7 +46,7 @@ export default function FavoritesPage() {
                 onClick={() => setFilter(f)}
                 className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${filter === f ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
               >
-                {f === 'all' ? '❤️ All' : typeConfig[f].label}
+                {f === 'all' ? `❤️ ${translateDynamic('All')}` : translateDynamic(typeConfig[f].label)}
                 <span className={`text-xs px-1.5 py-0.5 rounded-full ${filter === f ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-500'}`}>
                   {f === 'all' ? favorites.length : favorites.filter(fav => fav.type === f).length}
                 </span>
@@ -63,9 +63,9 @@ export default function FavoritesPage() {
           >
             <div className="text-7xl mb-6">💔</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('favorites.empty')}</h2>
-            <p className="text-gray-500 mb-8 max-w-sm mx-auto">Save your favorite destinations, hotels, and rentals to see them all in one place.</p>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">{translateDynamic('Save your favorite destinations, hotels, and rentals to see them all in one place.')}</p>
             <Link to="/destinations" className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-all">
-              Explore Destinations <ArrowRight size={18} />
+              {translateDynamic('Explore Destinations')} <ArrowRight size={18} />
             </Link>
           </motion.div>
         ) : (
@@ -91,7 +91,7 @@ export default function FavoritesPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       <div className="absolute top-3 left-3">
                         <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
-                          {cfg.icon} {cfg.label}
+                          {cfg.icon} {translateDynamic(cfg.label)}
                         </span>
                       </div>
                       <button
@@ -105,7 +105,7 @@ export default function FavoritesPage() {
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 text-base mb-1">{item.name}</h3>
                       <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                        <MapPin size={10} /> {item.location}
+                        <MapPin size={10} /> {translateDynamic(item.location)}
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -142,7 +142,7 @@ export default function FavoritesPage() {
                         )}
                         {item.type === 'destination' && (
                           <Link to="/destinations" className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all text-center">
-                            Explore →
+                            {translateDynamic('Explore')} →
                           </Link>
                         )}
                         <button
@@ -162,10 +162,10 @@ export default function FavoritesPage() {
 
         {favorites.length > 0 && (
           <div className="mt-12 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
-            <h3 className="font-bold text-gray-900 mb-2">Ready to plan your trip?</h3>
-            <p className="text-sm text-gray-600 mb-4">Use our travel planner to create the perfect itinerary with your saved places.</p>
+            <h3 className="font-bold text-gray-900 mb-2">{translateDynamic('Ready to plan your trip?')}</h3>
+            <p className="text-sm text-gray-600 mb-4">{translateDynamic('Use our travel planner to create the perfect itinerary with your saved places.')}</p>
             <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
-              Open Travel Planner <ArrowRight size={16} />
+              {translateDynamic('Open Travel Planner')} <ArrowRight size={16} />
             </Link>
           </div>
         )}

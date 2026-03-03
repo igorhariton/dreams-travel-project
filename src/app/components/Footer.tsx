@@ -4,7 +4,7 @@ import { Instagram, Twitter, Facebook, Youtube, Mail, Phone, MapPin } from 'luci
 import { useApp } from '../context/AppContext';
 
 export function Footer() {
-  const { t, theme } = useApp();
+  const { t, translateDynamic, theme } = useApp();
 
   return (
     <footer className={`${theme === 'dark' ? 'bg-slate-900 text-slate-300' : 'bg-gray-900 text-gray-300'}`}>
@@ -19,7 +19,7 @@ export function Footer() {
               <span className="text-white font-bold text-lg">Travel<span className="text-cyan-400">Dreams</span></span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5">
-              Your ultimate travel companion for discovering breathtaking destinations, booking luxury stays, and crafting unforgettable journeys.
+              {translateDynamic('Your ultimate travel companion for discovering breathtaking destinations, booking luxury stays, and crafting unforgettable journeys.')}
             </p>
             <div className="flex gap-3">
               {[
@@ -37,7 +37,7 @@ export function Footer() {
 
           {/* Explore */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Explore</h4>
+            <h4 className="text-white font-semibold mb-4">{translateDynamic('Explore')}</h4>
             <ul className="space-y-2 text-sm">
               {[
                 { to: '/destinations', label: t('nav.destinations') },
@@ -55,7 +55,7 @@ export function Footer() {
 
           {/* Top Destinations */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Top Destinations</h4>
+            <h4 className="text-white font-semibold mb-4">{translateDynamic('Top Destinations')}</h4>
             <ul className="space-y-2 text-sm">
               {['Santorini, Greece', 'Bali, Indonesia', 'Paris, France', 'Maldives', 'Tokyo, Japan', 'Dubai, UAE'].map(dest => (
                 <li key={dest}>
@@ -67,7 +67,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Contact</h4>
+            <h4 className="text-white font-semibold mb-4">{translateDynamic('Contact')}</h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2.5">
                 <Mail size={15} className="text-cyan-400 shrink-0" />
@@ -86,11 +86,11 @@ export function Footer() {
         </div>
 
         <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-          <p>© 2026 TravelDreams. All rights reserved.</p>
+          <p>© 2026 TravelDreams. {translateDynamic('All rights reserved.')}</p>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-gray-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-gray-300 transition-colors">Cookie Policy</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{translateDynamic('Privacy Policy')}</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{translateDynamic('Terms of Service')}</a>
+            <a href="#" className="hover:text-gray-300 transition-colors">{translateDynamic('Cookie Policy')}</a>
           </div>
         </div>
       </div>

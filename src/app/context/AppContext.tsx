@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 
 export type Language = 'en' | 'ro' | 'ru';
 export type UserRole = 'user' | 'host' | 'admin';
@@ -27,6 +27,7 @@ interface AppContextType {
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
   t: (key: string) => string;
+  translateDynamic: (text: string) => string;
   formatPrice: (price: number) => string;
   getPriceWithoutFormat: (price: number) => number;
   getCurrencySymbol: () => string;
@@ -322,6 +323,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return 'light';
   });
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({
+    en: {},
+    ro: {},
+    ru: {},
+  });
+  const pendingTranslations = useRef<Set<string>>(new Set());
 
   // Apply theme on mount and when it changes
   useEffect(() => {
@@ -344,8 +351,74 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
+  const shouldTranslate = (text: string): boolean => {
+    if (!text || text.trim().length < 2) return false;
+    // Keep proper nouns/IDs and mostly symbolic strings untouched.
+    const hasLetters = /[A-Za-zÀ-ÖØ-öø-ÿА-Яа-я]/.test(text);
+    const hasManySymbols = /^[^A-Za-zÀ-ÖØ-öø-ÿА-Яа-я0-9\s]+$/.test(text);
+    return hasLetters && !hasManySymbols;
+  };
+
+  const translateWithGoogle = async (text: string, target: Language): Promise<string> => {
+    if (target === 'en') return text;
+
+    const params = new URLSearchParams({
+      client: 'gtx',
+      sl: 'en',
+      tl: target,
+      dt: 't',
+      q: text,
+    });
+
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`);
+    if (!res.ok) return text;
+
+    const data = await res.json();
+    const translated = Array.isArray(data?.[0])
+      ? data[0].map((chunk: any[]) => chunk?.[0] ?? '').join('')
+      : '';
+
+    return translated || text;
+  };
+
+  const translateDynamic = (text: string): string => {
+    if (language === 'en' || !shouldTranslate(text)) return text;
+
+    const cached = dynamicTranslations[language][text];
+    if (cached) return cached;
+
+    const cacheKey = `${language}::${text}`;
+    if (!pendingTranslations.current.has(cacheKey)) {
+      pendingTranslations.current.add(cacheKey);
+      void translateWithGoogle(text, language)
+        .then((translated) => {
+          setDynamicTranslations((prev) => ({
+            ...prev,
+            [language]: {
+              ...prev[language],
+              [text]: translated,
+            },
+          }));
+        })
+        .catch(() => {
+          // Keep original text if translation request fails.
+        })
+        .finally(() => {
+          pendingTranslations.current.delete(cacheKey);
+        });
+    }
+
+    return text;
+  };
+
   const t = (key: string): string => {
-    return translations[language][key] || translations['en'][key] || key;
+    const localized = translations[language][key];
+    if (localized) return localized;
+
+    const english = translations['en'][key];
+    if (!english) return key;
+
+    return translateDynamic(english);
   };
 
   const getCurrencySymbol = (): string => {
@@ -386,7 +459,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
   return (
-    <AppContext.Provider value={{ language, setLanguage, role, setRole, theme, setTheme, toggleTheme, favorites, addFavorite, removeFavorite, isFavorite, t, formatPrice, getPriceWithoutFormat, getCurrencySymbol }}>
+    <AppContext.Provider value={{ language, setLanguage, role, setRole, theme, setTheme, toggleTheme, favorites, addFavorite, removeFavorite, isFavorite, t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol }}>
       {children}
     </AppContext.Provider>
   );

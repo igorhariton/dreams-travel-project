@@ -26,7 +26,7 @@ const PRICE_CALENDAR: Record<string, number> = {
 };
 
 export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
-  const { t, formatPrice, getCurrencySymbol, getPriceWithoutFormat } = useApp();
+  const { t, translateDynamic, formatPrice, getCurrencySymbol, getPriceWithoutFormat } = useApp();
   const [step, setStep] = useState(1);
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
@@ -96,7 +96,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                   <CheckCircle size={40} className="text-green-500" />
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('booking.success')}</h2>
-                <p className="text-gray-500 text-center">Your booking for <strong>{item.name}</strong> has been confirmed. A confirmation email will be sent shortly.</p>
+                <p className="text-gray-500 text-center">{translateDynamic('Your booking for')} <strong>{item.name}</strong> {translateDynamic('has been confirmed. A confirmation email will be sent shortly.')}</p>
               </div>
             ) : (
               <>
@@ -104,7 +104,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                 <div className="flex items-center justify-between p-6 border-b border-gray-100">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{t('booking.title')}</h2>
-                    <p className="text-sm text-gray-500 mt-0.5">Step {step} of 2</p>
+                    <p className="text-sm text-gray-500 mt-0.5">{translateDynamic('Step')} {step} {translateDynamic('of')} 2</p>
                   </div>
                   <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                     <X size={20} />
@@ -127,7 +127,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     <div className="text-xs text-gray-500">{t('common.per_night')}</div>
                     {multiplier !== 1.0 && (
                       <div className={`text-xs mt-1 font-medium ${multiplier > 1 ? 'text-red-500' : 'text-green-500'}`}>
-                        {multiplier > 1 ? '🔥 Peak season' : '✨ Off-season deal'}
+                        {multiplier > 1 ? `🔥 ${translateDynamic('Peak season')}` : `✨ ${translateDynamic('Off-season deal')}`}
                       </div>
                     )}
                   </div>
@@ -181,7 +181,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         <span className="font-medium">{formatPriceDisplay(subtotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Taxes & fees (12%)</span>
+                        <span className="text-gray-600">{translateDynamic('Taxes & fees (12%)')}</span>
                         <span className="font-medium">{formatPriceDisplay(taxes)}</span>
                       </div>
                       <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-blue-200">
@@ -194,7 +194,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                       onClick={() => setStep(2)}
                       className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all"
                     >
-                      Continue to Details →
+                      {translateDynamic('Continue to Details')} →
                     </button>
                   </div>
                 )}
@@ -207,7 +207,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="text"
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="John Doe"
+                        placeholder={translateDynamic('John Doe')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -217,7 +217,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder="john@example.com"
+                        placeholder={translateDynamic('john@example.com')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -227,7 +227,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         type="tel"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
-                        placeholder="+1 234 567 8900"
+                        placeholder={translateDynamic('+1 234 567 8900')}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                       />
                     </div>
@@ -236,7 +236,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                       <textarea
                         value={special}
                         onChange={e => setSpecial(e.target.value)}
-                        placeholder="Late check-in, dietary requirements..."
+                        placeholder={translateDynamic('Late check-in, dietary requirements...')}
                         rows={3}
                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                       />
@@ -246,23 +246,23 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     <div className="bg-gray-50 rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <CreditCard size={16} className="text-gray-600" />
-                        <span className="text-sm font-medium text-gray-700">Payment Details</span>
+                        <span className="text-sm font-medium text-gray-700">{translateDynamic('Payment Details')}</span>
                       </div>
                       <div className="space-y-3">
                         <input
                           type="text"
-                          placeholder="Card number: **** **** **** 4242"
+                          placeholder={translateDynamic('Card number: **** **** **** 4242')}
                           className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                         />
                         <div className="grid grid-cols-2 gap-3">
                           <input
                             type="text"
-                            placeholder="MM / YY"
+                            placeholder={translateDynamic('MM / YY')}
                             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                           />
                           <input
                             type="text"
-                            placeholder="CVC"
+                            placeholder={translateDynamic('CVC')}
                             className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white"
                           />
                         </div>

@@ -47,7 +47,7 @@ function getBotResponse(input: string): string {
 let msgId = 1;
 
 export default function ChatPage() {
-  const { t } = useApp();
+  const { t, translateDynamic } = useApp();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: String(msgId++),
@@ -115,12 +115,12 @@ export default function ChatPage() {
               <h1 className="text-white font-black text-lg">{t('chat.title')}</h1>
               <div className="flex items-center gap-1.5 text-white/80 text-sm">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                {t('chat.online')} · Ready to help you travel
+                {t('chat.online')} · {translateDynamic('Ready to help you travel')}
               </div>
             </div>
           </div>
           <button onClick={clearChat} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
-            <RefreshCw size={14} /> Clear
+            <RefreshCw size={14} /> {translateDynamic('Clear')}
           </button>
         </div>
 
@@ -132,7 +132,7 @@ export default function ChatPage() {
               onClick={() => sendMessage(q.slice(2))}
               className="shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-300 hover:bg-cyan-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-cyan-700 dark:hover:text-cyan-400 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm"
             >
-              {q}
+              {translateDynamic(q)}
             </button>
           ))}
         </div>
@@ -160,7 +160,7 @@ export default function ChatPage() {
                         ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-tr-sm'
                         : 'bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 rounded-tl-sm'
                     }`}
-                    dangerouslySetInnerHTML={{ __html: formatText(msg.text) }}
+                    dangerouslySetInnerHTML={{ __html: formatText(msg.role === 'bot' ? translateDynamic(msg.text) : msg.text) }}
                   />
                   <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 mx-1">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

@@ -50,7 +50,7 @@ const roleConfig = {
 };
 
 export default function AdminPage() {
-  const { t, role } = useApp();
+  const { t, translateDynamic, role } = useApp();
   const [activeTab, setActiveTab] = useState<'overview' | 'bookings' | 'users' | 'properties'>('overview');
   const [searchUsers, setSearchUsers] = useState('');
 
@@ -59,8 +59,8 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
         <div className="text-center">
           <div className="text-6xl mb-4">🔒</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Restricted</h2>
-          <p className="text-gray-500">Switch to Admin role to access the dashboard.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{translateDynamic('Access Restricted')}</h2>
+          <p className="text-gray-500">{translateDynamic('Switch to Admin role to access the dashboard.')}</p>
         </div>
       </div>
     );
@@ -74,10 +74,10 @@ export default function AdminPage() {
   ];
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'bookings', label: 'Bookings' },
-    { id: 'users', label: 'Users' },
-    { id: 'properties', label: 'Properties' },
+    { id: 'overview', label: translateDynamic('Overview') },
+    { id: 'bookings', label: t('admin.bookings') },
+    { id: 'users', label: t('admin.users') },
+    { id: 'properties', label: translateDynamic('Properties') },
   ];
 
   return (
@@ -88,11 +88,11 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-black text-white">{t('admin.title')}</h1>
-              <p className="text-gray-400 mt-1">Platform overview and management</p>
+              <p className="text-gray-400 mt-1">{translateDynamic('Platform overview and management')}</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-gray-300 text-sm">All systems operational</span>
+              <span className="text-gray-300 text-sm">{translateDynamic('All systems operational')}</span>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@ export default function AdminPage() {
             {/* Charts */}
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="font-bold text-gray-900 mb-5">Monthly Revenue</h3>
+                <h3 className="font-bold text-gray-900 mb-5">{translateDynamic('Monthly Revenue')}</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={revenueData}>
                     <defs>
@@ -151,20 +151,20 @@ export default function AdminPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v: any) => [`$${v.toLocaleString()}`, 'Revenue']} />
+                    <Tooltip formatter={(v: any) => [`$${v.toLocaleString()}`, translateDynamic('Revenue')]} />
                     <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="url(#revGrad)" strokeWidth={2} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                <h3 className="font-bold text-gray-900 mb-5">Monthly Bookings</h3>
+                <h3 className="font-bold text-gray-900 mb-5">{translateDynamic('Monthly Bookings')}</h3>
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={revenueData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip formatter={(v: any) => [v, 'Bookings']} />
+                    <Tooltip formatter={(v: any) => [v, translateDynamic('Bookings')]} />
                     <Bar dataKey="bookings" fill="#06b6d4" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -173,20 +173,20 @@ export default function AdminPage() {
 
             {/* Top Destinations */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-gray-900 mb-5">Top Performing Destinations</h3>
+              <h3 className="font-bold text-gray-900 mb-5">{translateDynamic('Top Performing Destinations')}</h3>
               <div className="space-y-3">
                 {topDestinations.map((dest, i) => (
                   <div key={dest.name} className="flex items-center gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                     <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full text-white text-sm font-bold flex items-center justify-center">{i + 1}</div>
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{dest.name}</div>
-                      <div className="text-xs text-gray-400">{dest.bookings} bookings</div>
+                      <div className="text-xs text-gray-400">{dest.bookings} {translateDynamic('bookings')}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-bold text-gray-900">${dest.revenue.toLocaleString()}</div>
                       <div className={`flex items-center gap-1 text-xs justify-end ${dest.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
                         {dest.trend === 'up' ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-                        {dest.trend === 'up' ? 'Trending ↑' : 'Declining ↓'}
+                        {dest.trend === 'up' ? `${translateDynamic('Trending')} ↑` : `${translateDynamic('Declining')} ↓`}
                       </div>
                     </div>
                   </div>
@@ -200,9 +200,9 @@ export default function AdminPage() {
         {activeTab === 'bookings' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">All Bookings</h2>
+              <h2 className="text-xl font-bold text-gray-900">{translateDynamic('All Bookings')}</h2>
               <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                <Plus size={15} /> New Booking
+                <Plus size={15} /> {translateDynamic('New Booking')}
               </button>
             </div>
 
@@ -210,21 +210,21 @@ export default function AdminPage() {
               <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 w-80">
                   <Search size={15} className="text-gray-400" />
-                  <input type="text" placeholder="Search bookings..." className="bg-transparent outline-none text-sm text-gray-700 w-full" />
+                  <input type="text" placeholder={translateDynamic('Search bookings...')} className="bg-transparent outline-none text-sm text-gray-700 w-full" />
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-5 py-3">Booking ID</th>
-                      <th className="text-left px-5 py-3">Guest</th>
-                      <th className="text-left px-5 py-3">Destination</th>
-                      <th className="text-left px-5 py-3">Check-In</th>
-                      <th className="text-left px-5 py-3">Nights</th>
-                      <th className="text-left px-5 py-3">Total</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                      <th className="text-left px-5 py-3">Actions</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Booking ID')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Guest')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Destination')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Check-In')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Nights')}</th>
+                      <th className="text-left px-5 py-3">{t('common.total')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Status')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -245,7 +245,7 @@ export default function AdminPage() {
                           <td className="px-5 py-4 text-sm font-bold text-gray-900">${booking.total.toLocaleString()}</td>
                           <td className="px-5 py-4">
                             <span className={`flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full w-fit ${sc.color}`}>
-                              {sc.icon} {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                              {sc.icon} {translateDynamic(booking.status.charAt(0).toUpperCase() + booking.status.slice(1))}
                             </span>
                           </td>
                           <td className="px-5 py-4">
@@ -269,9 +269,9 @@ export default function AdminPage() {
         {activeTab === 'users' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">User Management</h2>
+              <h2 className="text-xl font-bold text-gray-900">{translateDynamic('User Management')}</h2>
               <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                <Plus size={15} /> Add User
+                <Plus size={15} /> {translateDynamic('Add User')}
               </button>
             </div>
 
@@ -279,7 +279,7 @@ export default function AdminPage() {
               <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 w-80">
                   <Search size={15} className="text-gray-400" />
-                  <input type="text" placeholder="Search users..." value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
+                  <input type="text" placeholder={translateDynamic('Search users...')} value={searchUsers} onChange={e => setSearchUsers(e.target.value)}
                     className="bg-transparent outline-none text-sm text-gray-700 w-full" />
                 </div>
               </div>
@@ -287,13 +287,13 @@ export default function AdminPage() {
                 <table className="w-full">
                   <thead className="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     <tr>
-                      <th className="text-left px-5 py-3">User</th>
-                      <th className="text-left px-5 py-3">Role</th>
-                      <th className="text-left px-5 py-3">Bookings</th>
-                      <th className="text-left px-5 py-3">Total Spent</th>
-                      <th className="text-left px-5 py-3">Joined</th>
-                      <th className="text-left px-5 py-3">Status</th>
-                      <th className="text-left px-5 py-3">Actions</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('User')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Role')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Bookings')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Total Spent')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Joined')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Status')}</th>
+                      <th className="text-left px-5 py-3">{translateDynamic('Actions')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -310,7 +310,7 @@ export default function AdminPage() {
                         </td>
                         <td className="px-5 py-4">
                           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${roleConfig[user.role as keyof typeof roleConfig]}`}>
-                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                            {translateDynamic(user.role.charAt(0).toUpperCase() + user.role.slice(1))}
                             {user.role === 'host' && user.properties && ` (${user.properties} props)`}
                           </span>
                         </td>
@@ -319,7 +319,7 @@ export default function AdminPage() {
                         <td className="px-5 py-4 text-sm text-gray-400">{user.joined}</td>
                         <td className="px-5 py-4">
                           <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${user.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                            {user.status === 'active' ? '● Active' : '○ Inactive'}
+                            {user.status === 'active' ? `● ${translateDynamic('Active')}` : `○ ${translateDynamic('Inactive')}`}
                           </span>
                         </td>
                         <td className="px-5 py-4">
@@ -342,9 +342,9 @@ export default function AdminPage() {
         {activeTab === 'properties' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Properties & Hotels</h2>
+              <h2 className="text-xl font-bold text-gray-900">{translateDynamic('Properties & Hotels')}</h2>
               <button className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
-                <Plus size={15} /> Add Property
+                <Plus size={15} /> {translateDynamic('Add Property')}
               </button>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -360,7 +360,7 @@ export default function AdminPage() {
                   <div className="flex items-center justify-between mb-3">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${prop.type === 'Hotel' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>{prop.type}</span>
                     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${prop.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {prop.status === 'active' ? '● Active' : '⚠ Maintenance'}
+                      {prop.status === 'active' ? `● ${translateDynamic('Active')}` : `⚠ ${translateDynamic('Maintenance')}`}
                     </span>
                   </div>
                   <h3 className="font-bold text-gray-900 mb-1">{prop.name}</h3>
@@ -368,20 +368,20 @@ export default function AdminPage() {
                   <div className="grid grid-cols-3 gap-3 text-center py-3 border-y border-gray-100">
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{prop.bookings}</div>
-                      <div className="text-xs text-gray-400">Bookings</div>
+                      <div className="text-xs text-gray-400">{translateDynamic('Bookings')}</div>
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">${(prop.revenue / 1000).toFixed(1)}k</div>
-                      <div className="text-xs text-gray-400">Revenue</div>
+                      <div className="text-xs text-gray-400">{translateDynamic('Revenue')}</div>
                     </div>
                     <div>
                       <div className="font-bold text-gray-900 text-sm flex items-center justify-center gap-0.5"><Star size={11} className="text-amber-400 fill-amber-400" />{prop.rating}</div>
-                      <div className="text-xs text-gray-400">Rating</div>
+                      <div className="text-xs text-gray-400">{translateDynamic('Rating')}</div>
                     </div>
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <button className="flex-1 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"><Edit2 size={12} /> Edit</button>
-                    <button className="flex-1 py-2 bg-blue-50 rounded-xl text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"><Eye size={12} /> View</button>
+                    <button className="flex-1 py-2 border border-gray-200 rounded-xl text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"><Edit2 size={12} /> {translateDynamic('Edit')}</button>
+                    <button className="flex-1 py-2 bg-blue-50 rounded-xl text-xs font-medium text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1"><Eye size={12} /> {translateDynamic('View')}</button>
                   </div>
                 </div>
               ))}

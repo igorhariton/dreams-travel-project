@@ -1,6 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { Layout } from './components/Layout';
+import { useApp } from './context/AppContext';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const DestinationsPage = lazy(() => import('./pages/DestinationsPage'));
@@ -13,13 +14,15 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage_TravelDreams_v2'));
 
 function PageLoader() {
+  const { translateDynamic } = useApp();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center animate-pulse">
           <span className="text-white text-xl">✈</span>
         </div>
-        <div className="text-gray-400 text-sm">Loading...</div>
+        <div className="text-gray-400 text-sm">{translateDynamic('Loading...')}</div>
       </div>
     </div>
   );

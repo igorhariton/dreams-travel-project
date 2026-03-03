@@ -8,7 +8,7 @@ import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 
 export default function HomePage() {
-  const { t, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
+  const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
   const navigate = useNavigate();
   const [bookingItem, setBookingItem] = useState<any>(null);
 
@@ -66,7 +66,7 @@ export default function HomePage() {
                   {s.icon}
                 </div>
                 <div className="text-3xl font-black mb-1">{s.value}</div>
-                <div className="text-sm text-blue-200">{s.label}</div>
+                <div className="text-sm text-blue-200">{translateDynamic(s.label)}</div>
               </motion.div>
             ))}
           </div>
@@ -102,7 +102,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
                     {dest.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{tag}</span>
+                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{translateDynamic(tag)}</span>
                     ))}
                   </div>
                   <button
@@ -136,14 +136,14 @@ export default function HomePage() {
                       <span className="text-xs text-gray-400">({dest.reviews.toLocaleString()})</span>
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Clock size={12} /> {dest.bestSeason.split(' ')[0]}
+                      <Clock size={12} /> {translateDynamic(dest.bestSeason.split(' ')[0])}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-2">{dest.description}</p>
+                  <p className="text-xs text-gray-500 line-clamp-2">{translateDynamic(dest.description)}</p>
                   <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
                     <div className="flex gap-1">
                       {dest.mustVisit.slice(0, 2).map(place => (
-                        <span key={place} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{place.split(' ')[0]}</span>
+                        <span key={place} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(place).split(' ')[0]}</span>
                       ))}
                     </div>
                     <ArrowRight size={16} className="text-cyan-500 group-hover:translate-x-1 transition-transform" />
@@ -160,10 +160,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="text-cyan-500 font-semibold text-sm uppercase tracking-wide">Immerse Yourself</span>
+              <span className="text-cyan-500 font-semibold text-sm uppercase tracking-wide">{translateDynamic('Immerse Yourself')}</span>
               <h2 className="text-4xl font-black text-gray-900 mt-2 mb-4">{t('section.culture')} & {t('section.cuisine')}</h2>
               <p className="text-gray-500 leading-relaxed mb-8">
-                Every destination has a story told through its people, art, rituals, and food. From ancient temples to vibrant street markets, let us guide you to the heart of every culture.
+                {translateDynamic('Every destination has a story told through its people, art, rituals, and food. From ancient temples to vibrant street markets, let us guide you to the heart of every culture.')}
               </p>
               <div className="space-y-4">
                 {[
@@ -176,8 +176,8 @@ export default function HomePage() {
                       {item.icon}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{item.title}</h3>
-                      <p className="text-sm text-gray-500 mt-0.5">{item.desc}</p>
+                      <h3 className="font-semibold text-gray-900">{translateDynamic(item.title)}</h3>
+                      <p className="text-sm text-gray-500 mt-0.5">{translateDynamic(item.desc)}</p>
                     </div>
                   </div>
                 ))}
@@ -193,8 +193,8 @@ export default function HomePage() {
                   <img src={item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4 text-white">
-                    <div className="font-semibold">{item.name}</div>
-                    <div className="text-xs text-white/80">{item.dest}</div>
+                    <div className="font-semibold">{translateDynamic(item.name)}</div>
+                    <div className="text-xs text-white/80">{translateDynamic(item.dest)}</div>
                   </div>
                 </div>
               ))}
@@ -263,7 +263,7 @@ export default function HomePage() {
                   </div>
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {hotel.amenities.slice(0, 4).map(a => (
-                      <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">{a}</span>
+                      <span key={a} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-lg">{translateDynamic(a)}</span>
                     ))}
                   </div>
                   <button
@@ -284,7 +284,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-black text-gray-900">{t('section.how_it_works')}</h2>
-            <p className="text-gray-500 mt-2">Simple steps to your perfect journey</p>
+            <p className="text-gray-500 mt-2">{translateDynamic('Simple steps to your perfect journey')}</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8 relative">
             <div className="hidden md:block absolute top-10 left-1/4 right-1/4 h-px bg-gradient-to-r from-blue-200 to-cyan-200" style={{ left: '12.5%', right: '12.5%' }} />
@@ -301,8 +301,8 @@ export default function HomePage() {
                   {item.icon}
                 </div>
                 <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-orange-400 to-red-500 rounded-full text-white text-sm font-bold flex items-center justify-center shadow-md">{i + 1}</div>
-                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-500">{item.desc}</p>
+                <h3 className="font-bold text-gray-900 mb-2">{translateDynamic(item.title)}</h3>
+                <p className="text-sm text-gray-500">{translateDynamic(item.desc)}</p>
               </motion.div>
             ))}
           </div>
@@ -317,9 +317,9 @@ export default function HomePage() {
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-4xl font-black text-white mb-4">Start Planning Your Dream Trip</h2>
+            <h2 className="text-4xl font-black text-white mb-4">{translateDynamic('Start Planning Your Dream Trip')}</h2>
             <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-              Create a personalized travel itinerary in minutes with our AI-powered planner.
+              {translateDynamic('Create a personalized travel itinerary in minutes with our AI-powered planner.')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/planner" className="inline-flex items-center gap-2 bg-white text-blue-700 px-8 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg">

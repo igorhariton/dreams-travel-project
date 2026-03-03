@@ -4,7 +4,7 @@ import { useApp } from '../context/AppContext';
 import { motion } from 'motion/react';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, translateDynamic } = useApp();
 
   return (
     <motion.button
@@ -15,7 +15,7 @@ export function ThemeToggle() {
       }}
       whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.92 }}
-      title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+      title={theme === 'light' ? translateDynamic('Switch to dark mode') : translateDynamic('Switch to light mode')}
     >
       <motion.div
         initial={false}
