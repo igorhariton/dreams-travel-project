@@ -33,7 +33,13 @@ export const hotelsContentI18n: Record<'ro' | 'ru', { descriptions: Record<strin
       "h93": "Stațiune pe malul mării, oferind camere confortabile și atmosferă familială.",
       "h94": "Hotel istoric de lux în centrul Münchenului, cu spa pe acoperiș și restaurante gourmet.",
       "h95": "Hotel boutique de lux exclusivist, cu interioare elegante și terasă pe acoperiș.",
-      "h96": "Hotel tradițional confortabil, situat lângă Marienplatz."
+      "h96": "Hotel tradițional confortabil, situat lângă Marienplatz.",
+      "h97": "Hotel unic de tip boutique de lux, unde oaspeții pot interacționa cu girafele rezidente într-un conac uimitor în stil colonial.",
+      "h98": "Hotel elegant de tip boutique de 5 stele, care oferă suite spațioase, cu vedere la Dealurile Ngong.",
+      "h99": "Hotel istoric din inima orașului Nairobi, îmbinând farmecul colonial cu confortul modern.",
+      "h100": "Hotel legendar de 5 stele, cu vedere la portul Victoria, cunoscut pentru eleganța atemporală și serviciile excepționale.",
+      "h101": "Hotel ultra lux situat în Turnul ICC, oferind vederi panoramice la orizontul și restaurante cu stele Michelin.",
+      "h102": "Hotel modern și elegant în Tsim Sha Tsui, cu vedere la port și design contemporan."
     },
     "amenities": {
       "Pool": "Piscină",
@@ -64,7 +70,11 @@ export const hotelsContentI18n: Record<'ro' | 'ru', { descriptions: Record<strin
       "Rooftop Pool": "Piscina de pe acoperiș",
       "Ocean Views": "Vedere la ocean",
       "Rooftop Terrace": "Terasă pe acoperiș",
-      "Indoor Pool": "Piscina interioara"
+      "Indoor Pool": "Piscina interioara",
+      "Garden Views": "Vedere la grădină",
+      "Safari Tours": "Tururi de safari",
+      "Mountain Views": "Vederi la munte",
+      "Harbour Views": "Vederi la port"
     }
   },
   "ru": {
@@ -101,7 +111,13 @@ export const hotelsContentI18n: Record<'ro' | 'ru', { descriptions: Record<strin
       "h93": "Пляжный курорт с комфортабельными номерами и семейной атмосферой.",
       "h94": "Исторический роскошный отель в центре Мюнхена со спа-центром на крыше и ресторанами изысканной кухни.",
       "h95": "Эксклюзивный бутик-отель класса люкс с элегантным интерьером и террасой на крыше.",
-      "h96": "Комфортабельный традиционный отель, расположенный недалеко от Мариенплац."
+      "h96": "Комфортабельный традиционный отель, расположенный недалеко от Мариенплац.",
+      "h97": "Уникальный роскошный бутик-отель, где гости могут пообщаться с жирафами в потрясающем особняке в колониальном стиле.",
+      "h98": "Элегантный 5-звездочный бутик-отель предлагает просторные люксы с видом на холмы Нгонг.",
+      "h99": "Исторический отель в самом сердце Найроби, сочетающий колониальный шарм с современным комфортом.",
+      "h100": "Легендарный 5-звездочный отель с видом на гавань Виктория, известный своей вечной элегантностью и исключительным обслуживанием.",
+      "h101": "Ультра-роскошный отель, расположенный в башне ICC с панорамным видом на горизонт и ресторанами, отмеченными звездами Мишлен.",
+      "h102": "Современный стильный отель в Цим Ша Цуй с видом на гавань и современным дизайном."
     },
     "amenities": {
       "Pool": "Бассейн",
@@ -132,7 +148,11 @@ export const hotelsContentI18n: Record<'ro' | 'ru', { descriptions: Record<strin
       "Rooftop Pool": "Бассейн на крыше",
       "Ocean Views": "Вид на океан",
       "Rooftop Terrace": "Терраса на крыше",
-      "Indoor Pool": "Крытый бассейн"
+      "Indoor Pool": "Крытый бассейн",
+      "Garden Views": "Вид на сад",
+      "Safari Tours": "Сафари-туры",
+      "Mountain Views": "Вид на горы",
+      "Harbour Views": "Вид на гавань"
     }
   }
 };
