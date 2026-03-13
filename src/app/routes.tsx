@@ -13,6 +13,42 @@ const ChatPage = lazy(() => import('./pages/ChatPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage_TravelDreams_v2'));
 
+// Preload all pages immediately after app loads (in background)
+function prefetchAllPages() {
+  const pages = [
+    () => import('./pages/HomePage'),
+    () => import('./pages/DestinationsPage'),
+    () => import('./pages/HotelsPage'),
+    () => import('./pages/RentalsPage'),
+    () => import('./pages/PlannerPage'),
+    () => import('./pages/FavoritesPage'),
+    () => import('./pages/ChatPage'),
+    () => import('./pages/LoginPage_TravelDreams_v2'),
+  ];
+
+  // Stagger prefetch: wait 2s after load, then load one page every 300ms
+  if ('requestIdleCallback' in window) {
+    let i = 0;
+    const loadNext = () => {
+      if (i >= pages.length) return;
+      pages[i++]();
+      requestIdleCallback(loadNext);
+    };
+    setTimeout(() => requestIdleCallback(loadNext), 2000);
+  } else {
+    pages.forEach((load, i) => setTimeout(load, 2000 + i * 300));
+  }
+}
+
+// Start prefetching after the browser is idle
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'complete') {
+    prefetchAllPages();
+  } else {
+    window.addEventListener('load', prefetchAllPages, { once: true });
+  }
+}
+
 function PageLoader() {
   const { translateDynamic } = useApp();
 
