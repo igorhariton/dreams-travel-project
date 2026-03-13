@@ -147,7 +147,7 @@ export default function DestinationsPage() {
                   onClick={() => setSelectedDest(dest)}
                 >
                   <div className="relative h-60 overflow-hidden">
-                    <ImageCarousel images={dest.images} label={dest.name} className="h-60" />
+                    <ImageCarousel images={dest.images} className="h-60" />
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
                       <button onClick={e => handleFavorite(e, dest)}
