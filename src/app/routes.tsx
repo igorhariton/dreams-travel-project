@@ -11,6 +11,7 @@ const PlannerPage = lazy(() => import('./pages/PlannerPage'));
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
+const HostDashboardPage = lazy(() => import('./pages/HostDashboardPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage_TravelDreams_v2'));
 
 // Preload all pages immediately after app loads (in background)
@@ -108,6 +109,10 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         element: <SuspenseWrapper><AdminPage /></SuspenseWrapper>,
+      },
+      {
+        path: 'host-dashboard',
+        element: <SuspenseWrapper><HostDashboardPage /></SuspenseWrapper>,
       },
     ],
   },
