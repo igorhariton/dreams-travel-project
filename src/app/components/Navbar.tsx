@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
 import { useApp, Language, UserRole } from '../context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
@@ -14,6 +14,7 @@ export function Navbar() {
   const [activeTabRect, setActiveTabRect] = useState<{ x: number; width: number } | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -60,6 +61,7 @@ export function Navbar() {
     { to: '/favorites', label: t('nav.favorites'), badge: favorites.length },
     { to: '/chat', label: t('nav.chat'), icon: <MessageCircle size={16} /> },
     { to: '/login', label: t('nav.signin'), icon: <User size={16} /> },
+    ...(role === 'host' ? [{ to: '/host-dashboard', label: t('nav.role.host'), icon: <Shield size={16} /> }] : []),
     ...(role === 'admin' ? [{ to: '/admin', label: t('nav.admin'), icon: <Shield size={16} /> }] : []),
   ];
 
@@ -199,7 +201,13 @@ export function Navbar() {
                     {roles.map(r => (
                       <button
                         key={r.value}
-                        onClick={() => { setRole(r.value); setRoleOpen(false); }}
+                        onClick={() => {
+                          setRole(r.value);
+                          setRoleOpen(false);
+                          if (r.value === 'host') navigate('/host-dashboard');
+                          else if (r.value === 'admin') navigate('/admin');
+                          else navigate('/');
+                        }}
                         className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${theme === 'dark' ? `hover:bg-slate-700 ${role === r.value ? 'bg-slate-700' : ''}` : `hover:bg-gray-50 ${role === r.value ? 'bg-gray-50' : ''}`}`}
                       >
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${r.color}`}>{r.label}</span>
@@ -304,7 +312,12 @@ export function Navbar() {
                 {roles.map(r => (
                   <button
                     key={r.value}
-                    onClick={() => setRole(r.value)}
+                    onClick={() => {
+                      setRole(r.value);
+                      if (r.value === 'host') navigate('/host-dashboard');
+                      else if (r.value === 'admin') navigate('/admin');
+                      else navigate('/');
+                    }}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium ${role === r.value ? 'ring-2 ring-cyan-500' : ''} ${r.color}`}
                   >
                     {r.label}
