@@ -66,7 +66,10 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r66": "Tabără de safari tradițională.",
       "r67": "Penthouse de lux cu vedere la Eiffel.",
       "r68": "Apartament in centrul Parisului.",
-      "r69": "Sejur clasic francez."
+      "r69": "Sejur clasic francez.",
+      "r70": "Penthouse cu vedere la orizont.",
+      "r71": "Apartament din oraș.",
+      "r72": "Sejur clasic la New York."
     },
     "amenities": {
       "Plunge Pool": "Piscină mică",
@@ -100,7 +103,8 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "Fireplace": "Şemineu",
       "Campfire": "Foc de tabără",
       "Beach": "Plajă",
-      "Safari": "Safari"
+      "Safari": "Safari",
+      "Gym": "Sală de gimnastică"
     }
   },
   "ru": {
@@ -170,7 +174,10 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r66": "Традиционный сафари-лагерь.",
       "r67": "Роскошный пентхаус с видом на Эйфелеву башню.",
       "r68": "Квартира в центре Парижа.",
-      "r69": "Классический французский отдых."
+      "r69": "Классический французский отдых.",
+      "r70": "Пентхаус с видом на горизонт.",
+      "r71": "Городская квартира.",
+      "r72": "Классический отдых в Нью-Йорке."
     },
     "amenities": {
       "Plunge Pool": "Небольшой бассейн",
@@ -204,7 +211,8 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "Fireplace": "Камин",
       "Campfire": "Костер",
       "Beach": "Пляж",
-      "Safari": "Сафари"
+      "Safari": "Сафари",
+      "Gym": "Спортзал"
     }
   }
 };
