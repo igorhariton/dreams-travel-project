@@ -6,7 +6,10 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r3": "O căsuță în copac ridicată extraordinară, înconjurată de jungla tropicală, cu băi în aer liber, piscină infinită și vedere la orezul.",
       "r4": "Chalet de lux cu acces direct la pârtiile de schi, cu vedere panoramică la munte, cadă cu hidromasaj onsen privată, focar și acces direct la pârtie.",
       "r5": "Apartament elegant în stil Haussmann, cu vedere la Turnul Eiffel de la balcon, bucătărie completă și la câțiva pași de atracțiile de top.",
-      "r6": "Vila privată pe plajă, pe propria întindere curată de nisip alb, cu acces direct la ocean, serviciu de bucătar și echipament personal de snorkeling."
+      "r6": "Vila privată pe plajă, pe propria întindere curată de nisip alb, cu acces direct la ocean, serviciu de bucătar și echipament personal de snorkeling.",
+      "r7": "Vila de lux in Kyoto.",
+      "r8": "Apartament modern în Kyoto.",
+      "r9": "Sejur tradițional japonez."
     },
     "amenities": {
       "Plunge Pool": "Piscină mică",
@@ -44,7 +47,10 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r3": "Необыкновенный дом на возвышении, окруженный тропическими джунглями, с ванными комнатами под открытым небом, пейзажным бассейном и видом на рисовые поля.",
       "r4": "Роскошное шале с прямым доступом к лыжным склонам, панорамным видом на горы, собственной гидромассажной ванной онсэн, местом для костра и прямым доступом к склону.",
       "r5": "Элегантные апартаменты в османском стиле с балконом с видом на Эйфелеву башню, полностью оборудованной кухней и в нескольких минутах ходьбы от главных достопримечательностей.",
-      "r6": "Частная пляжная вилла на собственном нетронутом участке белого песка с прямым выходом к океану, услугами шеф-повара и личным снаряжением для подводного плавания."
+      "r6": "Частная пляжная вилла на собственном нетронутом участке белого песка с прямым выходом к океану, услугами шеф-повара и личным снаряжением для подводного плавания.",
+      "r7": "Роскошная вилла в Киото.",
+      "r8": "Современная квартира в Киото.",
+      "r9": "Традиционный японский отдых."
     },
     "amenities": {
       "Plunge Pool": "Небольшой бассейн",
