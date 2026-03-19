@@ -90,7 +90,16 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r90": "Sejur tradițional thailandez.",
       "r91": "Apartament de lux în Munchen.",
       "r92": "Apartament din oraș.",
-      "r93": "Sejur tradițional bavarez."
+      "r93": "Sejur tradițional bavarez.",
+      "r94": "Suită skyline de lux.",
+      "r95": "Apartament compact.",
+      "r96": "Sejur clasic în oraș.",
+      "r97": "Cabana de lux in natura.",
+      "r98": "Apartament din oraș.",
+      "r99": "Retragere în natură.",
+      "r103": "Vila langa Lion Rock.",
+      "r104": "Sejur simplu.",
+      "r105": "Retragere în junglă."
     },
     "amenities": {
       "Plunge Pool": "Piscină mică",
@@ -220,7 +229,16 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r90": "Традиционный тайский отдых.",
       "r91": "Роскошная квартира в Мюнхене.",
       "r92": "Городская квартира.",
-      "r93": "Традиционный баварский отдых."
+      "r93": "Традиционный баварский отдых.",
+      "r94": "Роскошный люкс с панорамным видом.",
+      "r95": "Компактная квартира.",
+      "r96": "Классический отдых в городе.",
+      "r97": "Роскошный домик на природе.",
+      "r98": "Городская квартира.",
+      "r99": "Природный отдых.",
+      "r103": "Вилла возле Львиной скалы.",
+      "r104": "Простое пребывание.",
+      "r105": "Отступление в джунглях."
     },
     "amenities": {
       "Plunge Pool": "Небольшой бассейн",
