@@ -69,7 +69,28 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r69": "Sejur clasic francez.",
       "r70": "Penthouse cu vedere la orizont.",
       "r71": "Apartament din oraș.",
-      "r72": "Sejur clasic la New York."
+      "r72": "Sejur clasic la New York.",
+      "r73": "Suită de lux cu vedere la Bosfor.",
+      "r74": "Apartament din oraș.",
+      "r75": "Casă tradițională otomană.",
+      "r76": "Vila de lux pe marginea canalului.",
+      "r77": "Apartament modern.",
+      "r78": "Sejur olandez clasic.",
+      "r79": "Apartament de lux în orașul vechi.",
+      "r80": "Apartament din oraș.",
+      "r81": "Sejur în stil istoric.",
+      "r82": "Apartament cu vedere la oraș.",
+      "r83": "Apartament din oraș.",
+      "r84": "Sejur tradițional portughez.",
+      "r85": "Apartament de lux în Seul.",
+      "r86": "Apartament modern.",
+      "r87": "Hanok tradițional coreean.",
+      "r88": "Vila de lux langa plaja.",
+      "r89": "Apartament modern.",
+      "r90": "Sejur tradițional thailandez.",
+      "r91": "Apartament de lux în Munchen.",
+      "r92": "Apartament din oraș.",
+      "r93": "Sejur tradițional bavarez."
     },
     "amenities": {
       "Plunge Pool": "Piscină mică",
@@ -104,7 +125,8 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "Campfire": "Foc de tabără",
       "Beach": "Plajă",
       "Safari": "Safari",
-      "Gym": "Sală de gimnastică"
+      "Gym": "Sală de gimnastică",
+      "Bike": "bicicleta"
     }
   },
   "ru": {
@@ -177,7 +199,28 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "r69": "Классический французский отдых.",
       "r70": "Пентхаус с видом на горизонт.",
       "r71": "Городская квартира.",
-      "r72": "Классический отдых в Нью-Йорке."
+      "r72": "Классический отдых в Нью-Йорке.",
+      "r73": "Роскошный люкс с видом на Босфор.",
+      "r74": "Городская квартира.",
+      "r75": "Традиционный османский дом.",
+      "r76": "Роскошная вилла на берегу канала.",
+      "r77": "Современная квартира.",
+      "r78": "Классический голландский отдых.",
+      "r79": "Роскошная квартира в старом городе.",
+      "r80": "Городская квартира.",
+      "r81": "Исторический стиль проживания.",
+      "r82": "Квартира с видом на город.",
+      "r83": "Городская квартира.",
+      "r84": "Традиционный португальский отдых.",
+      "r85": "Роскошная квартира в Сеуле.",
+      "r86": "Современная квартира.",
+      "r87": "Традиционный корейский ханок.",
+      "r88": "Роскошная вилла рядом с пляжем.",
+      "r89": "Современная квартира.",
+      "r90": "Традиционный тайский отдых.",
+      "r91": "Роскошная квартира в Мюнхене.",
+      "r92": "Городская квартира.",
+      "r93": "Традиционный баварский отдых."
     },
     "amenities": {
       "Plunge Pool": "Небольшой бассейн",
@@ -212,7 +255,8 @@ export const rentalsContentI18n: Record<'ro' | 'ru', { descriptions: Record<stri
       "Campfire": "Костер",
       "Beach": "Пляж",
       "Safari": "Сафари",
-      "Gym": "Спортзал"
+      "Gym": "Спортзал",
+      "Bike": "Велосипед"
     }
   }
 };
