@@ -34,12 +34,8 @@ html, body {
   width: 100%; height: 100%;
   overflow: hidden;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  cursor: none;
+  cursor: auto;
 }
-
-/* ── Cursor ── */
-#cur { position:fixed; pointer-events:none; z-index:9999; width:10px; height:10px; background:var(--coral); border-radius:50%; transform:translate(-50%,-50%); transition:width .2s,height .2s; mix-blend-mode:multiply; }
-#cur-ring { position:fixed; pointer-events:none; z-index:9998; width:34px; height:34px; border:2px solid rgba(212,168,75,0.6); border-radius:50%; transform:translate(-50%,-50%); transition:width .3s,height .3s; }
 
 /* ── BG Canvas ── */
 #bgC { position:fixed; inset:0; width:100vw; height:100vh; }
@@ -111,6 +107,7 @@ html, body {
   padding: 8px;
   box-shadow: 0 8px 40px rgba(42,127,171,0.18), 0 2px 8px rgba(255,255,255,0.5) inset;
   max-width: 500px;
+  cursor: pointer;
   opacity: 0; animation: slideUp .8s .8s forwards;
 }
 .search-row { display: flex; align-items: stretch; gap: 0; }
@@ -135,6 +132,90 @@ html, body {
   flex-shrink: 0;
 }
 .s-btn:hover { opacity: .9; transform: scale(.98); }
+
+.search-pop {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: calc(100% + 10px);
+  z-index: 120;
+  background: rgba(255,255,255,0.94);
+  border: 1px solid rgba(42,127,171,0.2);
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(26,82,118,0.2);
+  backdrop-filter: blur(14px);
+  padding: 12px;
+}
+.search-pop[hidden] { display: none; }
+.sp-head { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--deep); font-weight: 800; margin-bottom: 10px; }
+.sp-panel { display: none; }
+.sp-panel.active { display: block; }
+.sp-grid { display: grid; gap: 8px; }
+.sp-grid.two { grid-template-columns: 1fr 1fr; }
+.sp-label { font-size: 11px; color: var(--ink2); font-weight: 700; }
+.sp-input {
+  width: 100%;
+  border: 1px solid rgba(42,127,171,0.2);
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  background: rgba(255,255,255,0.88);
+}
+.sp-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.sp-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.sp-page-btn {
+  border: 1px solid rgba(42,127,171,0.22);
+  background: rgba(255,255,255,0.88);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.sp-page-btn:disabled { opacity: 0.45; cursor: default; }
+.sp-page-label { font-size: 11px; color: var(--ink2); font-weight: 700; }
+.sp-chip {
+  border: 1px solid rgba(42,127,171,0.2);
+  background: rgba(126,200,227,0.1);
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  color: var(--ink2);
+  cursor: pointer;
+  text-align: center;
+}
+.sp-chip:hover { background: rgba(126,200,227,0.22); color: var(--ink); }
+.sp-row { display: flex; align-items: center; gap: 10px; }
+.sp-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(42,127,171,0.25);
+  background: rgba(255,255,255,0.9);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sp-guest { min-width: 90px; text-align: center; font-weight: 700; color: var(--ink); }
+.sp-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.sp-btn {
+  border: 1px solid rgba(42,127,171,0.22);
+  background: rgba(255,255,255,0.8);
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.sp-btn.ok {
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, var(--deep), var(--ocean));
+}
 
 /* Stats */
 .stats { display:flex; gap:0; margin-top:24px; opacity:0; animation:slideUp .8s 1s forwards; }
@@ -339,8 +420,6 @@ html, body {
 
 <div class="grain"></div>
 <div class="pbar"></div>
-<div id="cur"></div>
-<div id="cur-ring"></div>
 <canvas id="bgC"></canvas>
 <div id="mesh"></div>
 
@@ -363,24 +442,66 @@ html, body {
 
     <p class="sub">Handpicked destinations, seamless booking, and journeys that transform. From hidden coastlines to ancient cities — we craft every detail.</p>
 
-    <div class="search-wrap">
+    <div class="search-wrap" id="searchWrap">
       <div class="search-row">
-        <div class="sf">
+        <div class="sf" id="sf-destination">
           <span class="sf-lbl">📍 Where to?</span>
           <span class="sf-val typing" id="typeEl">Santorini, Greece</span>
         </div>
-        <div class="sf" style="max-width:128px;">
+        <div class="sf" id="sf-dates" style="max-width:128px;">
           <span class="sf-lbl">📅 Dates</span>
-          <span class="sf-val">Oct 14 – 21</span>
+          <span class="sf-val" id="dateVal">Oct 14 - 21</span>
         </div>
-        <div class="sf" style="max-width:100px;">
+        <div class="sf" id="sf-guests" style="max-width:100px;">
           <span class="sf-lbl">👥 Guests</span>
-          <span class="sf-val">2 Adults</span>
+          <span class="sf-val" id="guestVal">2 Adults</span>
         </div>
         <button class="s-btn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           Search
         </button>
+      </div>
+      <div class="search-pop" id="searchPop" hidden>
+        <div class="sp-head" id="spTitle">Choose</div>
+
+        <div class="sp-panel" id="panel-destination">
+          <div class="sp-grid">
+            <label class="sp-label" for="destInput">Destination</label>
+            <input class="sp-input" id="destInput" type="text" placeholder="City or country">
+          </div>
+          <div class="sp-list" id="destList"></div>
+          <div class="sp-pager">
+            <button class="sp-page-btn" id="destPrev" type="button">Prev</button>
+            <div class="sp-page-label" id="destPageLabel">Page 1 / 1</div>
+            <button class="sp-page-btn" id="destNext" type="button">Next</button>
+          </div>
+        </div>
+
+        <div class="sp-panel" id="panel-dates">
+          <div class="sp-grid two">
+            <div class="sp-grid">
+              <label class="sp-label" for="checkInInput">Check-in</label>
+              <input class="sp-input" id="checkInInput" type="date">
+            </div>
+            <div class="sp-grid">
+              <label class="sp-label" for="checkOutInput">Check-out</label>
+              <input class="sp-input" id="checkOutInput" type="date">
+            </div>
+          </div>
+        </div>
+
+        <div class="sp-panel" id="panel-guests">
+          <div class="sp-row">
+            <button class="sp-step" id="guestMinus" type="button">-</button>
+            <div class="sp-guest" id="guestDraft">2 Adults</div>
+            <button class="sp-step" id="guestPlus" type="button">+</button>
+          </div>
+        </div>
+
+        <div class="sp-actions">
+          <button class="sp-btn" id="spCancel" type="button">Cancel</button>
+          <button class="sp-btn ok" id="spApply" type="button">Apply</button>
+        </div>
       </div>
     </div>
 
@@ -506,12 +627,6 @@ html, body {
 </div>
 
 <script>
-// ── Cursor
-const cur = document.getElementById('cur'), curR = document.getElementById('cur-ring');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
-(function ac(){cur.style.left=mx+'px';cur.style.top=my+'px';rx+=(mx-rx)*.13;ry+=(my-ry)*.13;curR.style.left=rx+'px';curR.style.top=ry+'px';requestAnimationFrame(ac);})();
-
 // ── Counters
 function count(id,val,dur,dec=0){
   const el=document.getElementById(id);
@@ -534,11 +649,235 @@ window.addEventListener('load',()=>{
 setInterval(()=>{ document.getElementById('liveN').textContent=(1300+Math.floor(Math.random()*300)).toLocaleString(); },3200);
 
 // ── Typing
-const dests=['Santorini, Greece','Bali, Indonesia','Kyoto, Japan','Maldives Islands','Amalfi Coast, Italy','Machu Picchu, Peru','Safari, Kenya','Iceland Aurora'];
+let dests=['Santorini, Greece','Bali, Indonesia','Kyoto, Japan','Maldives Islands','Amalfi Coast, Italy','Machu Picchu, Peru','Safari, Kenya','Iceland Aurora'];
+const DEST_PAGE_SIZE = 8;
+let destinationPage = 1;
+let destinationQuery = '';
+let destinationTotalPages = 1;
+const searchState = {
+  destination: 'Santorini, Greece',
+  checkIn: '2026-10-14',
+  checkOut: '2026-10-21',
+  guests: 2,
+};
+const draftState = { ...searchState };
 let di=0,ci=0,del=false;
+let manualDestination=false;
 const tel=()=>document.getElementById("typeEl");
-function type(){const el=tel();if(!el)return;const d=dests[di];if(!del){ci++;el.textContent=d.slice(0,ci);if(ci===d.length){del=true;setTimeout(type,2000);return;}setTimeout(type,55+Math.random()*45);}else{ci--;el.textContent=d.slice(0,ci);if(ci===0){del=false;di=(di+1)%dests.length;setTimeout(type,400);return;}setTimeout(type,30);}}
+function type(){const el=tel();if(!el || manualDestination || dests.length===0)return;const d=dests[di % dests.length];if(!del){ci++;el.textContent=d.slice(0,ci);if(ci===d.length){del=true;setTimeout(type,2000);return;}setTimeout(type,55+Math.random()*45);}else{ci--;el.textContent=d.slice(0,ci);if(ci===0){del=false;di=(di+1)%dests.length;setTimeout(type,400);return;}setTimeout(type,30);}}
 setTimeout(type,2000);
+
+// ── Hero search bridge (iframe -> app)
+function formatShortDate(isoDate){
+  if(!isoDate) return '';
+  const d = new Date(`${isoDate}T00:00:00`);
+  if(Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function syncSearchFields(){
+  const destinationEl = document.getElementById('typeEl');
+  const dateEl = document.getElementById('dateVal');
+  const guestEl = document.getElementById('guestVal');
+  if (destinationEl) destinationEl.textContent = searchState.destination;
+  if (dateEl) dateEl.textContent = `${formatShortDate(searchState.checkIn)} - ${formatShortDate(searchState.checkOut)}`;
+  if (guestEl) guestEl.textContent = `${searchState.guests} Adults`;
+}
+
+const pop = document.getElementById('searchPop');
+const popTitle = document.getElementById('spTitle');
+const panels = {
+  destination: document.getElementById('panel-destination'),
+  dates: document.getElementById('panel-dates'),
+  guests: document.getElementById('panel-guests'),
+};
+let activePanel = '';
+
+function syncDraftFields(){
+  const destInput = document.getElementById('destInput');
+  const checkInInput = document.getElementById('checkInInput');
+  const checkOutInput = document.getElementById('checkOutInput');
+  const guestDraft = document.getElementById('guestDraft');
+  if (destInput) destInput.value = draftState.destination;
+  if (checkInInput) checkInInput.value = draftState.checkIn;
+  if (checkOutInput) checkOutInput.value = draftState.checkOut;
+  if (guestDraft) guestDraft.textContent = `${draftState.guests} Adults`;
+}
+
+function openPanel(type){
+  activePanel = type;
+  draftState.destination = searchState.destination;
+  draftState.checkIn = searchState.checkIn;
+  draftState.checkOut = searchState.checkOut;
+  draftState.guests = searchState.guests;
+  syncDraftFields();
+
+  Object.entries(panels).forEach(([key, panel]) => {
+    if (!panel) return;
+    panel.classList.toggle('active', key === type);
+  });
+  if (popTitle) popTitle.textContent = type === 'destination' ? 'Where to?' : type === 'dates' ? 'Dates' : 'Guests';
+  if (pop) pop.hidden = false;
+  if (type === 'destination') {
+    destinationQuery = draftState.destination;
+    destinationPage = 1;
+    initDestinationList();
+  }
+}
+
+function closePanel(){
+  if (pop) pop.hidden = true;
+  activePanel = '';
+}
+
+function applyPanel(){
+  searchState.destination = draftState.destination.trim() || searchState.destination;
+  searchState.checkIn = draftState.checkIn;
+  searchState.checkOut = draftState.checkOut < draftState.checkIn ? draftState.checkIn : draftState.checkOut;
+  searchState.guests = Math.max(1, Math.min(12, Number(draftState.guests) || 2));
+  manualDestination = true;
+  document.getElementById('typeEl')?.classList.remove('typing');
+  syncSearchFields();
+  closePanel();
+}
+
+function initDestinationList(){
+  const list = document.getElementById('destList');
+  const prevBtn = document.getElementById('destPrev');
+  const nextBtn = document.getElementById('destNext');
+  const pageLabel = document.getElementById('destPageLabel');
+  if (!list) return;
+
+  const query = destinationQuery.trim().toLowerCase();
+  const filtered = !query
+    ? dests
+    : dests.filter((name) => name.toLowerCase().includes(query));
+
+  destinationTotalPages = Math.max(1, Math.ceil(filtered.length / DEST_PAGE_SIZE));
+  destinationPage = Math.min(destinationPage, destinationTotalPages);
+  const start = (destinationPage - 1) * DEST_PAGE_SIZE;
+  const pageItems = filtered.slice(start, start + DEST_PAGE_SIZE);
+
+  list.innerHTML = '';
+  pageItems.forEach((name) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'sp-chip';
+    chip.textContent = name;
+    chip.addEventListener('click', () => {
+      draftState.destination = name;
+      syncDraftFields();
+    });
+    list.appendChild(chip);
+  });
+
+  if (pageLabel) pageLabel.textContent = `Page ${destinationPage} / ${destinationTotalPages}`;
+  if (prevBtn instanceof HTMLButtonElement) prevBtn.disabled = destinationPage <= 1;
+  if (nextBtn instanceof HTMLButtonElement) nextBtn.disabled = destinationPage >= destinationTotalPages;
+}
+
+function postHeroSearch(){
+  window.parent.postMessage({
+    source: 'travel-hero',
+    type: 'search',
+    destination: searchState.destination,
+    checkIn: searchState.checkIn,
+    checkOut: searchState.checkOut,
+    guests: searchState.guests,
+  }, window.location.origin);
+}
+
+document.getElementById('sf-destination')?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  openPanel('destination');
+});
+document.getElementById('sf-dates')?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  openPanel('dates');
+});
+document.getElementById('sf-guests')?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  openPanel('guests');
+});
+
+document.querySelector('.s-btn')?.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  postHeroSearch();
+});
+
+document.getElementById('spCancel')?.addEventListener('click', closePanel);
+document.getElementById('spApply')?.addEventListener('click', applyPanel);
+
+document.getElementById('destInput')?.addEventListener('input', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  draftState.destination = target.value;
+  destinationQuery = target.value;
+  destinationPage = 1;
+  initDestinationList();
+});
+document.getElementById('destPrev')?.addEventListener('click', () => {
+  if (destinationPage <= 1) return;
+  destinationPage -= 1;
+  initDestinationList();
+});
+document.getElementById('destNext')?.addEventListener('click', () => {
+  if (destinationPage >= destinationTotalPages) return;
+  destinationPage += 1;
+  initDestinationList();
+});
+document.getElementById('checkInInput')?.addEventListener('change', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  draftState.checkIn = target.value;
+  if (draftState.checkOut < draftState.checkIn) draftState.checkOut = draftState.checkIn;
+  syncDraftFields();
+});
+document.getElementById('checkOutInput')?.addEventListener('change', (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  draftState.checkOut = target.value;
+});
+document.getElementById('guestMinus')?.addEventListener('click', () => {
+  draftState.guests = Math.max(1, draftState.guests - 1);
+  syncDraftFields();
+});
+document.getElementById('guestPlus')?.addEventListener('click', () => {
+  draftState.guests = Math.min(12, draftState.guests + 1);
+  syncDraftFields();
+});
+
+document.addEventListener('click', (event) => {
+  if (!activePanel) return;
+  const target = event.target;
+  if (!(target instanceof Node)) return;
+  const wrap = document.getElementById('searchWrap');
+  if (wrap && !wrap.contains(target)) closePanel();
+});
+
+window.addEventListener('message', (event) => {
+  if (event.origin !== window.location.origin) return;
+  const payload = event.data;
+  if (!payload || payload.source !== 'travel-app' || payload.type !== 'destinations' || !Array.isArray(payload.destinations)) return;
+
+  const unique = Array.from(new Set(payload.destinations.filter((item) => typeof item === 'string' && item.trim())));
+  if (unique.length === 0) return;
+  dests = unique;
+
+  if (!manualDestination) {
+    searchState.destination = dests[0];
+    draftState.destination = dests[0];
+    syncSearchFields();
+  }
+  initDestinationList();
+});
+
+window.parent.postMessage({ source: 'travel-hero', type: 'request-destinations' }, window.location.origin);
+
+initDestinationList();
+
+syncSearchFields();
 
 // ── Tags
 document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tag').forEach(x=>x.classList.remove('on'));t.classList.add('on');}));
