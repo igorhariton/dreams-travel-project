@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router';
 import { Plus, Trash2, MapPin, Calendar, Plane, Hotel, Utensils, Camera, Music, ChevronDown, ChevronUp, GripVertical, Download, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
@@ -74,7 +75,8 @@ const createActivity = (type: ActivityType = 'other', title = '', time = '', not
 });
 
 export default function PlannerPage() {
-  const { t, translateDynamic, formatPrice } = useApp();
+  const { t, translateDynamic, formatPrice, theme } = useApp();
+  const location = useLocation();
   const [tripName, setTripName] = useState('My Dream Trip');
   const [selectedDest, setSelectedDest] = useState('santorini');
   const [startDate, setStartDate] = useState('2026-04-15');
@@ -106,6 +108,35 @@ export default function PlannerPage() {
   ]);
   const [editingDay, setEditingDay] = useState<string | null>(null);
   const [newActivity, setNewActivity] = useState({ type: 'other' as ActivityType, title: '', time: '', notes: '', cost: '' });
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const destinationParam = (params.get('destination') || '').trim();
+    const checkInParam = (params.get('checkIn') || '').trim();
+
+    if (!destinationParam && !checkInParam) return;
+
+    const normalizedDestination = destinationParam.toLowerCase();
+    const matchedDestination = destinations.find((dest) =>
+      dest.id.toLowerCase() === normalizedDestination
+      || dest.name.toLowerCase() === normalizedDestination
+      || dest.country.toLowerCase() === normalizedDestination
+      || `${dest.name}, ${dest.country}`.toLowerCase() === normalizedDestination
+    );
+
+    if (matchedDestination) {
+      setSelectedDest(matchedDestination.id);
+      setTripName(`${translateDynamic('Trip to')} ${matchedDestination.name}`);
+      setDays((previousDays) => previousDays.map((day) => ({
+        ...day,
+        location: `${matchedDestination.name}, ${matchedDestination.country}`,
+      })));
+    }
+
+    if (checkInParam) {
+      setStartDate(checkInParam);
+    }
+  }, [location.search, translateDynamic]);
 
   const totalBudget = days.flatMap(d => d.activities).reduce((sum, a) => sum + a.cost, 0);
 
@@ -145,7 +176,7 @@ export default function PlannerPage() {
   const destOptions = destinations.find(d => d.id === selectedDest);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="planner-page min-h-screen bg-gray-50">
       {/* Header */}
       <div className="relative h-48 overflow-hidden">
         <img src="/images/_site/hero-planner.jpg" alt="Planner" className="w-full h-full object-cover" />
@@ -257,14 +288,18 @@ export default function PlannerPage() {
                 <motion.div key={day.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
                   className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                   {/* Day Header */}
-                  <div className="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-gray-100">
+                  <div className={`flex items-center justify-between px-5 py-4 border-b ${
+                    theme === 'dark'
+                      ? 'bg-slate-800/95 border-slate-700'
+                      : 'bg-gradient-to-r from-indigo-50 to-blue-50 border-gray-100'
+                  }`}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-indigo-600 rounded-xl text-white font-black flex items-center justify-center text-sm">
                         D{dayIndex + 1}
                       </div>
                       <div>
-                        <div className="font-bold text-gray-900">{translateDynamic('Day')} {dayIndex + 1}</div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className={`font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>{translateDynamic('Day')} {dayIndex + 1}</div>
+                        <div className={`text-xs flex items-center gap-1 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-500'}`}>
                           <Calendar size={10} /> {day.date}
                           <span className="mx-1">·</span>
                           <MapPin size={10} /> {day.location}

@@ -11,10 +11,23 @@ export default function HomePage() {
   const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
   const navigate = useNavigate();
   const [bookingItem, setBookingItem] = useState<any>(null);
+  const [heroDestination, setHeroDestination] = useState('');
+  const [heroCheckIn, setHeroCheckIn] = useState('');
+  const [heroCheckOut, setHeroCheckOut] = useState('');
+  const [heroGuests, setHeroGuests] = useState(2);
 
   const featuredDestinations = destinations.slice(0, 4);
   const featuredHotels = hotels.slice(0, 3);
   const heroSrc = theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html';
+  const heroFormClass = theme === 'dark'
+    ? 'bg-slate-900/38 border border-cyan-300/22 shadow-[0_10px_28px_rgba(6,182,212,0.15)]'
+    : 'bg-white/50 border border-white/65 shadow-[0_10px_22px_rgba(14,116,144,0.1)]';
+  const heroLabelClass = theme === 'dark' ? 'text-slate-200' : 'text-gray-600';
+  const heroFieldClass = theme === 'dark'
+    ? 'bg-slate-800/40 border-slate-300/65 text-slate-50'
+    : 'bg-white/36 border-white/70 text-gray-900';
+  const heroPlaceholderClass = theme === 'dark' ? 'placeholder-slate-400' : 'placeholder-gray-400';
+  const heroEyebrowClass = theme === 'dark' ? 'text-cyan-300/95' : 'text-cyan-700';
 
   const stats = [
     { value: '50+', label: 'Countries', icon: <Map size={20} /> },
@@ -36,10 +49,20 @@ export default function HomePage() {
     { img: '/images/_site/food-3.jpg', name: 'Balinese Feasts', dest: 'Ubud, Bali' },
   ];
 
+  const handleHeroSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const params = new URLSearchParams();
+    if (heroDestination.trim()) params.set('destination', heroDestination.trim());
+    if (heroCheckIn) params.set('checkIn', heroCheckIn);
+    if (heroCheckOut) params.set('checkOut', heroCheckOut);
+    params.set('guests', String(heroGuests));
+    navigate(`/planner?${params.toString()}`);
+  };
+
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-hidden">
+      <section className="relative min-h-screen overflow-visible">
         <iframe
           key={theme}
           title="Travel hero"
@@ -47,6 +70,118 @@ export default function HomePage() {
           className="absolute inset-0 w-full h-full border-0 pointer-events-none"
           aria-hidden="true"
         />
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.25), rgba(0,0,0,0.55))' }}
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 min-h-screen flex items-end">
+          <div className="max-w-7xl mx-auto w-full px-6 pb-10 sm:pb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45 }}
+              className="max-w-5xl mx-auto"
+            >
+              <form
+                onSubmit={handleHeroSearch}
+                className={`backdrop-blur-md rounded-2xl p-4 sm:p-5 grid grid-cols-1 md:grid-cols-4 gap-3 ${heroFormClass}`}
+                aria-label={translateDynamic('Quick trip planner search')}
+              >
+                <div className="md:col-span-4 -mb-1">
+                  <p className={`text-[11px] sm:text-xs font-bold uppercase tracking-[0.16em] ${heroEyebrowClass}`}>
+                    {translateDynamic('Find the journey that fits you')}
+                  </p>
+                </div>
+
+                <div className="md:col-span-1">
+                  <label htmlFor="hero-destination" className={`text-xs font-semibold block mb-1.5 ${heroLabelClass}`}>
+                    {t('hero.search')}
+                  </label>
+                  <div className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl ${heroFieldClass}`}>
+                    <MapPin size={15} className="text-gray-400" aria-hidden="true" />
+                    <input
+                      id="hero-destination"
+                      list="hero-destination-options"
+                      value={heroDestination}
+                      onChange={(e) => setHeroDestination(e.target.value)}
+                      placeholder={translateDynamic('City or country')}
+                      className={`w-full bg-transparent outline-none text-sm ${heroPlaceholderClass}`}
+                    />
+                  </div>
+                  <datalist id="hero-destination-options">
+                    {destinations.slice(0, 20).map((dest) => (
+                      <option key={dest.id} value={dest.name} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label htmlFor="hero-checkin" className={`text-xs font-semibold block mb-1.5 ${heroLabelClass}`}>
+                    {t('hero.checkin')}
+                  </label>
+                  <div className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl ${heroFieldClass}`}>
+                    <Calendar size={15} className="text-gray-400" aria-hidden="true" />
+                    <input
+                      id="hero-checkin"
+                      type="date"
+                      value={heroCheckIn}
+                      onChange={(e) => setHeroCheckIn(e.target.value)}
+                      className="w-full bg-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="hero-checkout" className={`text-xs font-semibold block mb-1.5 ${heroLabelClass}`}>
+                    {t('hero.checkout')}
+                  </label>
+                  <div className={`flex items-center gap-2 px-3 py-2.5 border rounded-xl ${heroFieldClass}`}>
+                    <Calendar size={15} className="text-gray-400" aria-hidden="true" />
+                    <input
+                      id="hero-checkout"
+                      type="date"
+                      value={heroCheckOut}
+                      min={heroCheckIn || undefined}
+                      onChange={(e) => setHeroCheckOut(e.target.value)}
+                      className="w-full bg-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="hero-guests" className={`text-xs font-semibold block mb-1.5 ${heroLabelClass}`}>
+                    {t('hero.guests')}
+                  </label>
+                  <div className="flex gap-2">
+                    <div className={`flex-1 flex items-center gap-2 px-3 py-2.5 border rounded-xl ${heroFieldClass}`}>
+                      <Users size={15} className="text-gray-400" aria-hidden="true" />
+                      <input
+                        id="hero-guests"
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={heroGuests}
+                        onChange={(e) => setHeroGuests(Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
+                        className="w-full bg-transparent outline-none text-sm"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      className="px-5 sm:px-6 bg-gradient-to-r from-blue-600 via-cyan-500 to-cyan-400 text-white rounded-xl text-base font-bold hover:opacity-95 hover:scale-[1.02] transition-all inline-flex items-center gap-2 shadow-lg shadow-cyan-700/30 animate-[heroSearchPulse_2.8s_ease-in-out_infinite]"
+                    >
+                      <Search size={14} aria-hidden="true" />
+                      <span className="hidden sm:inline">{t('hero.search_btn')}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              <style>{`@keyframes heroSearchPulse { 0%, 100% { box-shadow: 0 10px 28px rgba(8, 145, 178, 0.22); } 50% { box-shadow: 0 14px 36px rgba(6, 182, 212, 0.36); } }`}</style>
+            </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* Stats */}

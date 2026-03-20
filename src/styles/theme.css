@@ -371,13 +371,25 @@ html.dark .to-blue-50,
 html.dark .from-blue-50,
 html.dark .to-indigo-50,
 html.dark .bg-indigo-50,
-html.dark .bg-blue-50,
-html.dark .bg-gradient-to-r,
-html.dark .bg-gradient-to-b,
-html.dark .bg-gradient-to-l {
+html.dark .bg-blue-50 {
   background-color: var(--card) !important;
 }
 
-html.dark [class*="gradient-to"] {
-  background: linear-gradient(to right, var(--card), var(--card)) !important;
+/* Planner page: targeted contrast fixes for dark mode accents */
+html.dark .planner-page .text-indigo-600 {
+  color: #7dd3fc !important;
+}
+
+html.dark .planner-page .text-indigo-500 {
+  color: #93c5fd !important;
+}
+
+html.dark .planner-page .hover\:bg-indigo-50:hover {
+  background-color: rgba(56, 189, 248, 0.14) !important;
+}
+
+html.dark .planner-page .bg-indigo-50\/50,
+html.dark .planner-page .hover\:bg-indigo-50\/50:hover,
+html.dark .planner-page .hover\:bg-indigo-50\/30:hover {
+  background-color: rgba(56, 189, 248, 0.12) !important;
 }
