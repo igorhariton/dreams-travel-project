@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel, Home as HomeIcon, Globe2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BookingModal } from '../components/BookingModal';
 
