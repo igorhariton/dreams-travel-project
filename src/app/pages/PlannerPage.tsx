@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import { Plus, Trash2, MapPin, Calendar, Plane, Hotel, Utensils, Camera, Music, ChevronDown, ChevronUp, GripVertical, Download, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
