@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
