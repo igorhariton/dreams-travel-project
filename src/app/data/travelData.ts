@@ -1643,7 +1643,7 @@ export const destinations: Destination[] = [
   },
   {
     id: 'galapagos',
-    name: 'GalÃ¡pagos Islands',
+    name: 'Galápagos Islands',
     country: 'Ecuador',
     continent: 'Americas',
     description: 'Darwin\'s living laboratory â€” an extraordinary archipelago where giant tortoises, marine iguanas, blue-footed boobies, and sea lions evolved in spectacular isolation.',
