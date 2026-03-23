@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
 import { useApp, Language, UserRole } from '../context/AppContext';
@@ -17,8 +17,17 @@ export function Navbar() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handler);
+    let ticking = false;
+    const handler = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 20);
+        ticking = false;
+      });
+    };
+    handler();
+    window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
 
@@ -50,9 +59,9 @@ export function Navbar() {
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updateActiveTab);
     };
-  }, [location.pathname, language, role, favorites.length]);
+  }, [location.pathname, language, role]);
 
-  const navLinks = [
+  const navLinks = useMemo(() => [
     { to: '/', label: t('nav.home'), icon: <Home size={16} /> },
     { to: '/destinations', label: t('nav.destinations'), icon: <Map size={16} /> },
     { to: '/hotels', label: t('nav.hotels') },
@@ -63,7 +72,7 @@ export function Navbar() {
     { to: '/login', label: t('nav.signin'), icon: <User size={16} /> },
     ...(role === 'host' ? [{ to: '/host-dashboard', label: t('nav.role.host'), icon: <Shield size={16} /> }] : []),
     ...(role === 'admin' ? [{ to: '/admin', label: t('nav.admin'), icon: <Shield size={16} /> }] : []),
-  ];
+  ], [favorites.length, role, t]);
 
   const languages: { code: Language; label: string; flag: string }[] = [
     { code: 'en', label: 'English', flag: '🇬🇧' },
@@ -71,11 +80,11 @@ export function Navbar() {
     { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   ];
 
-  const roles: { value: UserRole; label: string; color: string }[] = [
+  const roles: { value: UserRole; label: string; color: string }[] = useMemo(() => [
     { value: 'user', label: t('nav.role.user'), color: 'bg-blue-100 text-blue-700' },
     { value: 'host', label: t('nav.role.host'), color: 'bg-green-100 text-green-700' },
     { value: 'admin', label: t('nav.role.admin'), color: 'bg-purple-100 text-purple-700' },
-  ];
+  ], [t]);
 
   const currentRole = roles.find(r => r.value === role)!;
   const currentLang = languages.find(l => l.code === language)!;
