@@ -46,11 +46,13 @@ export const ImageCarousel = memo(function ImageCarousel({
   // When navigating, add prev+current+next to loadedSet
   useEffect(() => {
     if (!len) return;
-    const needed = [
-      safeCurrent,
-      (safeCurrent + 1) % len,
-      (safeCurrent - 1 + len) % len,
-    ];
+    const needed = safeCurrent === 0
+      ? [safeCurrent]
+      : [
+          safeCurrent,
+          (safeCurrent + 1) % len,
+          (safeCurrent - 1 + len) % len,
+        ];
     setLoadedSet(s => {
       const missing = needed.filter(i => !s.has(i));
       if (!missing.length) return s;
@@ -140,9 +142,9 @@ export const ImageCarousel = memo(function ImageCarousel({
                 <img
                   src={src}
                   alt={label ? `${label} ${i + 1}` : `slide-${i + 1}`}
-                  loading="eager"
+                  loading="lazy"
                   decoding="async"
-                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                  fetchPriority="auto"
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   style={{ opacity: isReady ? 1 : 0 }}
                   onLoad={() => handleLoad(i)}
