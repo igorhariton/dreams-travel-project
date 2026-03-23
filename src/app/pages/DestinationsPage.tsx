@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Filter, Star, MapPin, Globe2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
@@ -34,6 +34,7 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 export default function DestinationsPage() {
   const { t, translateDynamic, addFavorite, removeFavorite, isFavorite } = useApp();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [activeContinent, setActiveContinent] = useState('All');
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [selectedDest, setSelectedDest] = useState<typeof destinations[0] | null>(null);
@@ -44,7 +45,8 @@ export default function DestinationsPage() {
 
   const sorted = useMemo(() => {
     const filtered = destinations.filter(d => {
-      const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) || d.country.toLowerCase().includes(search.toLowerCase());
+      const normalizedSearch = deferredSearch.toLowerCase();
+      const matchSearch = d.name.toLowerCase().includes(normalizedSearch) || d.country.toLowerCase().includes(normalizedSearch);
       const matchContinent = activeContinent === 'All' || d.continent === activeContinent;
       const matchTags = activeTags.length === 0 || activeTags.some(tag => d.tags.includes(tag));
       return matchSearch && matchContinent && matchTags;
@@ -52,7 +54,7 @@ export default function DestinationsPage() {
     if (sortBy === 'rating') return [...filtered].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'name') return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     return [...filtered].sort((a, b) => b.reviews - a.reviews);
-  }, [search, activeContinent, activeTags, sortBy]);
+  }, [deferredSearch, activeContinent, activeTags, sortBy]);
 
   const toggleTag = useCallback((tag: string) => {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
