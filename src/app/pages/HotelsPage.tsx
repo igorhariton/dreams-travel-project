@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, SlidersHorizontal, Wifi, Coffee, Car, Waves, Dumbbell, Utensils } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { hotels, destinations } from '../data/travelData';
@@ -40,6 +40,7 @@ function LazyCard({ children, minHeight = 320 }: { children: React.ReactNode; mi
 export default function HotelsPage() {
   const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice } = useApp();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [destFilter, setDestFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState(1000);
   const [minStars, setMinStars] = useState(0);
@@ -50,7 +51,8 @@ export default function HotelsPage() {
 
   const filtered = useMemo(() => {
     const f = hotels.filter(h => {
-      const matchSearch = h.name.toLowerCase().includes(search.toLowerCase()) || h.location.toLowerCase().includes(search.toLowerCase());
+      const normalizedSearch = deferredSearch.toLowerCase();
+      const matchSearch = h.name.toLowerCase().includes(normalizedSearch) || h.location.toLowerCase().includes(normalizedSearch);
       const matchDest = destFilter === 'all' || h.destinationId === destFilter;
       const matchPrice = h.pricePerNight <= maxPrice;
       const matchStars = h.stars >= minStars;
@@ -59,7 +61,7 @@ export default function HotelsPage() {
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [search, destFilter, maxPrice, minStars, sortBy]);
+  }, [deferredSearch, destFilter, maxPrice, minStars, sortBy]);
 
   const handleFavoriteHotel = useCallback((e: React.MouseEvent, hotel: typeof hotels[0]) => {
     e.stopPropagation();
