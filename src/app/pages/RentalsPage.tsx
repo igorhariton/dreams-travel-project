@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, Home, Building2, Trees, Mountain, Users, Bed, Bath, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { rentals } from '../data/travelData';
@@ -39,6 +39,7 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 export default function RentalsPage() {
   const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice } = useApp();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [maxPrice, setMaxPrice] = useState(700);
   const [minGuests, setMinGuests] = useState(1);
@@ -56,7 +57,8 @@ export default function RentalsPage() {
 
   const filtered = useMemo(() => {
     const f = rentals.filter(r => {
-      const matchSearch = r.name.toLowerCase().includes(search.toLowerCase()) || r.location.toLowerCase().includes(search.toLowerCase());
+      const normalizedSearch = deferredSearch.toLowerCase();
+      const matchSearch = r.name.toLowerCase().includes(normalizedSearch) || r.location.toLowerCase().includes(normalizedSearch);
       const matchType = typeFilter === 'all' || r.type === typeFilter;
       const matchPrice = r.pricePerNight <= maxPrice;
       const matchGuests = r.maxGuests >= minGuests;
@@ -65,7 +67,7 @@ export default function RentalsPage() {
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [search, typeFilter, maxPrice, minGuests, sortBy]);
+  }, [deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
 
   const handleFavorite = useCallback((e: React.MouseEvent, rental: typeof rentals[0]) => {
     e.stopPropagation();
