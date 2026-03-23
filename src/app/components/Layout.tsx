@@ -6,6 +6,7 @@ import { Footer } from './Footer';
 
 export function Layout() {
   const location = useLocation();
+  const isFirstLoad = location.key === 'default';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -15,27 +16,15 @@ export function Layout() {
           <motion.div
             key={location.pathname}
             className="h-full"
-            initial={{
-              opacity: 0,
-              y: 20,
-              scale: 0.985,
-              clipPath: 'inset(7% 5% 7% 5% round 28px)',
-            }}
+            initial={isFirstLoad ? false : { opacity: 0, y: 10 }}
             animate={{
               opacity: 1,
               y: 0,
-              scale: 1,
-              clipPath: 'inset(0% 0% 0% 0% round 0px)',
             }}
-            exit={{
-              opacity: 0,
-              y: -16,
-              scale: 1.01,
-              clipPath: 'inset(6% 4% 6% 4% round 24px)',
-            }}
+            exit={{ opacity: 0, y: -8 }}
             transition={{
-              duration: 0.45,
-              ease: [0.22, 1, 0.36, 1],
+              duration: 0.2,
+              ease: 'easeOut',
             }}
           >
             <Outlet />
