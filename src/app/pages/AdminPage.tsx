@@ -531,15 +531,7 @@ export default function AdminPageV2() {
   const [hotels, setHotels] = useState<Hotel[]>(initialHotels);
   const [rentals, setRentals] = useState<Rental[]>(initialRentals);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const app = useApp() as ReturnType<typeof useApp> & {
-    hostListings?: HostListing[];
-    approveListing?: (id: string, reviewNote: string) => void;
-    rejectListing?: (id: string, reviewNote: string) => void;
-  };
-  const { language, setLanguage } = app;
-  const hostListings = Array.isArray(app.hostListings) ? app.hostListings : [];
-  const approveListing = app.approveListing ?? (() => {});
-  const rejectListing = app.rejectListing ?? (() => {});
+  const { language, setLanguage, hostListings, approveListing, rejectListing } = useApp();
   const lang = language as Lang;
   const t = T[lang];
   const [destPage, setDestPage] = useState(1);
