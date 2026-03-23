@@ -15,18 +15,18 @@ const HostDashboardPage = lazy(() => import('./pages/HostDashboardPage'));
 const LoginPage = lazy(() => import('./pages/LoginPage_TravelDreams_v2'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 
-// Preload all pages immediately after app loads (in background)
+// Only prefetch a small set of common routes on fast connections.
 function prefetchAllPages() {
+  const connection = (navigator as Navigator & {
+    connection?: { saveData?: boolean; effectiveType?: string };
+  }).connection;
+  const shouldPrefetch = !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType || '');
+  if (!shouldPrefetch) return;
+
   const pages = [
-    () => import('./pages/HomePage'),
     () => import('./pages/DestinationsPage'),
     () => import('./pages/HotelsPage'),
     () => import('./pages/RentalsPage'),
-    () => import('./pages/PlannerPage'),
-    () => import('./pages/FavoritesPage'),
-    () => import('./pages/ChatPage'),
-    () => import('./pages/LoginPage_TravelDreams_v2'),
-    () => import('./pages/RegisterPage'),
   ];
 
   if ('requestIdleCallback' in window) {
@@ -36,9 +36,9 @@ function prefetchAllPages() {
       pages[i++]();
       requestIdleCallback(loadNext);
     };
-    setTimeout(() => requestIdleCallback(loadNext), 2000);
+    setTimeout(() => requestIdleCallback(loadNext), 2500);
   } else {
-    pages.forEach((load, i) => setTimeout(load, 2000 + i * 300));
+    pages.forEach((load, i) => setTimeout(load, 2500 + i * 500));
   }
 }
 
