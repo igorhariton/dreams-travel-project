@@ -164,7 +164,7 @@ export default function DestinationsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-5">
+                  <div className="p-5 flex flex-1 flex-col">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1">
                         <Star size={14} className="text-amber-400 fill-amber-400" />
@@ -179,7 +179,7 @@ export default function DestinationsPage() {
                         <span key={tag} className="text-xs bg-blue-50 text-blue-700 font-medium px-2.5 py-1 rounded-full">{translateDynamic(tag)}</span>
                       ))}
                     </div>
-                    <div className="border-t border-gray-100 pt-3">
+                    <div className="border-t border-gray-100 pt-3 mb-4">
                       <div className="text-xs font-semibold text-gray-500 mb-2">{t('section.must_visit')}:</div>
                       <div className="flex flex-wrap gap-1">
                         {dest.mustVisit.slice(0, 3).map(p => (
@@ -187,6 +187,15 @@ export default function DestinationsPage() {
                         ))}
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDest(dest);
+                      }}
+                      className="mt-auto w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
+                    >
+                      {t('common.view_details')}
+                    </button>
                   </div>
                 </div>
               </LazyCard>
