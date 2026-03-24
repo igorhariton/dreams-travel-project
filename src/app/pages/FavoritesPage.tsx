@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BookingModal } from '../components/BookingModal';
+import { hotels, rentals } from '../data/travelData';
+import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
 const typeConfig = {
   destination: { icon: <Globe2 size={14} />, color: 'bg-blue-100 text-blue-700', label: 'Destination' },
@@ -14,9 +16,70 @@ const typeConfig = {
 export default function FavoritesPage() {
   const { t, translateDynamic, favorites, removeFavorite, formatPrice } = useApp();
   const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
-  const [bookingItem, setBookingItem] = useState<any>(null);
+  const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const filtered = filter === 'all' ? favorites : favorites.filter(f => f.type === filter);
+
+  const openSavedListing = (id: string, type: 'hotel' | 'rental') => {
+    if (type === 'hotel') {
+      const hotel = hotels.find((entry) => entry.id === id);
+      if (!hotel) return;
+      setActiveItem({
+        id: hotel.id,
+        kind: 'hotel',
+        name: hotel.name,
+        location: hotel.location,
+        images: hotel.images,
+        rating: hotel.rating,
+        reviews: hotel.reviews,
+        pricePerNight: hotel.pricePerNight,
+        description: hotel.description,
+        amenities: hotel.amenities,
+        typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
+        stars: hotel.stars,
+      });
+    } else {
+      const rental = rentals.find((entry) => entry.id === id);
+      if (!rental) return;
+      setActiveItem({
+        id: rental.id,
+        kind: 'rental',
+        name: rental.name,
+        location: rental.location,
+        images: rental.images,
+        rating: rental.rating,
+        reviews: rental.reviews,
+        pricePerNight: rental.pricePerNight,
+        description: rental.description,
+        amenities: rental.amenities,
+        typeLabel: rental.type.charAt(0).toUpperCase() + rental.type.slice(1),
+        host: rental.host,
+        bedrooms: rental.bedrooms,
+        bathrooms: rental.bathrooms,
+        maxGuests: rental.maxGuests,
+      });
+    }
+
+    setIsBookingOpen(false);
+    setIsDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setIsDetailsOpen(false);
+    if (!isBookingOpen) setActiveItem(null);
+  };
+
+  const startBooking = () => {
+    setIsDetailsOpen(false);
+    setIsBookingOpen(true);
+  };
+
+  const closeBooking = () => {
+    setIsBookingOpen(false);
+    setActiveItem(null);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
@@ -128,16 +191,10 @@ export default function FavoritesPage() {
                       <div className="flex gap-2 mt-4">
                         {item.type !== 'destination' && (
                           <button
-                            onClick={() => setBookingItem({
-                              name: item.name,
-                              location: item.location,
-                              pricePerNight: item.price || 150,
-                              rating: item.rating || 4.5,
-                              image: item.image,
-                            })}
+                            onClick={() => openSavedListing(item.id, item.type)}
                             className="flex-1 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
                           >
-                            {t('common.book_now')}
+                            {t('common.view_details')}
                           </button>
                         )}
                         {item.type === 'destination' && (
@@ -171,7 +228,13 @@ export default function FavoritesPage() {
         )}
       </div>
 
-      <BookingModal isOpen={!!bookingItem} onClose={() => setBookingItem(null)} item={bookingItem} />
+      <ListingDetailsModal
+        isOpen={isDetailsOpen}
+        item={activeItem}
+        onClose={closeDetails}
+        onReserve={startBooking}
+      />
+      <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>
   );
 }

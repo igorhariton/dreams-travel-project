@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { rentals } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
+import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
 const typeConfig = {
   apartment: { icon: <Building2 size={14} />, label: 'Apartment', color: 'bg-blue-100 text-blue-700' },
@@ -45,7 +46,9 @@ export default function RentalsPage() {
   const [minGuests, setMinGuests] = useState(1);
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc' | 'price_desc'>('rating');
   const [showFilters, setShowFilters] = useState(false);
-  const [bookingItem, setBookingItem] = useState<any>(null);
+  const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const typeCounts = useMemo(() => ({
     all: rentals.length,
@@ -74,6 +77,43 @@ export default function RentalsPage() {
     if (isFavorite(rental.id)) removeFavorite(rental.id);
     else addFavorite({ id: rental.id, type: 'rental', name: rental.name, image: rental.images[0], price: rental.pricePerNight, rating: rental.rating, location: rental.location });
   }, [isFavorite, addFavorite, removeFavorite]);
+
+  const openRentalDetails = useCallback((rental: typeof rentals[0]) => {
+    setActiveItem({
+      id: rental.id,
+      kind: 'rental',
+      name: rental.name,
+      location: rental.location,
+      images: rental.images,
+      rating: rental.rating,
+      reviews: rental.reviews,
+      pricePerNight: rental.pricePerNight,
+      description: rental.description,
+      amenities: rental.amenities,
+      typeLabel: rental.type.charAt(0).toUpperCase() + rental.type.slice(1),
+      host: rental.host,
+      bedrooms: rental.bedrooms,
+      bathrooms: rental.bathrooms,
+      maxGuests: rental.maxGuests,
+    });
+    setIsBookingOpen(false);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const closeDetails = useCallback(() => {
+    setIsDetailsOpen(false);
+    if (!isBookingOpen) setActiveItem(null);
+  }, [isBookingOpen]);
+
+  const startBooking = useCallback(() => {
+    setIsDetailsOpen(false);
+    setIsBookingOpen(true);
+  }, []);
+
+  const closeBooking = useCallback(() => {
+    setIsBookingOpen(false);
+    setActiveItem(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -217,9 +257,9 @@ export default function RentalsPage() {
                   </div>
 
                   <button
-                    onClick={() => setBookingItem({ name: rental.name, location: rental.location, pricePerNight: rental.pricePerNight, rating: rental.rating, image: rental.images[0] })}
+                    onClick={() => openRentalDetails(rental)}
                     className="mt-auto w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
-                    {t('common.book_now')}
+                    {t('common.view_details')}
                   </button>
                 </div>
               </div>
@@ -228,7 +268,13 @@ export default function RentalsPage() {
         </div>
       </div>
 
-      <BookingModal isOpen={!!bookingItem} onClose={() => setBookingItem(null)} item={bookingItem} />
+      <ListingDetailsModal
+        isOpen={isDetailsOpen}
+        item={activeItem}
+        onClose={closeDetails}
+        onReserve={startBooking}
+      />
+      <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { hotels, destinations } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
+import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
 const amenityIcons: Record<string, React.ReactNode> = {
   'Wifi': <Wifi size={13} />,
@@ -46,7 +47,9 @@ export default function HotelsPage() {
   const [minStars, setMinStars] = useState(0);
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc' | 'price_desc'>('rating');
   const [showFilters, setShowFilters] = useState(false);
-  const [bookingItem, setBookingItem] = useState<any>(null);
+  const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const filtered = useMemo(() => {
@@ -68,6 +71,40 @@ export default function HotelsPage() {
     if (isFavorite(hotel.id)) removeFavorite(hotel.id);
     else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location });
   }, [isFavorite, addFavorite, removeFavorite]);
+
+  const openHotelDetails = useCallback((hotel: typeof hotels[0]) => {
+    setActiveItem({
+      id: hotel.id,
+      kind: 'hotel',
+      name: hotel.name,
+      location: hotel.location,
+      images: hotel.images,
+      rating: hotel.rating,
+      reviews: hotel.reviews,
+      pricePerNight: hotel.pricePerNight,
+      description: hotel.description,
+      amenities: hotel.amenities,
+      typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
+      stars: hotel.stars,
+    });
+    setIsBookingOpen(false);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const closeDetails = useCallback(() => {
+    setIsDetailsOpen(false);
+    if (!isBookingOpen) setActiveItem(null);
+  }, [isBookingOpen]);
+
+  const startBooking = useCallback(() => {
+    setIsDetailsOpen(false);
+    setIsBookingOpen(true);
+  }, []);
+
+  const closeBooking = useCallback(() => {
+    setIsBookingOpen(false);
+    setActiveItem(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -181,9 +218,9 @@ export default function HotelsPage() {
                       ))}
                     </div>
                     <button
-                      onClick={() => setBookingItem({ name: hotel.name, location: hotel.location, pricePerNight: hotel.pricePerNight, rating: hotel.rating, image: hotel.images[0] })}
+                      onClick={() => openHotelDetails(hotel)}
                       className="mt-auto w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
-                      {t('common.book_now')}
+                      {t('common.view_details')}
                     </button>
                   </div>
                 </div>
@@ -230,9 +267,9 @@ export default function HotelsPage() {
                         {isFavorite(hotel.id) ? `❤️ ${translateDynamic('Saved')}` : `🤍 ${t('common.save')}`}
                       </button>
                       <button
-                        onClick={() => setBookingItem({ name: hotel.name, location: hotel.location, pricePerNight: hotel.pricePerNight, rating: hotel.rating, image: hotel.images[0] })}
+                        onClick={() => openHotelDetails(hotel)}
                         className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
-                        {t('common.book_now')}
+                        {t('common.view_details')}
                       </button>
                     </div>
                   </div>
@@ -243,7 +280,13 @@ export default function HotelsPage() {
         )}
       </div>
 
-      <BookingModal isOpen={!!bookingItem} onClose={() => setBookingItem(null)} item={bookingItem} />
+      <ListingDetailsModal
+        isOpen={isDetailsOpen}
+        item={activeItem}
+        onClose={closeDetails}
+        onReserve={startBooking}
+      />
+      <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>
   );
 }

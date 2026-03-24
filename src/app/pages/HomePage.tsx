@@ -6,12 +6,15 @@ import { useApp } from '../context/AppContext';
 import { destinations, hotels } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
+import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
 export default function HomePage() {
   const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
   const navigate = useNavigate();
   const heroFrameRef = useRef<HTMLIFrameElement>(null);
-  const [bookingItem, setBookingItem] = useState<any>(null);
+  const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const featuredDestinations = destinations.slice(0, 4);
   const featuredHotels = hotels.slice(0, 3);
@@ -90,6 +93,40 @@ export default function HomePage() {
 
   const handleHeroFrameLoad = () => {
     postDestinationsToHero(heroFrameRef.current?.contentWindow ?? null);
+  };
+
+  const openHotelDetails = (hotel: typeof hotels[0]) => {
+    setActiveItem({
+      id: hotel.id,
+      kind: 'hotel',
+      name: hotel.name,
+      location: hotel.location,
+      images: hotel.images,
+      rating: hotel.rating,
+      reviews: hotel.reviews,
+      pricePerNight: hotel.pricePerNight,
+      description: hotel.description,
+      amenities: hotel.amenities,
+      typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
+      stars: hotel.stars,
+    });
+    setIsBookingOpen(false);
+    setIsDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setIsDetailsOpen(false);
+    if (!isBookingOpen) setActiveItem(null);
+  };
+
+  const startBooking = () => {
+    setIsDetailsOpen(false);
+    setIsBookingOpen(true);
+  };
+
+  const closeBooking = () => {
+    setIsBookingOpen(false);
+    setActiveItem(null);
   };
 
   return (
@@ -329,10 +366,10 @@ export default function HomePage() {
                     ))}
                   </div>
                   <button
-                    onClick={() => setBookingItem({ name: hotel.name, location: hotel.location, pricePerNight: hotel.pricePerNight, rating: hotel.rating, image: hotel.images[0] })}
+                    onClick={() => openHotelDetails(hotel)}
                     className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
                   >
-                    {t('common.book_now')}
+                    {t('common.view_details')}
                   </button>
                 </div>
               </motion.div>
@@ -395,10 +432,16 @@ export default function HomePage() {
         </div>
       </section>
 
+      <ListingDetailsModal
+        isOpen={isDetailsOpen}
+        item={activeItem}
+        onClose={closeDetails}
+        onReserve={startBooking}
+      />
       <BookingModal
-        isOpen={!!bookingItem}
-        onClose={() => setBookingItem(null)}
-        item={bookingItem}
+        isOpen={isBookingOpen}
+        onClose={closeBooking}
+        item={activeItem}
       />
     </>
   );

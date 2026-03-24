@@ -5,7 +5,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
 import { cn } from "./utils";
-import { buttonVariants } from "./button";
 
 function Calendar({
   className,
@@ -16,46 +15,43 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("travel-calendar p-0", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row gap-2",
-        month: "flex flex-col gap-4",
-        caption: "flex justify-center pt-1 relative items-center w-full",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
-        nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "size-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-        ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-x-1",
-        head_row: "flex",
+        months: "flex flex-col",
+        month: "space-y-4",
+        caption: "relative flex items-center justify-center pb-1 pt-1",
+        caption_label:
+          "text-sm font-semibold tracking-[0.01em] text-[#0F172A] dark:text-[#F9FAFB]",
+        nav: "flex items-center gap-2",
+        nav_button:
+          "travel-icon-button h-9 w-9 rounded-full border border-[#D9E2EC] bg-[#F8FAFC] p-0 text-[#475569] opacity-100 transition-colors hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:border-[#334155] dark:bg-[#243144] dark:text-[#CBD5E1] dark:hover:bg-[#334155] dark:hover:text-[#F9FAFB]",
+        nav_button_previous: "absolute left-0",
+        nav_button_next: "absolute right-0",
+        table: "w-full border-collapse",
+        head_row: "mb-1 flex",
         head_cell:
-          "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
+          "w-10 rounded-full text-center text-[0.72rem] font-semibold uppercase tracking-[0.08em] text-[#64748B] dark:text-[#94A3B8]",
+        row: "mt-1.5 flex w-full",
         cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-md",
+          "relative h-10 w-10 p-0 text-center text-sm",
           props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-            : "[&:has([aria-selected])]:rounded-md",
+            ? "[&:has(>.day-range-start)]:rounded-l-[12px] [&:has(>.day-range-end)]:rounded-r-[12px] [&:has(>.day-range-middle)]:bg-[#DBEAFE] dark:[&:has(>.day-range-middle)]:bg-[#1E3A5F]"
+            : "[&:has([aria-selected])]:rounded-[12px]",
         ),
-        day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "size-8 p-0 font-normal aria-selected:opacity-100",
-        ),
+        day: "h-10 w-10 rounded-[12px] p-0 text-sm font-medium text-[#0F172A] transition-colors hover:bg-[#EFF6FF] hover:text-[#0F172A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60A5FA]/70 dark:text-[#F9FAFB] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB] dark:focus-visible:ring-[#3B82F6]/70",
         day_range_start:
-          "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
+          "day-range-start bg-[#60A5FA] text-white hover:bg-[#60A5FA] hover:text-white dark:bg-[#3B82F6]",
         day_range_end:
-          "day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
+          "day-range-end bg-[#60A5FA] text-white hover:bg-[#60A5FA] hover:text-white dark:bg-[#3B82F6]",
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
+          "bg-[#60A5FA] text-white hover:bg-[#60A5FA] hover:text-white focus:bg-[#60A5FA] focus:text-white dark:bg-[#3B82F6] dark:hover:bg-[#3B82F6]",
+        day_today:
+          "border border-[#60A5FA] bg-[#EFF6FF] text-[#1D4ED8] dark:border-[#3B82F6] dark:bg-[#0F2A4A] dark:text-[#93C5FD]",
         day_outside:
-          "day-outside text-muted-foreground aria-selected:text-muted-foreground",
-        day_disabled: "text-muted-foreground opacity-50",
+          "day-outside text-[#94A3B8] opacity-55 aria-selected:text-[#94A3B8] dark:text-[#64748B]",
+        day_disabled: "text-[#94A3B8] opacity-60 dark:text-[#64748B]",
         day_range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
+          "day-range-middle rounded-[12px] bg-[#DBEAFE] text-[#0F172A] dark:bg-[#1E3A5F] dark:text-[#F9FAFB]",
         day_hidden: "invisible",
         ...classNames,
       }}
