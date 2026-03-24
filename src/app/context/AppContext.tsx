@@ -16,29 +16,52 @@ export interface FavoriteItem {
 
 // ── NEW: Host Listings System ─────────────────────────────────────────────────
 
-export type ListingStatus = 'pending' | 'approved' | 'rejected';
+export type ListingStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
+export type HostListingCategory = 'hotel' | 'rental';
+
+export type HostListingType =
+  | 'hotel'
+  | 'resort'
+  | 'boutique_hotel'
+  | 'apartment'
+  | 'villa'
+  | 'house'
+  | 'cabin'
+  | 'chalet'
+  | 'guesthouse';
 
 export type HostListing = {
   id: string;
   hostId: string;
   hostName: string;
-  type: 'hotel' | 'rental';
+  hostPublicId?: string;
+  type: HostListingCategory; // keep compatibility for existing admin UI
+  listingType: HostListingType;
   name: string;
   location: string;
+  address: string;
   destinationId: string;
   description: string;
   pricePerNight: number;
-  images: string[];
-  amenities: string[];
-  status: ListingStatus;
-  submittedAt: string;
-  reviewedAt?: string;
-  reviewNote?: string;
-  stars?: number;
-  hotelType?: string;
+  maxGuests: number;
   bedrooms?: number;
   bathrooms?: number;
-  maxGuests?: number;
+  stars?: number;
+  images: string[];
+  amenities: string[];
+  policies?: string;
+  availabilityNotes?: string;
+  featuredTags?: string[];
+  status: ListingStatus;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  bookingsCount?: number;
+  earningsTotal?: number;
+  hotelType?: string;
   rentalType?: string;
 };
 
@@ -64,45 +87,180 @@ const MOCK_USERS: (User & { password: string })[] = [
   { id: 'host-2',  name: 'John Smith',          email: 'john@host.com',          phone: '+44 7700 900001', role: 'host',  password: 'host123' },
 ];
 
+const daysAgoIso = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+
+function inferListingCategory(listingType: HostListingType): HostListingCategory {
+  return listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel' ? 'hotel' : 'rental';
+}
+
+function buildListingPrefix(category: HostListingCategory, listingType: HostListingType): 'HTL' | 'RNT' | 'LST' {
+  if (category === 'hotel' || listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel') return 'HTL';
+  if (category === 'rental') return 'RNT';
+  return 'LST';
+}
+
+function buildNextListingId(
+  existing: HostListing[],
+  category: HostListingCategory,
+  listingType: HostListingType,
+  createdAtIso?: string,
+) {
+  const year = new Date(createdAtIso || Date.now()).getFullYear();
+  const prefix = buildListingPrefix(category, listingType);
+  const idPrefix = `${prefix}-${year}-`;
+  const maxSeq = existing.reduce((max, listing) => {
+    if (!listing.id.startsWith(idPrefix)) return max;
+    const seq = Number(listing.id.slice(idPrefix.length));
+    if (Number.isNaN(seq)) return max;
+    return Math.max(max, seq);
+  }, 0);
+  return `${idPrefix}${String(maxSeq + 1).padStart(3, '0')}`;
+}
+
 const INITIAL_LISTINGS: HostListing[] = [
   {
-    id: 'hl-1', hostId: 'host-1', hostName: 'Maria Ionescu', type: 'rental',
-    name: 'Santorini Sunset Villa', location: 'Santorini, Greece', destinationId: 'santorini',
-    description: 'Beautiful villa with stunning caldera views.',
-    pricePerNight: 350, images: ['https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800'],
-    amenities: ['WiFi', 'Pool', 'Sea View'], status: 'pending',
-    submittedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
-    bedrooms: 3, bathrooms: 2, maxGuests: 6, rentalType: 'villa',
+    id: 'RNT-2026-001',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'rental',
+    listingType: 'villa',
+    name: 'Santorini Sunset Villa',
+    location: 'Santorini, Greece',
+    address: 'Caldera Ridge 21, Oia',
+    destinationId: 'santorini',
+    description: 'Beautiful villa with stunning caldera views and private infinity deck.',
+    pricePerNight: 350,
+    maxGuests: 6,
+    bedrooms: 3,
+    bathrooms: 2,
+    images: ['https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800'],
+    amenities: ['WiFi', 'Pool', 'Sea View', 'Breakfast'],
+    policies: 'No smoking. Quiet hours after 10 PM.',
+    availabilityNotes: 'Open year-round except January maintenance week.',
+    featuredTags: ['Sea View', 'Luxury', 'Family Friendly'],
+    status: 'pending',
+    createdAt: daysAgoIso(18),
+    updatedAt: daysAgoIso(2),
+    submittedAt: daysAgoIso(2),
+    bookingsCount: 18,
+    earningsTotal: 12600,
+    rentalType: 'villa',
   },
   {
-    id: 'hl-2', hostId: 'host-1', hostName: 'Maria Ionescu', type: 'hotel',
-    name: 'Aegean Boutique Hotel', location: 'Mykonos, Greece', destinationId: 'mykonos',
-    description: 'Luxury boutique hotel in the heart of Mykonos.',
-    pricePerNight: 420, images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'],
-    amenities: ['WiFi', 'Breakfast', 'Rooftop Bar'], status: 'approved',
-    submittedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
-    reviewedAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    reviewNote: 'Great listing, approved!', stars: 4, hotelType: 'boutique',
+    id: 'HTL-2026-001',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'hotel',
+    listingType: 'boutique_hotel',
+    name: 'Aegean Boutique Hotel',
+    location: 'Mykonos, Greece',
+    address: 'Harbor Promenade 11',
+    destinationId: 'mykonos',
+    description: 'Luxury boutique hotel in the heart of Mykonos with rooftop sunset lounge.',
+    pricePerNight: 420,
+    maxGuests: 3,
+    stars: 4,
+    images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'],
+    amenities: ['WiFi', 'Breakfast', 'Rooftop Bar', 'Airport Shuttle'],
+    policies: 'Flexible cancellation up to 72h before check-in.',
+    availabilityNotes: 'High season inventory updated weekly.',
+    featuredTags: ['Boutique', 'City Center'],
+    status: 'approved',
+    createdAt: daysAgoIso(31),
+    updatedAt: daysAgoIso(5),
+    submittedAt: daysAgoIso(7),
+    reviewedAt: daysAgoIso(5),
+    reviewNote: 'Great listing, approved!',
+    bookingsCount: 27,
+    earningsTotal: 23800,
+    hotelType: 'boutique',
   },
   {
-    id: 'hl-3', hostId: 'host-2', hostName: 'John Smith', type: 'rental',
-    name: 'Bali Jungle Retreat', location: 'Ubud, Bali', destinationId: 'bali',
-    description: 'Peaceful retreat surrounded by lush jungle.',
-    pricePerNight: 180, images: ['https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800'],
-    amenities: ['WiFi', 'Pool', 'Garden'], status: 'rejected',
-    submittedAt: new Date(Date.now() - 10 * 86400000).toISOString(),
-    reviewedAt: new Date(Date.now() - 8 * 86400000).toISOString(),
+    id: 'RNT-2026-002',
+    hostId: 'host-2',
+    hostName: 'John Smith',
+    hostPublicId: 'HST-0002',
+    type: 'rental',
+    listingType: 'villa',
+    name: 'Bali Jungle Retreat',
+    location: 'Ubud, Bali',
+    address: 'Green Valley Lane 8',
+    destinationId: 'bali',
+    description: 'Peaceful retreat surrounded by lush jungle and rice terraces.',
+    pricePerNight: 180,
+    maxGuests: 4,
+    bedrooms: 2,
+    bathrooms: 1,
+    images: ['https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800'],
+    amenities: ['WiFi', 'Pool', 'Garden', 'Spa'],
+    policies: 'Children above 8 years only.',
+    availabilityNotes: 'Requires 2-night minimum stay.',
+    featuredTags: ['Nature', 'Wellness'],
+    status: 'rejected',
+    createdAt: daysAgoIso(20),
+    updatedAt: daysAgoIso(8),
+    submittedAt: daysAgoIso(10),
+    reviewedAt: daysAgoIso(8),
     reviewNote: 'Images not clear enough. Please resubmit.',
-    bedrooms: 2, bathrooms: 1, maxGuests: 4, rentalType: 'villa',
+    bookingsCount: 6,
+    earningsTotal: 2100,
+    rentalType: 'villa',
   },
   {
-    id: 'hl-4', hostId: 'host-2', hostName: 'John Smith', type: 'hotel',
-    name: 'Tokyo Zen Hotel', location: 'Shinjuku, Tokyo', destinationId: 'tokyo',
-    description: 'Modern hotel blending traditional Japanese aesthetics.',
-    pricePerNight: 290, images: ['https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800'],
-    amenities: ['WiFi', 'Onsen', 'Restaurant'], status: 'pending',
-    submittedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    stars: 5, hotelType: 'luxury',
+    id: 'HTL-2026-002',
+    hostId: 'host-2',
+    hostName: 'John Smith',
+    hostPublicId: 'HST-0002',
+    type: 'hotel',
+    listingType: 'hotel',
+    name: 'Tokyo Zen Hotel',
+    location: 'Shinjuku, Tokyo',
+    address: 'Shinjuku South 14-2',
+    destinationId: 'tokyo',
+    description: 'Modern hotel blending traditional Japanese aesthetics and smart rooms.',
+    pricePerNight: 290,
+    maxGuests: 2,
+    stars: 5,
+    images: ['https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800'],
+    amenities: ['WiFi', 'Onsen', 'Restaurant', 'Gym'],
+    policies: 'No pets. Check-in after 3 PM.',
+    availabilityNotes: 'Limited availability during Sakura season.',
+    featuredTags: ['Business Travel', 'Luxury'],
+    status: 'pending',
+    createdAt: daysAgoIso(9),
+    updatedAt: daysAgoIso(1),
+    submittedAt: daysAgoIso(1),
+    bookingsCount: 12,
+    earningsTotal: 7100,
+    hotelType: 'luxury',
+  },
+  {
+    id: 'RNT-2026-003',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'rental',
+    listingType: 'apartment',
+    name: 'Cyclades Marina Apartment',
+    location: 'Naxos, Greece',
+    address: 'Old Harbor 2',
+    destinationId: 'santorini',
+    description: 'Freshly renovated apartment minutes away from the marina.',
+    pricePerNight: 210,
+    maxGuests: 3,
+    bedrooms: 1,
+    bathrooms: 1,
+    images: ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800'],
+    amenities: ['WiFi', 'Kitchen', 'Balcony'],
+    policies: 'No parties.',
+    availabilityNotes: 'Open from April to November.',
+    featuredTags: ['Marina', 'City Stay'],
+    status: 'draft',
+    createdAt: daysAgoIso(3),
+    updatedAt: daysAgoIso(1),
+    rentalType: 'apartment',
   },
 ];
 
@@ -134,14 +292,22 @@ interface AppContextType {
   isAuthLoading: boolean;
   // ── New: Host listings ──
   hostListings: HostListing[];
-  addHostListing: (listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'status' | 'submittedAt'>) => void;
+  addHostListing: (
+    listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'hostPublicId' | 'status' | 'createdAt' | 'updatedAt' | 'submittedAt' | 'reviewedAt' | 'reviewNote'>,
+    options?: { submit?: boolean },
+  ) => string | null;
   updateHostListing: (id: string, data: Partial<HostListing>) => void;
   deleteHostListing: (id: string) => void;
+  submitHostListing: (id: string) => void;
+  resubmitHostListing: (id: string) => void;
+  duplicateHostListing: (id: string) => string | null;
   approveListing: (id: string, note?: string) => void;
   rejectListing: (id: string, note?: string) => void;
   getMyListings: () => HostListing[];
   getPendingListings: () => HostListing[];
   getApprovedListings: () => HostListing[];
+  getRejectedListings: () => HostListing[];
+  getDraftListings: () => HostListing[];
 }
 
 // ── Translations (unchanged from original) ────────────────────────────────────
@@ -548,50 +714,179 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return { success: true };
   }
 
+  function getHostActor(): User | null {
+    if (currentUser?.role === 'host') return currentUser;
+    if (role !== 'host') return null;
+    const fallback = mockUsers.find((user) => user.role === 'host');
+    if (!fallback) return null;
+    const { password: _pw, ...hostUser } = fallback;
+    return hostUser;
+  }
+
   // ── NEW: Host listing actions ──────────────────────────────────────────────
-  function addHostListing(listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'status' | 'submittedAt'>) {
-    if (!currentUser) return;
-    setHostListings(prev => [{
+  function addHostListing(
+    listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'hostPublicId' | 'status' | 'createdAt' | 'updatedAt' | 'submittedAt' | 'reviewedAt' | 'reviewNote'>,
+    options?: { submit?: boolean },
+  ) {
+    const hostActor = getHostActor();
+    if (!hostActor) return null;
+
+    const now = new Date().toISOString();
+    const listingType = listing.listingType || (listing.type === 'hotel' ? 'hotel' : 'apartment');
+    const type = listing.type || inferListingCategory(listingType);
+    const nextId = buildNextListingId(hostListings, type, listingType, now);
+    const hostPublicId = hostActor.id.startsWith('host-')
+      ? `HST-${hostActor.id.replace('host-', '').padStart(4, '0')}`
+      : hostActor.id.toUpperCase();
+    const shouldSubmit = options?.submit === true;
+
+    const newListing: HostListing = {
       ...listing,
-      id: 'hl-' + Date.now(),
-      hostId: currentUser.id,
-      hostName: currentUser.name,
-      status: 'pending',
-      submittedAt: new Date().toISOString(),
-    }, ...prev]);
+      id: nextId,
+      hostId: hostActor.id,
+      hostName: hostActor.name,
+      hostPublicId,
+      type,
+      listingType,
+      address: listing.address || listing.location,
+      amenities: Array.from(new Set((listing.amenities || []).map((a) => a.trim()).filter(Boolean))),
+      images: (listing.images || []).map((img) => img.trim()).filter(Boolean),
+      featuredTags: (listing.featuredTags || []).map((tag) => tag.trim()).filter(Boolean),
+      pricePerNight: Math.max(0, Number(listing.pricePerNight) || 0),
+      maxGuests: Math.max(1, Number(listing.maxGuests) || 1),
+      bedrooms: listing.bedrooms ? Math.max(0, Number(listing.bedrooms) || 0) : undefined,
+      bathrooms: listing.bathrooms ? Math.max(0, Number(listing.bathrooms) || 0) : undefined,
+      stars: listing.stars ? Math.max(0, Math.min(5, Number(listing.stars) || 0)) : undefined,
+      status: shouldSubmit ? 'pending' : 'draft',
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: shouldSubmit ? now : undefined,
+      reviewedAt: undefined,
+      reviewNote: undefined,
+    };
+
+    setHostListings((prev) => [newListing, ...prev]);
+    return nextId;
   }
 
   function updateHostListing(id: string, data: Partial<HostListing>) {
-    setHostListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id
+          ? {
+              ...listing,
+              ...data,
+              amenities: data.amenities
+                ? Array.from(new Set(data.amenities.map((a) => a.trim()).filter(Boolean)))
+                : listing.amenities,
+              images: data.images
+                ? data.images.map((img) => img.trim()).filter(Boolean)
+                : listing.images,
+              featuredTags: data.featuredTags
+                ? data.featuredTags.map((tag) => tag.trim()).filter(Boolean)
+                : listing.featuredTags,
+              updatedAt: now,
+            }
+          : listing,
+      ),
+    );
   }
 
   function deleteHostListing(id: string) {
-    setHostListings(prev => prev.filter(l => l.id !== id));
+    setHostListings((prev) => prev.filter((l) => l.id !== id));
+  }
+
+  function submitHostListing(id: string) {
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id
+          ? {
+              ...listing,
+              status: 'pending',
+              submittedAt: now,
+              reviewedAt: undefined,
+              reviewNote: undefined,
+              updatedAt: now,
+            }
+          : listing,
+      ),
+    );
+  }
+
+  function resubmitHostListing(id: string) {
+    submitHostListing(id);
+  }
+
+  function duplicateHostListing(id: string) {
+    const hostActor = getHostActor();
+    if (!hostActor) return null;
+    const source = hostListings.find((listing) => listing.id === id);
+    if (!source) return null;
+
+    const now = new Date().toISOString();
+    const duplicatedId = buildNextListingId(hostListings, source.type, source.listingType, now);
+    const duplicated: HostListing = {
+      ...source,
+      id: duplicatedId,
+      name: `${source.name} (Copy)`,
+      status: 'draft',
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: undefined,
+      reviewedAt: undefined,
+      reviewNote: undefined,
+    };
+
+    setHostListings((prev) => [duplicated, ...prev]);
+    return duplicatedId;
   }
 
   function approveListing(id: string, note?: string) {
-    setHostListings(prev => prev.map(l => l.id === id ? {
-      ...l, status: 'approved' as ListingStatus,
-      reviewedAt: new Date().toISOString(),
-      reviewNote: note || 'Approved.',
-    } : l));
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'approved' as ListingStatus,
+              reviewedAt: now,
+              reviewNote: note || 'Approved.',
+              updatedAt: now,
+            }
+          : l,
+      ),
+    );
   }
 
   function rejectListing(id: string, note?: string) {
-    setHostListings(prev => prev.map(l => l.id === id ? {
-      ...l, status: 'rejected' as ListingStatus,
-      reviewedAt: new Date().toISOString(),
-      reviewNote: note || 'Rejected.',
-    } : l));
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'rejected' as ListingStatus,
+              reviewedAt: now,
+              reviewNote: note || 'Rejected.',
+              updatedAt: now,
+            }
+          : l,
+      ),
+    );
   }
 
   function getMyListings() {
-    if (!currentUser) return [];
-    return hostListings.filter(l => l.hostId === currentUser.id);
+    const hostActor = getHostActor();
+    if (!hostActor) return [];
+    return hostListings.filter((l) => l.hostId === hostActor.id);
   }
 
-  function getPendingListings() { return hostListings.filter(l => l.status === 'pending'); }
-  function getApprovedListings() { return hostListings.filter(l => l.status === 'approved'); }
+  function getPendingListings() { return hostListings.filter((l) => l.status === 'pending'); }
+  function getApprovedListings() { return hostListings.filter((l) => l.status === 'approved'); }
+  function getRejectedListings() { return hostListings.filter((l) => l.status === 'rejected'); }
+  function getDraftListings() { return hostListings.filter((l) => l.status === 'draft'); }
 
   // ── Existing: Translation logic (unchanged) ───────────────────────────────
   const shouldTranslate = (text: string): boolean => {
@@ -657,8 +952,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // New
       currentUser, login, logout, register, isAuthLoading,
       hostListings, addHostListing, updateHostListing, deleteHostListing,
+      submitHostListing, resubmitHostListing, duplicateHostListing,
       approveListing, rejectListing,
-      getMyListings, getPendingListings, getApprovedListings,
+      getMyListings, getPendingListings, getApprovedListings, getRejectedListings, getDraftListings,
     }}>
       {children}
     </AppContext.Provider>
