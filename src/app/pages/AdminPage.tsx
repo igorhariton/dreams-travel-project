@@ -1361,14 +1361,18 @@ export default function AdminPageV2() {
   const [hlFilterStatus, setHlFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   function renderHostListings() {
-    const pending = hostListings.filter((l: HostListing) => l.status === 'pending');
-    const filtered = hlFilterStatus === 'all' ? hostListings : hostListings.filter((l: HostListing) => l.status === hlFilterStatus);
+    const reviewListings = hostListings.filter((l: HostListing) => l.status !== 'draft');
+    const pending = reviewListings.filter((l: HostListing) => l.status === 'pending');
+    const filtered = hlFilterStatus === 'all'
+      ? reviewListings
+      : reviewListings.filter((l: HostListing) => l.status === hlFilterStatus);
 
     const statusBadge = (status: HostListing['status']) => {
       const map: Record<string, string> = {
         pending:  'bg-amber-500/15 text-amber-400 border border-amber-500/30',
         approved: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
         rejected: 'bg-red-500/15 text-red-400 border border-red-500/30',
+        draft: 'bg-slate-500/15 text-slate-300 border border-slate-500/30',
       };
       return <span className={'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ' + map[status]}>{status}</span>;
     };
@@ -1397,10 +1401,10 @@ export default function AdminPageV2() {
           {/* Stats row */}
           <div className="grid grid-cols-4 gap-3">
             {([
-              { key: 'all',      label: 'Total',    val: hostListings.length,                                                          color: 'bg-slate-800' },
-              { key: 'pending',  label: 'Pending',  val: hostListings.filter((l: HostListing) => l.status === 'pending').length,   color: 'bg-amber-500/10' },
-              { key: 'approved', label: 'Approved', val: hostListings.filter((l: HostListing) => l.status === 'approved').length,  color: 'bg-emerald-500/10' },
-              { key: 'rejected', label: 'Rejected', val: hostListings.filter((l: HostListing) => l.status === 'rejected').length,  color: 'bg-red-500/10' },
+              { key: 'all',      label: 'Total',    val: reviewListings.length,                                                         color: 'bg-slate-800' },
+              { key: 'pending',  label: 'Pending',  val: reviewListings.filter((l: HostListing) => l.status === 'pending').length,   color: 'bg-amber-500/10' },
+              { key: 'approved', label: 'Approved', val: reviewListings.filter((l: HostListing) => l.status === 'approved').length,  color: 'bg-emerald-500/10' },
+              { key: 'rejected', label: 'Rejected', val: reviewListings.filter((l: HostListing) => l.status === 'rejected').length,  color: 'bg-red-500/10' },
             ] as const).map(({ key, label, val, color }) => (
               <button key={key} onClick={() => setHlFilterStatus(key)}
                 className={'rounded-2xl border p-4 text-left transition ' + color + ' ' + (hlFilterStatus === key ? 'border-cyan-500/50' : 'border-slate-700/50 dark:border-slate-700/50')}>
@@ -1447,14 +1451,23 @@ export default function AdminPageV2() {
                         {statusBadge(listing.status)}
                       </div>
                       <div className="flex flex-wrap gap-3 text-sm text-slate-500 dark:text-slate-400">
-                        <span className="capitalize font-medium">{listing.type}</span>
+                        <span className="capitalize font-medium">
+                          {(listing.listingType || listing.type)
+                            .split('_')
+                            .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+                            .join(' ')}
+                        </span>
                         <span>${listing.pricePerNight}/night</span>
+                        <span className="text-xs text-slate-500">ID: {listing.id}</span>
                         <span className="flex items-center gap-1">
                           <Building2 className="h-3.5 w-3.5" />
-                          Host: <span className="font-medium text-slate-300">{listing.hostName}</span>
+                          Host:
+                          <span className="font-medium text-slate-300">
+                            {listing.hostName} ({listing.hostPublicId || listing.hostId})
+                          </span>
                         </span>
                         <span className="text-xs text-slate-500">
-                          Submitted: {new Date(listing.submittedAt).toLocaleDateString()}
+                          Submitted: {listing.submittedAt ? new Date(listing.submittedAt).toLocaleDateString() : '—'}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
