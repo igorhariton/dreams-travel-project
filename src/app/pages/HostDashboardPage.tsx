@@ -1,747 +1,1324 @@
-import React, { useMemo, useState, useCallback } from 'react';
-import { Calendar as CalendarIcon, DollarSign, Home, MapPin, Plus, Star, Users, Edit2, Trash2, CheckCircle2, XCircle } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { ProgressiveImage } from '../components/ProgressiveImage';
-import { Calendar } from '../components/ui/calendar';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '../components/ui/table';
+import React, { useMemo, useState } from 'react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+  BarChart3,
+  BedDouble,
+  CheckCircle2,
+  ChevronRight,
+  Clock3,
+  Copy,
+  DollarSign,
+  Edit3,
+  Eye,
+  HousePlus,
+  Layers,
+  ListFilter,
+  Loader2,
+  MapPin,
+  MessageSquare,
+  Plus,
+  Search,
+  Send,
+  ShieldCheck,
+  Star,
+  Trash2,
+  TriangleAlert,
+  XCircle,
+} from 'lucide-react';
+import {
+  useApp,
+  type HostListing,
+  type HostListingCategory,
+  type HostListingType,
+  type ListingStatus,
+} from '../context/AppContext';
+import { destinations } from '../data/travelData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
-type PropertyType = 'Hotel' | 'Apartment' | 'House' | 'Villa';
+type HostSection =
+  | 'dashboard'
+  | 'my-listings'
+  | 'add-listing'
+  | 'pending-review'
+  | 'approved-listings'
+  | 'rejected-listings'
+  | 'bookings'
+  | 'earnings'
+  | 'messages';
 
-interface HostProperty {
-  id: string;
+type SortKey = 'newest' | 'oldest' | 'status' | 'price_low' | 'price_high';
+
+type ListingFormState = {
   name: string;
-  type: PropertyType;
-  city: string;
+  listingType: HostListingType;
+  destinationId: string;
+  location: string;
   address: string;
-  description: string;
-  pricePerNight: number;
-  rooms: number;
-  maxGuests: number;
+  pricePerNight: string;
+  maxGuests: string;
+  bedrooms: string;
+  bathrooms: string;
+  stars: string;
   amenities: string;
+  description: string;
   images: string[];
-  rating: number;
+  policies: string;
+  availabilityNotes: string;
+  featuredTags: string;
+};
+
+const HOST_LISTING_TYPES: { value: HostListingType; label: string; category: HostListingCategory }[] = [
+  { value: 'hotel', label: 'Hotel', category: 'hotel' },
+  { value: 'resort', label: 'Resort', category: 'hotel' },
+  { value: 'boutique_hotel', label: 'Boutique Hotel', category: 'hotel' },
+  { value: 'apartment', label: 'Apartment', category: 'rental' },
+  { value: 'villa', label: 'Villa', category: 'rental' },
+  { value: 'house', label: 'House', category: 'rental' },
+  { value: 'cabin', label: 'Cabin', category: 'rental' },
+  { value: 'chalet', label: 'Chalet', category: 'rental' },
+  { value: 'guesthouse', label: 'Guesthouse', category: 'rental' },
+];
+
+function createEmptyForm(): ListingFormState {
+  return {
+  name: '',
+  listingType: 'hotel',
+  destinationId: '',
+  location: '',
+  address: '',
+  pricePerNight: '',
+  maxGuests: '',
+  bedrooms: '',
+  bathrooms: '',
+  stars: '4',
+  amenities: '',
+  description: '',
+  images: [''],
+  policies: '',
+  availabilityNotes: '',
+  featuredTags: '',
+  };
 }
 
-type BookingStatus = 'pending' | 'accepted' | 'rejected';
+const CUSTOM_DESTINATION_VALUE = '__custom_destination__';
 
-interface HostBooking {
-  id: string;
-  propertyId: string;
-  propertyName: string;
-  guestName: string;
-  checkIn: string;
-  checkOut: string;
-  nights: number;
-  total: number;
-  status: BookingStatus;
+const STATUS_STYLES: Record<ListingStatus, string> = {
+  draft: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30',
+  rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30',
+};
+
+function inferCategory(listingType: HostListingType): HostListingCategory {
+  return listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel' ? 'hotel' : 'rental';
 }
 
-interface EarningsPoint {
-  month: string;
-  amount: number;
+function toLabel(value: string) {
+  return value
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
-// ───────────────── Host Stats ─────────────────
-
-interface HostStatsCardsProps {
-  properties: HostProperty[];
-  bookings: HostBooking[];
+function parseCsv(value: string) {
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
 }
 
-function HostStatsCards({ properties, bookings }: HostStatsCardsProps) {
-  const totalProperties = properties.length;
-  const activeBookings = bookings.filter(b => b.status === 'accepted' || b.status === 'pending').length;
-  const totalEarnings = bookings
-    .filter(b => b.status === 'accepted')
-    .reduce((sum, b) => sum + b.total, 0);
-  const avgRating =
-    properties.length > 0
-      ? properties.reduce((sum, p) => sum + p.rating, 0) / properties.length
-      : 0;
+function formatDate(value?: string) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString();
+}
 
-  const cards = [
-    {
-      label: 'Total properties',
-      value: totalProperties.toString(),
-      icon: <Home size={20} />,
-      accent: 'from-blue-500 to-cyan-500',
-    },
-    {
-      label: 'Active bookings',
-      value: activeBookings.toString(),
-      icon: <CalendarIcon size={20} />,
-      accent: 'from-emerald-500 to-teal-500',
-    },
-    {
-      label: 'Total earnings',
-      value: `$${totalEarnings.toLocaleString()}`,
-      icon: <DollarSign size={20} />,
-      accent: 'from-amber-500 to-orange-500',
-    },
-    {
-      label: 'Average rating',
-      value: avgRating ? avgRating.toFixed(2) : '–',
-      icon: <Star size={20} className="text-amber-400" />,
-      accent: 'from-violet-500 to-fuchsia-500',
-    },
-  ];
+function isHotelType(listingType: HostListingType) {
+  return inferCategory(listingType) === 'hotel';
+}
 
+function mapListingToForm(listing: HostListing): ListingFormState {
+  const listingImages = (listing.images || []).map((image) => image.trim()).filter(Boolean);
+  return {
+    name: listing.name,
+    listingType: listing.listingType,
+    destinationId: listing.destinationId || '',
+    location: listing.location,
+    address: listing.address || '',
+    pricePerNight: String(listing.pricePerNight || ''),
+    maxGuests: String(listing.maxGuests || ''),
+    bedrooms: listing.bedrooms ? String(listing.bedrooms) : '',
+    bathrooms: listing.bathrooms ? String(listing.bathrooms) : '',
+    stars: listing.stars ? String(listing.stars) : '4',
+    amenities: (listing.amenities || []).join(', '),
+    description: listing.description || '',
+    images: listingImages.length ? listingImages : [''],
+    policies: listing.policies || '',
+    availabilityNotes: listing.availabilityNotes || '',
+    featuredTags: (listing.featuredTags || []).join(', '),
+  };
+}
+
+function statusIcon(status: ListingStatus) {
+  if (status === 'approved') return <CheckCircle2 className="h-3.5 w-3.5" />;
+  if (status === 'pending') return <Loader2 className="h-3.5 w-3.5" />;
+  if (status === 'rejected') return <XCircle className="h-3.5 w-3.5" />;
+  return <Edit3 className="h-3.5 w-3.5" />;
+}
+
+function StatusBadge({ status }: { status: ListingStatus }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {cards.map(card => (
-        <Card key={card.label} className="border-gray-100 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between gap-3 pt-4 px-4">
-            <CardTitle className="text-sm font-medium text-gray-500">{card.label}</CardTitle>
-            <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${card.accent} flex items-center justify-center text-white`}>
-              {card.icon}
-            </div>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <div className="text-2xl font-black text-gray-900">{card.value}</div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[status]}`}>
+      {statusIcon(status)}
+      {status === 'pending' ? 'pending review' : status}
+    </span>
   );
 }
 
-// ───────────────── Property Form ─────────────────
+export default function HostDashboardPage() {
+  const {
+    role,
+    currentUser,
+    formatPrice,
+    addHostListing,
+    updateHostListing,
+    deleteHostListing,
+    submitHostListing,
+    resubmitHostListing,
+    duplicateHostListing,
+    getMyListings,
+    translateDynamic,
+  } = useApp();
 
-interface HostPropertyFormProps {
-  initial?: HostProperty | null;
-  onSave: (property: Omit<HostProperty, 'id' | 'rating'> & { id?: string }) => void;
-  onCancel: () => void;
-}
+  const [section, setSection] = useState<HostSection>('dashboard');
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | ListingStatus>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | HostListingType>('all');
+  const [sortBy, setSortBy] = useState<SortKey>('newest');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [formError, setFormError] = useState('');
+  const [form, setForm] = useState<ListingFormState>(createEmptyForm());
 
-function HostPropertyForm({ initial, onSave, onCancel }: HostPropertyFormProps) {
-  const [form, setForm] = useState(() => ({
-    id: initial?.id,
-    name: initial?.name || '',
-    type: (initial?.type || 'Apartment') as PropertyType,
-    city: initial?.city || '',
-    address: initial?.address || '',
-    description: initial?.description || '',
-    pricePerNight: initial?.pricePerNight?.toString() || '',
-    rooms: initial?.rooms?.toString() || '',
-    maxGuests: initial?.maxGuests?.toString() || '',
-    amenities: initial?.amenities || '',
-    images: initial?.images.join(', ') || '',
-  }));
+  const myListings = getMyListings();
 
-  const handleChange = (field: keyof typeof form, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  };
+  const listingsByStatus = useMemo(
+    () => ({
+      draft: myListings.filter((listing) => listing.status === 'draft'),
+      pending: myListings.filter((listing) => listing.status === 'pending'),
+      approved: myListings.filter((listing) => listing.status === 'approved'),
+      rejected: myListings.filter((listing) => listing.status === 'rejected'),
+    }),
+    [myListings],
+  );
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name || !form.city || !form.pricePerNight) return;
+  const activeEdit = useMemo(
+    () => (editingId ? myListings.find((listing) => listing.id === editingId) || null : null),
+    [editingId, myListings],
+  );
 
-    const images =
-      form.images
-        .split(',')
-        .map(s => s.trim())
-        .filter(Boolean) || [];
+  const previewListing = useMemo(
+    () => (previewId ? myListings.find((listing) => listing.id === previewId) || null : null),
+    [previewId, myListings],
+  );
 
-    onSave({
-      id: form.id,
-      name: form.name,
-      type: form.type,
-      city: form.city,
-      address: form.address,
-      description: form.description,
-      pricePerNight: Number(form.pricePerNight) || 0,
-      rooms: Number(form.rooms) || 1,
-      maxGuests: Number(form.maxGuests) || 1,
-      amenities: form.amenities,
-      images,
+  const totalEarnings = useMemo(
+    () =>
+      myListings.reduce(
+        (sum, listing) =>
+          sum + (listing.earningsTotal ?? (listing.bookingsCount || 0) * listing.pricePerNight),
+        0,
+      ),
+    [myListings],
+  );
+
+  const totalBookings = useMemo(
+    () => myListings.reduce((sum, listing) => sum + (listing.bookingsCount || 0), 0),
+    [myListings],
+  );
+
+  const pendingRevenue = useMemo(
+    () =>
+      listingsByStatus.pending.reduce(
+        (sum, listing) => sum + (listing.bookingsCount || 0) * listing.pricePerNight,
+        0,
+      ),
+    [listingsByStatus.pending],
+  );
+
+  const filteredListings = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    const source = myListings.filter((listing) => {
+      const byQuery =
+        !normalized ||
+        listing.name.toLowerCase().includes(normalized) ||
+        listing.id.toLowerCase().includes(normalized) ||
+        listing.location.toLowerCase().includes(normalized);
+      const byStatus = statusFilter === 'all' || listing.status === statusFilter;
+      const byType = typeFilter === 'all' || listing.listingType === typeFilter;
+      return byQuery && byStatus && byType;
     });
-  };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Property name</label>
-          <Input
-            value={form.name}
-            onChange={e => handleChange('name', e.target.value)}
-            placeholder="Ocean View Apartment"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Property type</label>
-          <Select
-            value={form.type}
-            onValueChange={value => handleChange('type', value)}
+    const priority: Record<ListingStatus, number> = {
+      pending: 0,
+      draft: 1,
+      rejected: 2,
+      approved: 3,
+    };
+
+    return source.sort((a, b) => {
+      if (sortBy === 'newest') return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      if (sortBy === 'oldest') return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
+      if (sortBy === 'price_low') return a.pricePerNight - b.pricePerNight;
+      if (sortBy === 'price_high') return b.pricePerNight - a.pricePerNight;
+      return priority[a.status] - priority[b.status];
+    });
+  }, [myListings, query, statusFilter, typeFilter, sortBy]);
+
+  const sectionListings = useMemo(() => {
+    if (section === 'pending-review') return listingsByStatus.pending;
+    if (section === 'approved-listings') return listingsByStatus.approved;
+    if (section === 'rejected-listings') return listingsByStatus.rejected;
+    return filteredListings;
+  }, [section, filteredListings, listingsByStatus]);
+
+  const averageNightlyPrice = useMemo(() => {
+    if (!myListings.length) return 0;
+    return Math.round(myListings.reduce((sum, listing) => sum + listing.pricePerNight, 0) / myListings.length);
+  }, [myListings]);
+
+  const navItems: { key: HostSection; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { key: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+    { key: 'my-listings', label: 'My Listings', icon: <Layers className="h-4 w-4" />, badge: myListings.length },
+    { key: 'add-listing', label: 'Add Listing', icon: <HousePlus className="h-4 w-4" /> },
+    { key: 'pending-review', label: 'Pending Review', icon: <Clock3 className="h-4 w-4" />, badge: listingsByStatus.pending.length },
+    { key: 'approved-listings', label: 'Approved Listings', icon: <ShieldCheck className="h-4 w-4" />, badge: listingsByStatus.approved.length },
+    { key: 'rejected-listings', label: 'Rejected Listings', icon: <TriangleAlert className="h-4 w-4" />, badge: listingsByStatus.rejected.length },
+    { key: 'bookings', label: 'Bookings', icon: <BedDouble className="h-4 w-4" />, badge: totalBookings },
+    { key: 'earnings', label: 'Earnings', icon: <DollarSign className="h-4 w-4" /> },
+    { key: 'messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
+  ];
+
+  function openCreateForm() {
+    setEditingId(null);
+    setForm(createEmptyForm());
+    setFormError('');
+    setSection('add-listing');
+  }
+
+  function openEditForm(listing: HostListing) {
+    setEditingId(listing.id);
+    setForm(mapListingToForm(listing));
+    setFormError('');
+    setSection('add-listing');
+  }
+
+  function handleDestinationChange(destinationId: string) {
+    const destination = destinations.find((item) => item.id === destinationId);
+    setForm((prev) => ({
+      ...prev,
+      destinationId,
+      location: destination ? `${destination.name}, ${destination.country}` : prev.location,
+    }));
+  }
+
+  function validateForm(state: ListingFormState) {
+    const errors: string[] = [];
+    const cleanImages = state.images.map((image) => image.trim()).filter(Boolean);
+    if (!state.name.trim()) errors.push('Title is required.');
+    if (!state.location.trim()) errors.push('Location is required.');
+    if (!state.address.trim()) errors.push('Address is required.');
+    if (!state.description.trim()) errors.push('Description is required.');
+    if (!cleanImages.length) errors.push('At least one image URL is required.');
+    if (!parseCsv(state.amenities).length) errors.push('Add at least one amenity.');
+    if (!(Number(state.pricePerNight) > 0)) errors.push('Price per night must be greater than 0.');
+    if (!(Number(state.maxGuests) > 0)) errors.push('Guest capacity must be at least 1.');
+
+    if (isHotelType(state.listingType)) {
+      const stars = Number(state.stars);
+      if (!(stars >= 1 && stars <= 5)) errors.push('Hotel/Resort listings must include stars from 1 to 5.');
+    } else {
+      if (!(Number(state.bedrooms) >= 1)) errors.push('Bedrooms must be at least 1 for rental listings.');
+      if (!(Number(state.bathrooms) >= 1)) errors.push('Bathrooms must be at least 1 for rental listings.');
+    }
+    return errors;
+  }
+
+  function toPayload(state: ListingFormState) {
+    const listingType = state.listingType;
+    const category = inferCategory(listingType);
+    const hotelCategory = isHotelType(listingType);
+    const cleanImages = state.images.map((image) => image.trim()).filter(Boolean);
+
+    return {
+      name: state.name.trim(),
+      type: category as HostListingCategory,
+      listingType,
+      destinationId: state.destinationId || 'custom-destination',
+      location: state.location.trim(),
+      address: state.address.trim(),
+      description: state.description.trim(),
+      pricePerNight: Number(state.pricePerNight),
+      maxGuests: Number(state.maxGuests),
+      bedrooms: hotelCategory ? undefined : Number(state.bedrooms || 0),
+      bathrooms: hotelCategory ? undefined : Number(state.bathrooms || 0),
+      stars: hotelCategory ? Number(state.stars || 0) : undefined,
+      amenities: parseCsv(state.amenities),
+      images: cleanImages,
+      policies: state.policies.trim(),
+      availabilityNotes: state.availabilityNotes.trim(),
+      featuredTags: parseCsv(state.featuredTags),
+      hotelType: hotelCategory ? toLabel(listingType).toLowerCase() : undefined,
+      rentalType: hotelCategory ? undefined : toLabel(listingType).toLowerCase(),
+    };
+  }
+
+  function handleSave(submitForReview: boolean) {
+    const errors = validateForm(form);
+    if (errors.length) {
+      setFormError(errors[0]);
+      return;
+    }
+    setFormError('');
+    const payload = toPayload(form);
+
+    if (activeEdit) {
+      updateHostListing(activeEdit.id, payload);
+      if (submitForReview) {
+        if (activeEdit.status === 'rejected') resubmitHostListing(activeEdit.id);
+        else submitHostListing(activeEdit.id);
+      }
+    } else {
+      addHostListing(payload, { submit: submitForReview });
+    }
+
+    setEditingId(null);
+    setForm(createEmptyForm());
+    setSection(submitForReview ? 'pending-review' : 'my-listings');
+  }
+
+  function updateImageField(index: number, value: string) {
+    setForm((prev) => ({
+      ...prev,
+      images: prev.images.map((image, imageIndex) => (imageIndex === index ? value : image)),
+    }));
+  }
+
+  function addImageField() {
+    setForm((prev) => ({
+      ...prev,
+      images: [...prev.images, ''],
+    }));
+  }
+
+  function removeImageField(index: number) {
+    setForm((prev) => {
+      const nextImages = prev.images.filter((_, imageIndex) => imageIndex !== index);
+      return {
+        ...prev,
+        images: nextImages.length ? nextImages : [''],
+      };
+    });
+  }
+
+  function handleDelete(listing: HostListing) {
+    const shouldDelete = window.confirm(`Delete listing ${listing.id}? This action cannot be undone.`);
+    if (!shouldDelete) return;
+    deleteHostListing(listing.id);
+  }
+
+  function handleDuplicate(listing: HostListing) {
+    const newId = duplicateHostListing(listing.id);
+    if (!newId) return;
+    setSection('my-listings');
+  }
+
+  function renderListingCollection(listings: HostListing[], emptyTitle: string, emptyText: string) {
+    if (!listings.length) {
+      return (
+        <div className="travel-panel border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900/60">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <Layers className="h-5 w-5" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{emptyTitle}</h3>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{emptyText}</p>
+          <button
+            onClick={openCreateForm}
+            className="travel-primary-button mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold"
           >
-            <SelectTrigger>
-              <SelectValue />
+            <Plus className="h-4 w-4" />
+            Add Listing
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {listings.map((listing) => {
+          const canEdit = listing.status === 'draft' || listing.status === 'rejected';
+          const canSubmit = listing.status === 'draft';
+          const canResubmit = listing.status === 'rejected';
+          return (
+            <article key={listing.id} className="travel-panel border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 md:p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-1 gap-4">
+                  <div className="h-24 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                    {listing.images[0] ? (
+                      <img src={listing.images[0]} alt={listing.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={listing.status} />
+                      <span className="travel-badge bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                        {toLabel(listing.listingType)}
+                      </span>
+                      <span className="travel-badge bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {listing.id}
+                      </span>
+                    </div>
+                    <h3 className="mt-2 text-lg font-bold text-slate-900 dark:text-slate-100">{listing.name}</h3>
+                    <p className="mt-1 flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {listing.location}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600 dark:text-slate-300">
+                      <span>{formatPrice(listing.pricePerNight)} / night</span>
+                      <span>{listing.maxGuests} guests</span>
+                      <span>Updated {formatDate(listing.updatedAt)}</span>
+                    </div>
+                    {listing.reviewNote && (
+                      <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
+                        <span className="font-semibold">Admin feedback:</span> {listing.reviewNote}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 lg:justify-end">
+                  <button
+                    onClick={() => setPreviewId(listing.id)}
+                    className="travel-secondary-button inline-flex items-center gap-1.5 px-3.5 py-2 text-sm"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => handleDuplicate(listing)}
+                    className="travel-secondary-button inline-flex items-center gap-1.5 px-3.5 py-2 text-sm"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Duplicate
+                  </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => openEditForm(listing)}
+                      className="travel-secondary-button inline-flex items-center gap-1.5 px-3.5 py-2 text-sm"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      Edit
+                    </button>
+                  )}
+                  {canSubmit && (
+                    <button
+                      onClick={() => submitHostListing(listing.id)}
+                      className="travel-primary-button inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold"
+                    >
+                      <Send className="h-4 w-4" />
+                      Submit
+                    </button>
+                  )}
+                  {canResubmit && (
+                    <button
+                      onClick={() => resubmitHostListing(listing.id)}
+                      className="travel-primary-button inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold"
+                    >
+                      <Send className="h-4 w-4" />
+                      Resubmit
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(listing)}
+                    className="inline-flex items-center gap-1.5 rounded-[18px] border border-red-200 bg-red-50 px-3.5 py-2 text-sm font-semibold text-red-600 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    );
+  }
+
+  function renderListingFilters() {
+    return (
+      <div className="travel-panel border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by title, id, location..."
+              className="travel-input-field w-full pl-10 text-sm"
+            />
+          </div>
+
+          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | ListingStatus)}>
+            <SelectTrigger className="travel-select-trigger w-full text-sm">
+              <SelectValue placeholder="All statuses" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Hotel">Hotel</SelectItem>
-              <SelectItem value="Apartment">Apartment</SelectItem>
-              <SelectItem value="House">House</SelectItem>
-              <SelectItem value="Villa">Villa</SelectItem>
+            <SelectContent className="travel-select-content">
+              <SelectItem className="travel-select-item" value="all">All statuses</SelectItem>
+              <SelectItem className="travel-select-item" value="draft">Draft</SelectItem>
+              <SelectItem className="travel-select-item" value="pending">Pending review</SelectItem>
+              <SelectItem className="travel-select-item" value="approved">Approved</SelectItem>
+              <SelectItem className="travel-select-item" value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as 'all' | HostListingType)}>
+            <SelectTrigger className="travel-select-trigger w-full text-sm">
+              <SelectValue placeholder="All types" />
+            </SelectTrigger>
+            <SelectContent className="travel-select-content">
+              <SelectItem className="travel-select-item" value="all">All types</SelectItem>
+              {HOST_LISTING_TYPES.map((item) => (
+                <SelectItem className="travel-select-item" key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortKey)}>
+            <SelectTrigger className="travel-select-trigger w-full text-sm">
+              <SelectValue placeholder="Newest first" />
+            </SelectTrigger>
+            <SelectContent className="travel-select-content">
+              <SelectItem className="travel-select-item" value="newest">Newest first</SelectItem>
+              <SelectItem className="travel-select-item" value="oldest">Oldest first</SelectItem>
+              <SelectItem className="travel-select-item" value="status">Status priority</SelectItem>
+              <SelectItem className="travel-select-item" value="price_low">Price low to high</SelectItem>
+              <SelectItem className="travel-select-item" value="price_high">Price high to low</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Destination / City</label>
-          <Input
-            value={form.city}
-            onChange={e => handleChange('city', e.target.value)}
-            placeholder="Santorini, Greece"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Address</label>
-          <Input
-            value={form.address}
-            onChange={e => handleChange('address', e.target.value)}
-            placeholder="123 Caldera Street"
-          />
-        </div>
-      </div>
+  function renderListingForm() {
+    const editing = Boolean(activeEdit);
+    const isHotel = isHotelType(form.listingType);
 
-      <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Description</label>
-        <Textarea
-          rows={3}
-          value={form.description}
-          onChange={e => handleChange('description', e.target.value)}
-          placeholder="Describe your property, view, and unique features..."
-        />
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Price per night</label>
-          <Input
-            type="number"
-            min={0}
-            value={form.pricePerNight}
-            onChange={e => handleChange('pricePerNight', e.target.value)}
-            placeholder="200"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Rooms</label>
-          <Input
-            type="number"
-            min={1}
-            value={form.rooms}
-            onChange={e => handleChange('rooms', e.target.value)}
-            placeholder="2"
-          />
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Max guests</label>
-          <Input
-            type="number"
-            min={1}
-            value={form.maxGuests}
-            onChange={e => handleChange('maxGuests', e.target.value)}
-            placeholder="4"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Amenities</label>
-        <Input
-          value={form.amenities}
-          onChange={e => handleChange('amenities', e.target.value)}
-          placeholder="WiFi, Pool, Breakfast..."
-        />
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Image URLs (comma separated)</label>
-        <Input
-          value={form.images}
-          onChange={e => handleChange('images', e.target.value)}
-          placeholder="https://..., https://..."
-        />
-      </div>
-
-      <div className="flex gap-2 justify-end pt-1">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit">
-          {initial ? 'Save changes' : 'Add property'}
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-// ───────────────── Property Card & Manager ─────────────────
-
-interface HostPropertyCardProps {
-  property: HostProperty;
-  onEdit: () => void;
-  onDelete: () => void;
-}
-
-function HostPropertyCard({ property, onEdit, onDelete }: HostPropertyCardProps) {
-  const cover = property.images[0] || '/images/_site/hero-hotels.jpg';
-
-  return (
-    <Card className="border-gray-100 shadow-sm overflow-hidden">
-      <div className="h-40 w-full overflow-hidden">
-        <ProgressiveImage
-          src={cover}
-          alt={property.name}
-          wrapperClassName="w-full h-full"
-        />
-      </div>
-      <CardContent className="px-4 py-4 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 inline-flex items-center gap-1">
-              <Home size={12} /> {property.type}
+    return (
+      <div className="space-y-4">
+        <div className="travel-panel border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                {editing ? `Edit Listing ${activeEdit?.id}` : 'Add New Listing'}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Create a complete listing and submit it to admin review when ready.
+              </p>
             </div>
-            <h3 className="mt-2 font-semibold text-gray-900 text-sm line-clamp-2">{property.name}</h3>
-            <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-              <MapPin size={11} /> {property.city}
-            </p>
+            {activeEdit?.status && <StatusBadge status={activeEdit.status} />}
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-sm font-black text-gray-900">${property.pricePerNight}</div>
-            <div className="text-[11px] text-gray-400">per night</div>
+
+          {formError && (
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+              {formError}
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Title</label>
+              <input
+                className="travel-input-field w-full text-sm"
+                value={form.name}
+                onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+                placeholder="Sunrise Coastline Villa"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Listing Type</label>
+              <Select
+                value={form.listingType}
+                onValueChange={(value) => setForm((prev) => ({ ...prev, listingType: value as HostListingType }))}
+              >
+                <SelectTrigger className="travel-select-trigger w-full text-sm">
+                  <SelectValue placeholder="Select listing type" />
+                </SelectTrigger>
+                <SelectContent className="travel-select-content">
+                  {HOST_LISTING_TYPES.map((item) => (
+                    <SelectItem className="travel-select-item" key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Destination</label>
+              <Select
+                value={form.destinationId || CUSTOM_DESTINATION_VALUE}
+                onValueChange={(value) => handleDestinationChange(value === CUSTOM_DESTINATION_VALUE ? '' : value)}
+              >
+                <SelectTrigger className="travel-select-trigger w-full text-sm">
+                  <SelectValue placeholder="Custom / not listed" />
+                </SelectTrigger>
+                <SelectContent className="travel-select-content">
+                  <SelectItem className="travel-select-item" value={CUSTOM_DESTINATION_VALUE}>Custom / not listed</SelectItem>
+                  {destinations.map((destination) => (
+                    <SelectItem className="travel-select-item" key={destination.id} value={destination.id}>
+                      {destination.name}, {destination.country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Location</label>
+              <input
+                className="travel-input-field w-full text-sm"
+                value={form.location}
+                onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))}
+                placeholder="Santorini, Greece"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex items-center justify-between mt-1">
-          <div className="text-xs text-gray-500">
-            {property.rooms} rooms · up to {property.maxGuests} guests
-          </div>
-          <div className="flex items-center gap-1 text-xs text-gray-700">
-            <Star size={12} className="text-amber-400 fill-amber-400" />
-            {property.rating.toFixed(1)}
-          </div>
-        </div>
-        <div className="flex gap-2 pt-2">
-          <Button variant="outline" size="sm" className="flex-1 flex items-center justify-center gap-1 text-xs" onClick={onEdit}>
-            <Edit2 size={12} /> Edit
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1 flex items-center justify-center gap-1 text-xs text-red-600 border-red-100 hover:bg-red-50" onClick={onDelete}>
-            <Trash2 size={12} /> Delete
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
-interface HostPropertyManagerProps {
-  properties: HostProperty[];
-  setProperties: React.Dispatch<React.SetStateAction<HostProperty[]>>;
-}
-
-function HostPropertyManager({ properties, setProperties }: HostPropertyManagerProps) {
-  const [editing, setEditing] = useState<HostProperty | null>(null);
-  const [showForm, setShowForm] = useState(false);
-
-  const handleSave = (data: Omit<HostProperty, 'id' | 'rating'> & { id?: string }) => {
-    if (data.id) {
-      setProperties(prev =>
-        prev.map(p =>
-          p.id === data.id
-            ? { ...p, ...data }
-            : p,
-        ),
-      );
-    } else {
-      const newProperty: HostProperty = {
-        ...(data as HostProperty),
-        id: `prop-${Date.now()}`,
-        rating: 4.8,
-      };
-      setProperties(prev => [newProperty, ...prev]);
-    }
-    setEditing(null);
-    setShowForm(false);
-  };
-
-  const handleDelete = (id: string) => {
-    setProperties(prev => prev.filter(p => p.id !== id));
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Your properties</h2>
-        <Button
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={() => {
-            setEditing(null);
-            setShowForm(true);
-          }}
-        >
-          <Plus size={14} /> Add property
-        </Button>
-      </div>
-
-      {showForm && (
-        <Card className="border-gray-100 shadow-sm">
-          <CardHeader className="px-4 pt-4 pb-2">
-            <CardTitle className="text-sm font-semibold text-gray-900">
-              {editing ? 'Edit property' : 'Add new property'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-4 pb-4">
-            <HostPropertyForm
-              initial={editing}
-              onSave={handleSave}
-              onCancel={() => {
-                setEditing(null);
-                setShowForm(false);
-              }}
+          <div className="mt-4 space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Address</label>
+            <input
+              className="travel-input-field w-full text-sm"
+              value={form.address}
+              onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
+              placeholder="Street, number, district"
             />
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {properties.map(p => (
-          <HostPropertyCard
-            key={p.id}
-            property={p}
-            onEdit={() => {
-              setEditing(p);
-              setShowForm(true);
-            }}
-            onDelete={() => handleDelete(p.id)}
-          />
-        ))}
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Price / Night</label>
+              <input
+                type="number"
+                min={1}
+                className="travel-input-field w-full text-sm"
+                value={form.pricePerNight}
+                onChange={(event) => setForm((prev) => ({ ...prev, pricePerNight: event.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Guests</label>
+              <input
+                type="number"
+                min={1}
+                className="travel-input-field w-full text-sm"
+                value={form.maxGuests}
+                onChange={(event) => setForm((prev) => ({ ...prev, maxGuests: event.target.value }))}
+              />
+            </div>
+            {isHotel ? (
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Stars</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={5}
+                  className="travel-input-field w-full text-sm"
+                  value={form.stars}
+                  onChange={(event) => setForm((prev) => ({ ...prev, stars: event.target.value }))}
+                />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Bedrooms</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className="travel-input-field w-full text-sm"
+                    value={form.bedrooms}
+                    onChange={(event) => setForm((prev) => ({ ...prev, bedrooms: event.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Bathrooms</label>
+                  <input
+                    type="number"
+                    min={1}
+                    className="travel-input-field w-full text-sm"
+                    value={form.bathrooms}
+                    onChange={(event) => setForm((prev) => ({ ...prev, bathrooms: event.target.value }))}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Description</label>
+            <textarea
+              rows={4}
+              className="travel-input-field w-full text-sm"
+              value={form.description}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              placeholder="Describe the guest experience and what makes your listing unique."
+            />
+          </div>
+
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Amenities (comma separated)</label>
+              <input
+                className="travel-input-field w-full text-sm"
+                value={form.amenities}
+                onChange={(event) => setForm((prev) => ({ ...prev, amenities: event.target.value }))}
+                placeholder="WiFi, Pool, Breakfast"
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Images URLs</label>
+                <button
+                  type="button"
+                  onClick={addImageField}
+                  className="travel-secondary-button inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add photo
+                </button>
+              </div>
+              <div className="space-y-2">
+                {form.images.map((imageUrl, index) => (
+                  <div key={`image-field-${index}`} className="flex items-center gap-2">
+                    <input
+                      className="travel-input-field w-full text-sm"
+                      value={imageUrl}
+                      onChange={(event) => updateImageField(index, event.target.value)}
+                      placeholder={`https://... (Photo ${index + 1})`}
+                    />
+                    {form.images.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeImageField(index)}
+                        className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20"
+                        aria-label={`Remove photo ${index + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Policies</label>
+              <textarea
+                rows={3}
+                className="travel-input-field w-full text-sm"
+                value={form.policies}
+                onChange={(event) => setForm((prev) => ({ ...prev, policies: event.target.value }))}
+                placeholder="Cancellation policy, quiet hours, pet policy..."
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Availability Notes</label>
+              <textarea
+                rows={3}
+                className="travel-input-field w-full text-sm"
+                value={form.availabilityNotes}
+                onChange={(event) => setForm((prev) => ({ ...prev, availabilityNotes: event.target.value }))}
+                placeholder="Seasonality and blocked dates."
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">Featured tags (comma separated)</label>
+            <input
+              className="travel-input-field w-full text-sm"
+              value={form.featuredTags}
+              onChange={(event) => setForm((prev) => ({ ...prev, featuredTags: event.target.value }))}
+              placeholder="Family Friendly, Luxury, Sea View"
+            />
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <button
+              onClick={() => handleSave(false)}
+              className="travel-secondary-button inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold"
+            >
+              <Edit3 className="h-4 w-4" />
+              {editing ? 'Save Changes' : 'Save Draft'}
+            </button>
+            <button
+              onClick={() => handleSave(true)}
+              className="travel-primary-button inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold"
+            >
+              <Send className="h-4 w-4" />
+              {activeEdit?.status === 'rejected' ? 'Resubmit to Admin' : 'Submit for Approval'}
+            </button>
+            <button
+              onClick={() => {
+                setEditingId(null);
+                setForm(createEmptyForm());
+                setFormError('');
+                setSection('my-listings');
+              }}
+              className="travel-secondary-button inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// ───────────────── Bookings, Calendar, Earnings ─────────────────
+  function renderDashboard() {
+    return (
+      <div className="space-y-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Total listings</p>
+            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{myListings.length}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{listingsByStatus.approved.length} currently approved</p>
+          </div>
+          <div className="travel-panel border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
+            <p className="text-sm text-amber-700 dark:text-amber-300">Pending review</p>
+            <p className="mt-2 text-3xl font-black text-amber-700 dark:text-amber-200">{listingsByStatus.pending.length}</p>
+            <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/80">Awaiting admin decision</p>
+          </div>
+          <div className="travel-panel border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+            <p className="text-sm text-emerald-700 dark:text-emerald-300">Estimated earnings</p>
+            <p className="mt-2 text-3xl font-black text-emerald-700 dark:text-emerald-200">{formatPrice(totalEarnings)}</p>
+            <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">From total approved+booked inventory</p>
+          </div>
+          <div className="travel-panel border border-sky-200 bg-sky-50 p-5 shadow-sm dark:border-sky-500/30 dark:bg-sky-500/10">
+            <p className="text-sm text-sky-700 dark:text-sky-300">Avg nightly rate</p>
+            <p className="mt-2 text-3xl font-black text-sky-700 dark:text-sky-200">{formatPrice(averageNightlyPrice)}</p>
+            <p className="mt-1 text-xs text-sky-700/80 dark:text-sky-300/80">{totalBookings} total bookings tracked</p>
+          </div>
+        </section>
 
-interface HostBookingsTableProps {
-  bookings: HostBooking[];
-  onUpdateStatus: (id: string, status: BookingStatus) => void;
-}
-
-function HostBookingsTable({ bookings, onUpdateStatus }: HostBookingsTableProps) {
-  return (
-    <Card className="border-gray-100 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-2">
-        <CardTitle className="text-sm font-semibold text-gray-900">Incoming bookings</CardTitle>
-      </CardHeader>
-      <CardContent className="px-0 pb-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="px-4">Guest</TableHead>
-              <TableHead>Property</TableHead>
-              <TableHead>Dates</TableHead>
-              <TableHead>Total</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="px-4 text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookings.map(b => (
-              <TableRow key={b.id}>
-                <TableCell className="px-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-semibold flex items-center justify-center">
-                      {b.guestName[0]}
+        <section className="grid gap-5 xl:grid-cols-3">
+          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 xl:col-span-2">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Recent listing activity</h2>
+              <button
+                onClick={() => setSection('my-listings')}
+                className="inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400"
+              >
+                View all
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {(myListings.slice().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)).map((listing) => (
+                <div key={listing.id} className="travel-surface travel-panel border p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{listing.name}</p>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        {listing.id} · {toLabel(listing.listingType)} · Updated {formatDate(listing.updatedAt)}
+                      </p>
                     </div>
-                    <span className="text-sm text-gray-900">{b.guestName}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm text-gray-700">{b.propertyName}</TableCell>
-                <TableCell className="text-sm text-gray-500">
-                  {b.checkIn} → {b.checkOut}
-                </TableCell>
-                <TableCell className="text-sm font-semibold text-gray-900">
-                  ${b.total.toLocaleString()}
-                </TableCell>
-                <TableCell>
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
-                    b.status === 'accepted'
-                      ? 'bg-green-100 text-green-700'
-                      : b.status === 'rejected'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-amber-50 text-amber-700'
-                  }`}>
-                    {b.status === 'accepted' && <CheckCircle2 size={12} />}
-                    {b.status === 'rejected' && <XCircle size={12} />}
-                    {b.status === 'pending' && <ClockIcon />}
-                    {b.status}
-                  </span>
-                </TableCell>
-                <TableCell className="px-4 text-right">
-                  <div className="inline-flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs border-green-200 text-green-700 hover:bg-green-50"
-                      disabled={b.status === 'accepted'}
-                      onClick={() => onUpdateStatus(b.id, 'accepted')}
-                    >
-                      Accept
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs border-red-200 text-red-700 hover:bg-red-50"
-                      disabled={b.status === 'rejected'}
-                      onClick={() => onUpdateStatus(b.id, 'rejected')}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ClockIcon() {
-  return <span className="inline-block w-2 h-2 rounded-full bg-amber-500" />;
-}
-
-interface HostCalendarProps {
-  bookings: HostBooking[];
-}
-
-function HostCalendar({ bookings }: HostCalendarProps) {
-  const bookedRanges = bookings
-    .filter(b => b.status === 'accepted')
-    .map(b => ({
-      from: new Date(b.checkIn),
-      to: new Date(b.checkOut),
-    }));
-
-  return (
-    <Card className="border-gray-100 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-2 flex items-center justify-between">
-        <CardTitle className="text-sm font-semibold text-gray-900">Calendar</CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4">
-        <div className="flex flex-col lg:flex-row gap-6">
-          <Calendar
-            mode="range"
-            selected={bookedRanges[0]}
-            numberOfMonths={1}
-          />
-          <div className="space-y-2 text-sm text-gray-600">
-            <div className="font-semibold text-gray-900">Upcoming stays</div>
-            {bookings.filter(b => b.status === 'accepted').map(b => (
-              <div key={b.id} className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                <div>
-                  <div className="text-sm font-medium text-gray-900">{b.propertyName}</div>
-                  <div className="text-xs text-gray-500">
-                    {b.checkIn} → {b.checkOut} · {b.nights} nights
+                    <StatusBadge status={listing.status} />
                   </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {b.guestName}
+              ))}
+              {!myListings.length && (
+                <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                  No listings yet. Add your first listing to start the host workflow.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Quick actions</h2>
+            <div className="mt-4 space-y-2.5">
+              <button
+                onClick={openCreateForm}
+                className="travel-primary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+              >
+                <Plus className="h-4 w-4" />
+                Add Listing
+              </button>
+              <button
+                onClick={() => setSection('pending-review')}
+                className="travel-secondary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+              >
+                <Clock3 className="h-4 w-4" />
+                Review Queue
+              </button>
+              <button
+                onClick={() => setSection('rejected-listings')}
+                className="travel-secondary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+              >
+                <TriangleAlert className="h-4 w-4" />
+                Fix Rejected Listings
+              </button>
+            </div>
+            <div className="travel-surface-secondary travel-summary-box mt-5 border p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Submission health</p>
+              <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <p>{listingsByStatus.draft.length} drafts ready to complete</p>
+                <p>{listingsByStatus.pending.length} waiting for admin</p>
+                <p>{listingsByStatus.rejected.length} need revision and resubmission</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  function renderBookings() {
+    return (
+      <div className="space-y-4">
+        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bookings Summary</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Bookings are derived from listing records until dedicated reservations management is connected.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Total bookings</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{totalBookings}</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending revenue</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{formatPrice(pendingRevenue)}</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Approved listings</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{listingsByStatus.approved.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Listing performance</h3>
+          <div className="mt-4 space-y-3">
+            {myListings.map((listing) => (
+              <div key={listing.id} className="travel-surface travel-panel border p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{listing.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{listing.id}</p>
+                  </div>
+                  <div className="text-right text-sm text-slate-600 dark:text-slate-300">
+                    <p>{listing.bookingsCount || 0} bookings</p>
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">{formatPrice((listing.bookingsCount || 0) * listing.pricePerNight)}</p>
+                  </div>
                 </div>
               </div>
             ))}
+            {!myListings.length && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">No listings yet.</p>
+            )}
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-interface HostEarningsChartProps {
-  points: EarningsPoint[];
-}
-
-function HostEarningsChart({ points }: HostEarningsChartProps) {
-  return (
-    <Card className="border-gray-100 shadow-sm">
-      <CardHeader className="px-4 pt-4 pb-2">
-        <CardTitle className="text-sm font-semibold text-gray-900">Earnings overview</CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4">
-        <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={points}>
-              <defs>
-                <linearGradient id="earningsGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.4} />
-                  <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip formatter={(v: any) => [`$${v.toLocaleString()}`, 'Earnings']} />
-              <Area
-                type="monotone"
-                dataKey="amount"
-                stroke="#0ea5e9"
-                strokeWidth={2}
-                fill="url(#earningsGrad)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ───────────────── Main Page ─────────────────
-
-export default function HostDashboardPage() {
-  const { role, translateDynamic } = useApp();
-
-  const [properties, setProperties] = useState<HostProperty[]>([
-    {
-      id: 'prop-1',
-      name: 'Oia Sunset Loft',
-      type: 'Apartment',
-      city: 'Santorini, Greece',
-      address: 'Caldera Street 12',
-      description: 'Cliffside apartment with panoramic caldera views and private terrace.',
-      pricePerNight: 280,
-      rooms: 2,
-      maxGuests: 4,
-      amenities: 'WiFi, Pool, Breakfast, Air conditioning',
-      images: ['/images/_site/hero-hotels.jpg'],
-      rating: 4.9,
-    },
-    {
-      id: 'prop-2',
-      name: 'Ubud Jungle Villa',
-      type: 'Villa',
-      city: 'Ubud, Bali',
-      address: 'Jungle Road 8',
-      description: 'Private pool villa surrounded by rice terraces and tropical forest.',
-      pricePerNight: 320,
-      rooms: 3,
-      maxGuests: 6,
-      amenities: 'WiFi, Pool, Spa, Breakfast',
-      images: ['/images/_site/hero-rentals.jpg'],
-      rating: 4.8,
-    },
-  ]);
-
-  const [bookings, setBookings] = useState<HostBooking[]>([
-    {
-      id: 'HB-1001',
-      propertyId: 'prop-1',
-      propertyName: 'Oia Sunset Loft',
-      guestName: 'Emma Thompson',
-      checkIn: '2026-04-15',
-      checkOut: '2026-04-20',
-      nights: 5,
-      total: 1400,
-      status: 'pending',
-    },
-    {
-      id: 'HB-1002',
-      propertyId: 'prop-2',
-      propertyName: 'Ubud Jungle Villa',
-      guestName: 'Lucas Martin',
-      checkIn: '2026-05-01',
-      checkOut: '2026-05-06',
-      nights: 5,
-      total: 1600,
-      status: 'accepted',
-    },
-  ]);
-
-  const earnings: EarningsPoint[] = useMemo(
-    () => [
-      { month: 'Nov', amount: 3200 },
-      { month: 'Dec', amount: 4100 },
-      { month: 'Jan', amount: 2900 },
-      { month: 'Feb', amount: 3800 },
-      { month: 'Mar', amount: 4600 },
-    ],
-    [],
-  );
-
-  const handleUpdateBookingStatus = useCallback((id: string, status: BookingStatus) => {
-    setBookings(prev =>
-      prev.map(b =>
-        b.id === id
-          ? { ...b, status }
-          : b,
-      ),
+      </div>
     );
-  }, []);
+  }
+
+  function renderEarnings() {
+    const sorted = myListings
+      .slice()
+      .sort((a, b) => ((b.earningsTotal || b.pricePerNight) - (a.earningsTotal || a.pricePerNight)))
+      .slice(0, 6);
+    return (
+      <div className="space-y-4">
+        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Earnings</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Revenue snapshot tied to listing performance and nightly rates.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-3">
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Total projected</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{formatPrice(totalEarnings)}</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Average nightly</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{formatPrice(averageNightlyPrice)}</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Live inventory</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{listingsByStatus.approved.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Top earning listings</h3>
+          <div className="mt-4 space-y-3">
+            {sorted.map((listing) => {
+              const estimated = listing.earningsTotal ?? listing.pricePerNight * (listing.bookingsCount || 0);
+              return (
+                <div key={listing.id} className="travel-surface travel-panel border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{listing.name}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{listing.id} · {toLabel(listing.listingType)}</p>
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatPrice(estimated)}</p>
+                  </div>
+                </div>
+              );
+            })}
+            {!sorted.length && <p className="text-sm text-slate-500 dark:text-slate-400">No data yet.</p>}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderMessages() {
+    return (
+      <div className="travel-panel border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Messages & Support</h2>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          Host support inbox is ready for integration. This section will include admin feedback threads and support messages.
+        </p>
+        <div className="travel-surface-secondary travel-summary-box mt-5 border p-4">
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Next integration targets</p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
+            <li>Threaded admin comments for listing reviews</li>
+            <li>Real-time host support updates</li>
+            <li>Notifications for status changes (approved/rejected)</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
+
+  function renderMainContent() {
+    if (section === 'dashboard') return renderDashboard();
+    if (section === 'add-listing') return renderListingForm();
+    if (section === 'bookings') return renderBookings();
+    if (section === 'earnings') return renderEarnings();
+    if (section === 'messages') return renderMessages();
+
+    const metadata: Record<string, { title: string; subtitle: string; emptyTitle: string; emptyText: string }> = {
+      'my-listings': {
+        title: 'My Listings',
+        subtitle: 'Manage all your hotels, villas, apartments, houses, and other stays.',
+        emptyTitle: 'No listings yet',
+        emptyText: 'Create your first listing to start hosting.',
+      },
+      'pending-review': {
+        title: 'Pending Review',
+        subtitle: 'Listings submitted to admin and waiting for review.',
+        emptyTitle: 'No pending listings',
+        emptyText: 'Submitted listings will appear here while admin reviews them.',
+      },
+      'approved-listings': {
+        title: 'Approved Listings',
+        subtitle: 'Listings approved by admin and available as active inventory.',
+        emptyTitle: 'No approved listings',
+        emptyText: 'Approved listings will appear here once reviewed by admin.',
+      },
+      'rejected-listings': {
+        title: 'Rejected Listings',
+        subtitle: 'Listings that need changes before resubmission.',
+        emptyTitle: 'No rejected listings',
+        emptyText: 'Any rejected listing will show here with admin feedback.',
+      },
+    };
+
+    const header = metadata[section];
+
+    return (
+      <div className="space-y-4">
+        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{header.title}</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{header.subtitle}</p>
+          {(section === 'my-listings' || section === 'pending-review' || section === 'approved-listings' || section === 'rejected-listings') && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {section === 'my-listings' && (
+                <button
+                  onClick={openCreateForm}
+                  className="travel-primary-button inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Listing
+                </button>
+              )}
+              {section === 'rejected-listings' && (
+                <button
+                  onClick={openCreateForm}
+                  className="travel-secondary-button inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold"
+                >
+                  <Edit3 className="h-4 w-4" />
+                  Add Revised Listing
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {section === 'my-listings' && renderListingFilters()}
+        {renderListingCollection(sectionListings, header.emptyTitle, header.emptyText)}
+      </div>
+    );
+  }
 
   if (role !== 'host') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center pt-16">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🔒</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{translateDynamic('Access Restricted')}</h2>
-          <p className="text-gray-500">
-            {translateDynamic('Switch to Host role in the navbar to access the Host Dashboard.')}
-          </p>
+      <div className="min-h-screen bg-[var(--background)] pt-20">
+        <div className="mx-auto max-w-xl px-4">
+          <div className="travel-panel border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{translateDynamic('Access Restricted')}</h2>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              {translateDynamic('Switch to Host role in the navbar to access the Host Dashboard.')}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-teal-600 py-8 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-white">Host Dashboard</h1>
-            <p className="text-emerald-100 mt-1 text-sm">
-              {translateDynamic('Manage your properties, bookings, and earnings in one place.')}
-            </p>
+    <div className="min-h-screen bg-[var(--background)] pt-20">
+      <div className="mx-auto max-w-[1500px] px-4 pb-10 sm:px-6">
+        <header className="travel-shell overflow-hidden border border-slate-200 bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-8 shadow-sm dark:border-slate-700">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="travel-badge inline-flex items-center gap-2 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
+                Host Portal
+              </p>
+              <h1 className="mt-2 text-3xl font-black text-white">Hosting Command Center</h1>
+              <p className="mt-1 text-sm text-blue-50">
+                Manage listings end-to-end from draft to admin approval, with unified hotel and rental workflow.
+              </p>
+            </div>
+            <div className="travel-panel border border-white/30 bg-white/10 p-4 backdrop-blur">
+              <p className="text-xs uppercase tracking-wide text-blue-100">Host Account</p>
+              <p className="mt-1 text-sm font-semibold text-white">{currentUser?.name || 'Host'}</p>
+              <p className="text-xs text-blue-100">{currentUser?.id || '—'}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-lime-300 rounded-full animate-pulse" />
-            <span className="text-emerald-50 text-xs">
-              {translateDynamic('Hosting status')}: {properties.length > 0 ? translateDynamic('Active') : translateDynamic('Getting started')}
-            </span>
-          </div>
+        </header>
+
+        <div className="mt-5 grid gap-5 xl:grid-cols-[280px,1fr]">
+          <aside className="space-y-4">
+            <div className="travel-panel border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+              <div className="mb-2 flex items-center gap-2 px-2 py-1">
+                <ListFilter className="h-4 w-4 text-slate-500" />
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Host Menu</p>
+              </div>
+              <nav className="space-y-1">
+                {navItems.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setSection(item.key)}
+                    className={`flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-sm font-semibold transition ${
+                      section === item.key
+                        ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white'
+                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      {item.icon}
+                      {item.label}
+                    </span>
+                    {typeof item.badge === 'number' && (
+                      <span className={`travel-badge px-2 py-0.5 text-xs ${section === item.key ? 'bg-white/30 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </aside>
+
+          <main>{renderMainContent()}</main>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <HostStatsCards properties={properties} bookings={bookings} />
-
-        <HostPropertyManager properties={properties} setProperties={setProperties} />
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          <HostBookingsTable bookings={bookings} onUpdateStatus={handleUpdateBookingStatus} />
-          <HostCalendar bookings={bookings} />
+      {previewListing && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/55 p-4" onClick={() => setPreviewId(null)}>
+          <div
+            className="travel-shell max-h-[92vh] w-full max-w-4xl overflow-hidden border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{previewListing.id}</p>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{previewListing.name}</h3>
+              </div>
+              <button
+                onClick={() => setPreviewId(null)}
+                className="travel-icon-button flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="app-modal-scroll max-h-[calc(92vh-84px)] overflow-y-auto px-6 py-5">
+              <div className="grid gap-4 md:grid-cols-[1.2fr,1fr]">
+                <div className="space-y-4">
+                  <div className="h-56 overflow-hidden rounded-3xl bg-slate-100 dark:bg-slate-800">
+                    {previewListing.images[0] ? (
+                      <img src={previewListing.images[0]} alt={previewListing.name} className="h-full w-full object-cover" />
+                    ) : null}
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{previewListing.description}</p>
+                </div>
+                <div className="space-y-3">
+                  <div className="travel-surface travel-panel border p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Overview</p>
+                    <div className="mt-2 space-y-1.5 text-sm text-slate-700 dark:text-slate-200">
+                      <p>{toLabel(previewListing.listingType)}</p>
+                      <p>{previewListing.location}</p>
+                      <p>{formatPrice(previewListing.pricePerNight)} / night</p>
+                      <p>{previewListing.maxGuests} guests</p>
+                      {previewListing.stars ? (
+                        <p className="inline-flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 text-amber-400" />
+                          {previewListing.stars} stars
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className="travel-surface travel-panel border p-4">
+                    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Amenities</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {previewListing.amenities.map((item) => (
+                        <span key={item} className="travel-badge bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  {previewListing.reviewNote && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                      <span className="font-semibold">Admin note:</span> {previewListing.reviewNote}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-
-        <HostEarningsChart points={earnings} />
-      </div>
+      )}
     </div>
   );
 }
-
