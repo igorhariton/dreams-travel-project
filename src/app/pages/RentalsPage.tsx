@@ -119,7 +119,7 @@ export default function RentalsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="relative h-64 overflow-hidden">
-        <img src="/images/_site/hero-rentals.jpg" alt="Rentals" className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
+        <img src="/images/_site/hero-rentals.jpg" alt="Rentals" className="w-full h-full object-cover" loading="eager" />
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/80 to-emerald-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white mb-2">{t('section.rentals')}</h1>

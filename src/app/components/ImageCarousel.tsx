@@ -144,7 +144,6 @@ export const ImageCarousel = memo(function ImageCarousel({
                   alt={label ? `${label} ${i + 1}` : `slide-${i + 1}`}
                   loading="lazy"
                   decoding="async"
-                  fetchPriority="auto"
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   style={{ opacity: isReady ? 1 : 0 }}
                   onLoad={() => handleLoad(i)}

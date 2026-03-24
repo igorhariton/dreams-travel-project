@@ -70,7 +70,7 @@ export default function DestinationsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
       <div className="relative h-72 overflow-hidden">
-        <img src="/images/_site/hero-destinations.jpg" alt="Destinations" className="w-full h-full object-cover" loading="eager" fetchPriority="high" />
+        <img src="/images/_site/hero-destinations.jpg" alt="Destinations" className="w-full h-full object-cover" loading="eager" />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(2,6,23,0.72) 0%, rgba(2,6,23,0.5) 100%)' }} />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white mb-3">{t('section.top_destinations')}</h1>
