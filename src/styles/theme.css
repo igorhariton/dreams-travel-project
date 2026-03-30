@@ -338,29 +338,29 @@ select.travel-input-field {
 
 .travel-secondary-button {
   border-radius: 18px;
-  border: 1px solid #d9e2ec;
-  background: #f1f5f9;
-  color: #0f172a;
+  border: 1px solid #cfe0f0;
+  background: #eef6ff;
+  color: #0f2747;
   box-shadow: none;
 }
 
 .travel-secondary-button:hover {
-  background: #eef4fa;
+  background: #e4f0ff;
 }
 
 .travel-summary-box {
   border-radius: 20px;
-  border-color: #d9e2ec;
+  border-color: #cfe0f0;
 }
 
 .travel-surface {
-  background: #f1f5f9;
-  border-color: #d9e2ec;
+  background: #eef6ff;
+  border-color: #cfe0f0;
 }
 
 .travel-surface-secondary {
-  background: #eef4fa;
-  border-color: #d9e2ec;
+  background: #e8f3ff;
+  border-color: #cfe0f0;
 }
 
 .travel-muted-text {
@@ -397,6 +397,102 @@ select.travel-input-field {
 
 .travel-icon-button {
   border-radius: 9999px;
+}
+
+html:not(.dark) .host-dashboard .host-nav-shell,
+.host-dashboard.host-theme-light .host-nav-shell {
+  border-color: #cfe0f0;
+  background: #f8fbff;
+}
+
+html:not(.dark) .host-dashboard .host-nav-item:not(.from-blue-500),
+.host-dashboard.host-theme-light .host-nav-item:not(.from-blue-500) {
+  background-color: transparent;
+  color: #23406a;
+}
+
+html:not(.dark) .host-dashboard .host-nav-item:not(.from-blue-500):hover,
+.host-dashboard.host-theme-light .host-nav-item:not(.from-blue-500):hover {
+  background-color: #eaf3ff;
+  color: #0f2747;
+}
+
+html:not(.dark) .host-dashboard .host-nav-item.from-blue-500,
+.host-dashboard.host-theme-light .host-nav-item.from-blue-500 {
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+html:not(.dark) .host-dashboard .host-nav-badge,
+.host-dashboard.host-theme-light .host-nav-badge {
+  border: 1px solid #cfe0f0;
+  background-color: #eaf3ff;
+  color: #325a8c;
+}
+
+html:not(.dark) .host-dashboard .host-nav-item.from-blue-500 .host-nav-badge,
+.host-dashboard.host-theme-light .host-nav-item.from-blue-500 .host-nav-badge {
+  border-color: rgba(255, 255, 255, 0.35);
+  background-color: rgba(255, 255, 255, 0.26);
+  color: #ffffff;
+}
+
+html:not(.dark) .host-dashboard .text-slate-100,
+html:not(.dark) .host-dashboard .text-slate-200,
+html:not(.dark) .host-dashboard .text-slate-300,
+html:not(.dark) .host-dashboard .text-slate-400,
+html:not(.dark) .host-dashboard .text-slate-500,
+html:not(.dark) .host-dashboard .text-slate-600,
+html:not(.dark) .host-dashboard .text-slate-700,
+html:not(.dark) .host-dashboard .text-slate-800,
+html:not(.dark) .host-dashboard .text-slate-900,
+html:not(.dark) .host-dashboard .text-slate-950,
+.host-dashboard.host-theme-light .text-slate-100,
+.host-dashboard.host-theme-light .text-slate-200,
+.host-dashboard.host-theme-light .text-slate-300,
+.host-dashboard.host-theme-light .text-slate-400,
+.host-dashboard.host-theme-light .text-slate-500,
+.host-dashboard.host-theme-light .text-slate-600,
+.host-dashboard.host-theme-light .text-slate-700,
+.host-dashboard.host-theme-light .text-slate-800,
+.host-dashboard.host-theme-light .text-slate-900,
+.host-dashboard.host-theme-light .text-slate-950 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .host-dashboard .travel-input-field,
+html:not(.dark) .host-dashboard .travel-select-trigger,
+html:not(.dark) .host-dashboard .travel-select-content,
+html:not(.dark) .host-dashboard input,
+html:not(.dark) .host-dashboard select,
+html:not(.dark) .host-dashboard textarea,
+html:not(.dark) .host-dashboard label,
+.host-dashboard.host-theme-light .travel-input-field,
+.host-dashboard.host-theme-light .travel-select-trigger,
+.host-dashboard.host-theme-light .travel-select-content,
+.host-dashboard.host-theme-light input,
+.host-dashboard.host-theme-light select,
+.host-dashboard.host-theme-light textarea,
+.host-dashboard.host-theme-light label {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .host-dashboard .travel-input-field::placeholder,
+html:not(.dark) .host-dashboard input::placeholder,
+html:not(.dark) .host-dashboard textarea::placeholder,
+.host-dashboard.host-theme-light .travel-input-field::placeholder,
+.host-dashboard.host-theme-light input::placeholder,
+.host-dashboard.host-theme-light textarea::placeholder {
+  color: #475569 !important;
+  opacity: 1;
+}
+
+.host-dashboard.host-theme-light [class*="dark:text-slate-"],
+.host-dashboard.host-theme-light [class*="dark:text-gray-"] {
+  color: #0f172a !important;
+}
+
+.host-dashboard .host-search-input {
+  padding-left: 3rem !important;
 }
 
 html.dark .travel-input {
@@ -468,6 +564,20 @@ html.dark .travel-calendar-popover {
 
 html.dark .travel-calendar-footer {
   border-top-color: #334155;
+}
+
+html.dark .travel-surface {
+  background: #1f2937;
+  border-color: #334155;
+}
+
+html.dark .travel-surface-secondary {
+  background: #172133;
+  border-color: #334155;
+}
+
+html.dark .travel-summary-box {
+  border-color: #334155;
 }
 
 /* ─────────────────────────────────────────── */
