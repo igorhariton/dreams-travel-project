@@ -10,7 +10,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "paris": {
       "culture": "Colecții de artă de neegalat, arhitectură grandioasă, cafenele literare și un mod de viață sofisticat cunoscut sub numele de „joie de vivre”.",
-      "cuisine": "Croissant, crepe, coq au vin, foie gras, brânzeturi fine și vinuri și șampanie de clasă mondială."
+      "cuisine": "Croissant, crêpe, coq au vin, foie gras, brânzeturi fine și vinuri și șampanie de clasă mondială."
     },
     "maldives": {
       "culture": "Cultura islamică maldiveană cu tobe tradiționale de bodu beru, obiecte de lăcuire artizanală și construcție de bărci dhoni.",
@@ -34,7 +34,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rome": {
       "culture": "Casa Imperiului Roman, Vaticanul, Renașterea și o cultură vie a piețelor, fântânilor și a culturii cafenelelor.",
-      "cuisine": "Cacio e pepe, carbonara, suppl�, gelato, tiramisu și vinuri excepționale din Lazio și nu numai."
+      "cuisine": "Cacio e pepe, carbonara, supplì, gelato, tiramisu și vinuri excepționale din Lazio și nu numai."
     },
     "kyoto": {
       "culture": "Moștenirea imperială, budismul zen, ceremonia ceaiului, aranjarea florilor ikebana, teatrul Noh și districtele gheișelor din Gion.",
@@ -50,11 +50,11 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "iceland": {
       "culture": "Moștenirea vikingă, mitologia nordică, saga, tradițiile de scăldat geotermal și o scenă de artă contemporană extrem de creativă.",
-      "cuisine": "Somon proaspăt de Atlantic, skyr, miel gătit lent în izvoare geotermale, rechin fermentat h�karl și hot dog."
+      "cuisine": "Somon proaspăt de Atlantic, skyr, miel gătit lent în izvoare geotermale, rechin fermentat cu hákarl și hot dog."
     },
     "istanbul": {
-      "culture": "Straturi de cultură bizantină, otomană și turcă modernă - derviși învolburați, băi hamam, ceainări și covoare turcești.",
-      "cuisine": "Diner kebab, baklava, platouri cu meze, sandvișuri cu pește proaspăt pe Bosfor, ceai turcesc și inele de pâine simit."
+      "culture": "Straturi de cultură bizantină, otomană și turcă modernă - derviși în vârtej, băi hamam, ceainări și covoare turcești.",
+      "cuisine": "Döner kebab, baklava, platouri cu meze, sandvișuri cu pește proaspăt pe Bosfor, ceai turcesc și inele de pâine simit."
     },
     "sydney": {
       "culture": "Moștenirea aborigenă, viața multiculturală în oraș, cultura surfului, stilul de viață în aer liber și artele spectacolului de talie mondială.",
@@ -66,7 +66,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rio": {
       "culture": "Muzică vibrantă samba și bossa nova, extravaganță de carnaval, religii afro-braziliene, capoeira și pasiune de fotbal.",
-      "cuisine": "Feijoada (tocană de fasole neagră), grătar churrasco, boluri a�a�, p�o de queijo, cocktail-uri caipirinha și coxinha proaspătă."
+      "cuisine": "Feijoada (tocană de fasole neagră), churrasco BBQ, boluri de açaí, pão de queijo, cocktail-uri caipirinha și coxinha proaspătă."
     },
     "marrakech": {
       "culture": "Moștenire berberă și arabă, artă și arhitectură islamică, tradiții hamam, povestitori, fermecătoare de șerpi și riad-uri.",
@@ -74,7 +74,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "prague": {
       "culture": "Moștenirea artistică boemă, moștenirea literară a lui Kafka, arhitectura Art Nouveau, muzică clasică și istoria Revoluției de catifea.",
-      "cuisine": "Sv�ckov� (mușchi de vită), produse de patiserie trdeln�k, gulaș cu găluște de pâine, brânză prăjită și pilsner ceh de renume mondial."
+      "cuisine": "Svíčková (mușchi de vită), produse de patiserie trdelník, gulaș cu găluște de pâine, brânză prăjită și pilsner ceh de renume mondial."
     },
     "singapur": {
       "culture": "Culturile chineză, malay, indiană și peranakan coexistă, sărbătorite prin festivaluri, arte și cartiere de patrimoniu.",
@@ -101,7 +101,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Bistecca alla Fiorentina, supă ribollita, sandviș lampredotto, pappa al pomodoro, cantucci și Chianti Classico."
     },
     "havana": {
-      "culture": "Religie Santera afro-cubană, istorie revoluționară, muzică son și salsa, trabucuri de talie mondială și spirit habaneros rezistent.",
+      "culture": "Religie Santería afro-cubană, istorie revoluționară, muzică son și salsa, trabucuri de talie mondială și spirit habaneros rezistent.",
       "cuisine": "Ropa vieja (carne de vită mărunțită), moros y cristianos (orez și fasole), tostones, sandviș cubanez, mojito și daiquiris."
     },
     "lisbon": {
@@ -121,8 +121,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Supă Tom Kha Gai, pad krapow, creveți tigru proaspeți, homar Phuket, curry Massaman și orez lipicios de mango."
     },
     "munich": {
-      "culture": "Tradiții bavareze cu picioare, sărbătoarea Oktoberfest, moștenirea muzicală Richard Wagner, cultura pentru micul dejun Wei�wurst.",
-      "cuisine": "Wei�wurst cu muștar dulce, covrigei, șnițel, ciocan de porc (schweinshaxe), Brotzeit și soiuri de bere germană."
+      "culture": "Tradiții bavareze cu pantaloni cu picioare, sărbătoarea Oktoberfest, moștenirea muzicală Richard Wagner, cultura pentru micul dejun Weißwurst.",
+      "cuisine": "Weißwurst cu muștar dulce, covrigei, șnițel, cioț de porc (schweinshaxe), Brotzeit și soiuri de bere germană."
     },
     "nairobi": {
       "culture": "Cultura războinicilor masai, 42 de grupuri etnice kenyene, istorie colonială, scena artistică vibrantă și filozofia Ubuntu.",
@@ -150,11 +150,11 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "granada": {
       "culture": "Moștenirea creștină maură și spaniolă, dansul flamenco în peșterile din Sacromonte, moștenirea literară Federico García Lorca.",
-      "cuisine": "Tapas gratuite cu băuturi, gazpacho, gem ibérico, tocană de cocido andaluz, papas a lo pobre și vinuri locale Tempranillo."
+      "cuisine": "Tapas gratuite cu băuturi, gazpacho, jamón ibérico, tocană de cocido andaluz, papas a lo pobre și vinuri locale Tempranillo."
     },
     "argentina": {
-      "culture": "Locul nașterii tangoului, moștenirea Evita Per�n, cultura fotbalistică pasionată (Boca Juniors), tradiția cafenele literare.",
-      "cuisine": "Asado (BBQ), empanadas, medialunas, dulce de leche, chorip�n, Malbec wine, and Fernet con Coca."
+      "culture": "Locul nașterii tangoului, moștenirea Evita Perón, cultura fotbalistică pasionată (Boca Juniors), tradiția cafenelei literare.",
+      "cuisine": "Asado (BBQ), empanadas, medialunas, dulce de leche, choripán, Malbec wine și Fernet con Coca."
     },
     "srilanka": {
       "culture": "Moștenirea sinhaleză și tamilă, budismul Theravada cu relicvă a dintelui sacru, festivalul Kandy Esala Perahera.",
@@ -169,8 +169,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Gallo pinto (orez și fasole), farfurie casado, ceviche, tamales, prăjitură tres leches, horchata și sucuri tropicale proaspete."
     },
     "dubrovnik": {
-      "culture": "Moștenirea maritimă a Republicii Ragusan, biserici în stil baroc, dansul cu sabia more�ka, muzică tradițională dalmată klapa.",
-      "cuisine": "Risotto negru (crni ri�ot), carne peka prăjită lent, crustacee prstaci, stridii Pelje�ac, vin roșu Dingac."
+      "culture": "Moștenirea maritimă a Republicii Ragusan, biserici în stil baroc, dansul cu sabia Moreška, klapa de muzică tradițională dalmată.",
+      "cuisine": "Risotto negru (crni rižot), carne peka prăjită lent, crustacee prstaci, stridii Pelješac, vin roșu Dingac."
     },
     "argentina-patagonia": {
       "culture": "Cultura cowboy gaucho, tradiții indigene Mapuche, moștenirea coloniștilor galezi în Chubut, spirit de expediție epic.",
@@ -210,7 +210,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Moștenirea vikingă la Muzeul Vasa, design suedez și origini IKEA, moștenire ABBA și muzica pop, cultura cafelei fika.",
-      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surstr�mming, sm�rg�sbord, prăjitură prințesă și gl�gg vin fiert."
+      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surstr�mming, smörgåsbord, prăjitură prințesă și vin fiert glögg."
     },
     "galapagos": {
       "culture": "Moștenirea evoluției Charles Darwin, eco-turism durabil, conservarea speciilor endemice, tradițiile insulelor din Pacific.",
@@ -218,18 +218,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "oslo": {
       "culture": "Moștenirea vikingă, expresionismul Edvard Munch, tradiția Premiului Nobel pentru Pace, filozofia stilului de viață în aer liber friluftsliv.",
-      "cuisine": "Pește fermentat Rakfisk, chiftele kj�ttkaker, brânză brunost brună, cod uscat klippfisk și schnaps aquavit."
+      "cuisine": "Pește fermentat Rakfisk, chiftele kjøttkaker, brânză brunost brună, cod uscat klippfisk și schnaps aquavit."
     },
     "albania": {
       "culture": "Rădăcini străvechi ilire, cultura bazarului otoman, istoria buncărelor comuniste, dreptul cutumiar Kanun și ospitalitatea mediteraneană.",
-      "cuisine": "Tav� kosi (caserolă de miel și iaurt), fergese (ardei și brânză), produse de patiserie byrek, tave elbasani și coniac Skanderbeg."
+      "cuisine": "Tavë kosi (caserolă de miel și iaurt), fergese (ardei și brânză), produse de patiserie byrek, tave elbasani și coniac Skanderbeg."
     },
     "bhutan": {
       "culture": "Cultura budistă tibetană Vajrayana, filosofia fericirii naționale brute, festivalurile religioase anuale Tsechu, tirul cu arcul ca sport național.",
       "cuisine": "Ema datshi (tocană de brânză cu ardei iute), orez roșu, carne de porc phaksha paa, găluște hoentay, ceai cu unt suja și spirt de ara."
     },
     "namibia": {
-      "culture": "Arta stâncă antică San Bushmen, tradițiile oamenilor Himba, moștenirea colonială germană în L�deritz, rochie de ceremonie Herero.",
+      "culture": "Arta rupestre antică San Bushmen, tradițiile oamenilor Himba, moștenirea colonială germană în Lüderitz, rochie de ceremonie Herero.",
       "cuisine": "Friptură de Oryx, carne uscată biltong, tocană potjiekos, pâine prăjită vetkoek, grătar pe strada kapana și bere Lager Windhoek."
     },
     "colombia": {
@@ -688,7 +688,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rome": {
       "culture": "Дом Римской империи, Ватикана, эпохи Возрождения и живой культуры площадей, фонтанов и кафе.",
-      "cuisine": "Качио э пепе, карбонара, суппле, мороженое, тирамису и исключительные вина из Лацио и за его пределами."
+      "cuisine": "Качио и пепе, карбонара, суппли, мороженое, тирамису и исключительные вина из Лацио и за его пределами."
     },
     "kyoto": {
       "culture": "Императорское наследие, дзен-буддизм, чайная церемония, цветочная икебана, театр Но и районы гейш в Гионе.",
@@ -704,11 +704,11 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "iceland": {
       "culture": "Наследие викингов, скандинавская мифология, саги, традиции геотермальных купаний и яростная творческая сцена современного искусства.",
-      "cuisine": "Свежий атлантический лосось, скир, баранина, приготовленная на медленном огне в геотермальных источниках, ферментированная акула хкарла и хот-доги."
+      "cuisine": "Свежий атлантический лосось, скир, баранина, приготовленная на медленном огне в геотермальных источниках, ферментированная акула хакарла и хот-доги."
     },
     "istanbul": {
-      "culture": "Слои византийской, османской и современной турецкой культуры – кружащиеся дервиши, хаммамы, чайные домики и турецкие ковры.",
-      "cuisine": "Динер-кебаб, пахлава, мезе, бутерброды со свежей рыбой на Босфоре, турецкий чай и симитные хлебные кольца."
+      "culture": "Слои византийской, османской и современной турецкой культуры – кружащиеся дервиши, хамамы, чайные домики и турецкие ковры.",
+      "cuisine": "Дёнер-кебаб, пахлава, ассорти мезе, бутерброды со свежей рыбой на Босфоре, турецкий чай и симитные хлебные кольца."
     },
     "sydney": {
       "culture": "Наследие аборигенов, мультикультурная городская жизнь, культура серфинга, образ жизни на открытом воздухе и исполнительское искусство мирового уровня.",
@@ -720,7 +720,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rio": {
       "culture": "Яркая музыка самбы и босса-новы, карнавальная феерия, афро-бразильские религии, капоэйра и футбольная страсть.",
-      "cuisine": "Фейжоада (тушеная черная фасоль), барбекю чураско, аа боулы, по де кейхо, коктейли из кайпиринья и свежая коксинья."
+      "cuisine": "Фейжоада (тушеная черная фасоль), барбекю чураско, асаи боулы, пао де кейхо, коктейли из кайпиринья и свежая коксинья."
     },
     "marrakech": {
       "culture": "Берберское и арабское наследие, исламское искусство и архитектура, традиции хаммама, рассказчики, заклинатели змей и риады.",
@@ -728,7 +728,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "prague": {
       "culture": "Богемное художественное наследие, литературное наследие Кафки, архитектура в стиле модерн, классическая музыка и история бархатной революции.",
-      "cuisine": "Свечков (говяжья вырезка), пирожное «Трдельник», гуляш с кнедликами, жареным сыром и всемирно известный чешский пилснер."
+      "cuisine": "Свичкова (говяжья вырезка), пирожное «трдельник», гуляш с кнедликами, жареный сыр и всемирно известный чешский пилснер."
     },
     "singapur": {
       "culture": "Китайская, малайская, индийская и перанаканская культуры сосуществуют, отмечаясь фестивалями, искусством и историческими кварталами.",
@@ -755,7 +755,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Бистекка алла Фиорентина, суп риболлита, сэндвич с лампредотто, паппа аль помодоро, кантуччи и Кьянти Классико."
     },
     "havana": {
-      "culture": "Афро-кубинская сантера — религия, революционная история, музыка сон и сальса, сигары мирового класса и стойкий дух хабанеро.",
+      "culture": "Афро-кубинская религия сантерия, революционная история, музыка сына и сальсы, сигары мирового класса и стойкий дух хабанеро.",
       "cuisine": "Ропа вьеха (тертая говядина), морос и кристианос (рис и фасоль), тостоны, кубинский сэндвич, мохито и дайкири."
     },
     "lisbon": {
@@ -775,8 +775,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Суп том кха гай, пад крапов, свежие тигровые креветки, пхукетский омар, карри массаман и клейкий рис с манго."
     },
     "munich": {
-      "culture": "Баварские традиции ледерхозен, празднование Октоберфеста, музыкальное наследие Рихарда Вагнера, культура завтрака Weiöwurst.",
-      "cuisine": "Вайвурст со сладкой горчицей, крендельками, шницелем, свиной рулькой (schweinshaxe), Brotzeit и немецкими сортами пива."
+      "culture": "Баварские традиции ледерхозен, празднование Октоберфеста, музыкальное наследие Рихарда Вагнера, культура завтрака Weißwurst.",
+      "cuisine": "Weißwurst со сладкой горчицей, крендельками, шницелем, свиной рулькой (schweinshaxe), Brotzeit и немецкими сортами пива."
     },
     "nairobi": {
       "culture": "Культура воинов масаи, 42 кенийские этнические группы, колониальная история, яркая сцена искусства и философия Убунту.",
@@ -804,11 +804,11 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "granada": {
       "culture": "Мавританское и испанское христианское наследие, танцы фламенко в пещерах Сакромонте, литературное наследие Федерико Гарсиа Лорки.",
-      "cuisine": "Бесплатные тапас с напитками, гаспачо, хамон иберико, тушеное мясо косидо андалуз, папас а ло побре и местные вина Темпранильо."
+      "cuisine": "Бесплатные тапас с напитками, гаспачо, иберийский хамон, тушеное мясо косидо андалуз, папас а ло побре и местные вина Темпранильо."
     },
     "argentina": {
-      "culture": "Место рождения танго, наследие Эвиты Перон, страстная футбольная культура (Бока Хуниорс), традиции литературного кафе.",
-      "cuisine": "Асадо (барбекю), эмпанадас, медилунас, дульсе де лече, чорипон, вино Мальбек и Ферне кон Кока."
+      "culture": "Место рождения танго, наследие Эвиты Перон, страстная футбольная культура (Бока Хуниорс), традиции литературных кафе.",
+      "cuisine": "Асадо (барбекю), эмпанадас, медиалунас, дульсе де лече, чорипан, вино Мальбек и Ферне кон Кока."
     },
     "srilanka": {
       "culture": "Сингальское и тамильское наследие, буддизм Тхеравады со священной реликвией зуба, фестиваль Канди Эсала Перахера.",
@@ -823,8 +823,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Галло пинто (рис и фасоль), тарелка касадо, севиче, тамалес, торт трес лечес, орчата и свежие тропические соки."
     },
     "dubrovnik": {
-      "culture": "Морское наследие Республики Рагуза, церкви в стиле барокко, танец моречка с мечами, традиционная далматинская музыка клапа.",
-      "cuisine": "Черное ризотто (crni riot), мясо пека медленного обжаривания, моллюски прстачи, устрицы Пельешац, красное вино Дингач."
+      "culture": "Морское наследие Республики Рагуза, церкви в стиле барокко, танец с мечами морешка, традиционная далматинская музыка клапа.",
+      "cuisine": "Черное ризотто (црни рижот), мясо пека медленного обжаривания, моллюски прстачи, устрицы Пелешац, красное вино Дингач."
     },
     "argentina-patagonia": {
       "culture": "Ковбойская культура гаучо, традиции коренных народов мапуче, наследие валлийских поселенцев в Чубуте, дух эпических экспедиций.",
@@ -864,7 +864,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Наследие викингов в музее Васа, шведский дизайн и происхождение IKEA, наследие ABBA и поп-музыки, кофейная культура фика.",
-      "cuisine": "Шведские котлеты с брусникой, гравлаксом, сюрстрёммингом, смёргсбордом, тортом «Принцесса» и глинтвейном «Глёгг»."
+      "cuisine": "Шведские котлеты с брусникой, гравлаксом, сюрстреммингом, шведским столом, тортом «Принцесса» и глинтвейном «Глёгг»."
     },
     "galapagos": {
       "culture": "Эволюционное наследие Чарльза Дарвина, устойчивый экотуризм, сохранение эндемичных видов, традиции жителей островов Тихого океана.",
@@ -872,7 +872,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "oslo": {
       "culture": "Наследие викингов, экспрессионизм Эдварда Мунка, традиции Нобелевской премии мира, философия образа жизни на открытом воздухе фрилуфтслив.",
-      "cuisine": "Рыба, ферментированная ракфиск, фрикадельки кьетткакер, коричневый сыр брюност, сушеная треска клипфиск и шнапс аквавит."
+      "cuisine": "Рыба, ферментированная ракфиск, фрикадельки кьётткакер, коричневый сыр брюност, сушеная треска клипфиск и шнапс аквавит."
     },
     "albania": {
       "culture": "Древние иллирийские корни, базарная культура Османской империи, история коммунистических бункеров, обычное право Кануна и средиземноморское гостеприимство.",
@@ -883,7 +883,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Эма датши (тушеное мясо с сыром чили), красный рис, свинина пхакша паа, пельмени хентай, чай с маслом суджа и спирт ара."
     },
     "namibia": {
-      "culture": "Древние наскальные рисунки сан-бушменов, традиции народа химба, немецкое колониальное наследие в Ледерице, церемониальное платье гереро.",
+      "culture": "Древние наскальные рисунки сан-бушменов, традиции народа химба, немецкое колониальное наследие в Людерице, церемониальное платье гереро.",
       "cuisine": "Стейк орикса, сушеное мясо билтонг, тушеное мясо потьекос, жареный хлеб веткук, барбекю на улице Капана и пиво Windhoek Lager."
     },
     "colombia": {
