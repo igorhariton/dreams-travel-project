@@ -10,7 +10,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "paris": {
       "culture": "Colecții de artă de neegalat, arhitectură grandioasă, cafenele literare și un mod de viață sofisticat cunoscut sub numele de „joie de vivre”.",
-      "cuisine": "Croissant, crepe, coq au vin, foie gras, brânzeturi fine și vinuri și șampanie de clasă mondială."
+      "cuisine": "Croissant, crêpe, coq au vin, foie gras, brânzeturi fine și vinuri și șampanie de clasă mondială."
     },
     "maldives": {
       "culture": "Cultura islamică maldiveană cu tobe tradiționale de bodu beru, obiecte de lăcuire artizanală și construcție de bărci dhoni.",
@@ -34,7 +34,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rome": {
       "culture": "Casa Imperiului Roman, Vaticanul, Renașterea și o cultură vie a piețelor, fântânilor și a culturii cafenelelor.",
-      "cuisine": "Cacio e pepe, carbonara, supplÃ¬, gelato, tiramisu și vinuri excepționale din Lazio și nu numai."
+      "cuisine": "Cacio e pepe, carbonara, supplì, gelato, tiramisu și vinuri excepționale din Lazio și nu numai."
     },
     "kyoto": {
       "culture": "Moștenirea imperială, budismul zen, ceremonia ceaiului, aranjarea florilor ikebana, teatrul Noh și districtele gheișelor din Gion.",
@@ -50,10 +50,10 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "iceland": {
       "culture": "Moștenirea vikingă, mitologia nordică, saga, tradițiile de scăldat geotermal și o scenă de artă contemporană extrem de creativă.",
-      "cuisine": "Somon proaspăt de Atlantic, skyr, miel gătit lent în izvoare geotermale, rechin fermentat hákarl și hot dog."
+      "cuisine": "Somon proaspăt de Atlantic, skyr, miel gătit lent în izvoare geotermale, rechin fermentat cu hákarl și hot dog."
     },
     "istanbul": {
-      "culture": "Straturi de cultură bizantină, otomană și turcă modernă – derviși învolburați, băi hamam, ceainări și covoare turcești.",
+      "culture": "Straturi de cultură bizantină, otomană și turcă modernă - derviși în vârtej, băi hamam, ceainări și covoare turcești.",
       "cuisine": "Döner kebab, baklava, platouri cu meze, sandvișuri cu pește proaspăt pe Bosfor, ceai turcesc și inele de pâine simit."
     },
     "sydney": {
@@ -66,7 +66,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rio": {
       "culture": "Muzică vibrantă samba și bossa nova, extravaganță de carnaval, religii afro-braziliene, capoeira și pasiune de fotbal.",
-      "cuisine": "Feijoada (tocană de fasole neagră), grătar churrasco, boluri cu açaí, pa de queijo, cocktail-uri caipirinha și coxinha proaspătă."
+      "cuisine": "Feijoada (tocană de fasole neagră), churrasco BBQ, boluri de açaí, pão de queijo, cocktail-uri caipirinha și coxinha proaspătă."
     },
     "marrakech": {
       "culture": "Moștenire berberă și arabă, artă și arhitectură islamică, tradiții hamam, povestitori, fermecătoare de șerpi și riad-uri.",
@@ -74,14 +74,14 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "prague": {
       "culture": "Moștenirea artistică boemă, moștenirea literară a lui Kafka, arhitectura Art Nouveau, muzică clasică și istoria Revoluției de catifea.",
-      "cuisine": "SvÃÄkovÃ¡ (mușchi de vită), produse de patiserie trdelnÃk, gulaș cu găluște de pâine, brânză prăjită și pilsner ceh de renume mondial."
+      "cuisine": "Svíčková (mușchi de vită), produse de patiserie trdelník, gulaș cu găluște de pâine, brânză prăjită și pilsner ceh de renume mondial."
     },
     "singapur": {
       "culture": "Culturile chineză, malay, indiană și peranakan coexistă, sărbătorite prin festivaluri, arte și cartiere de patrimoniu.",
       "cuisine": "Orez cu pui din Haina, crab chilli, laksa, char kway teow, satay și hawker center street food paradise."
     },
     "newzealand": {
-      "culture": "Moștenirea și tradițiile MÄori, spirit de pionier, cultură a sporturilor extreme, locații de filmare a Stăpânului Inelelor.",
+      "culture": "Moștenirea și tradițiile maori, spirit de pionier, cultură a sporturilor extreme, locații de filmare a Stăpânului Inelelor.",
       "cuisine": "Miel din Noua Zeelandă, midii cu buze verzi, pavlova, înghețată Hokey Pokey, fructe feijoa și vinuri Pinot Noir."
     },
     "cairo": {
@@ -101,7 +101,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Bistecca alla Fiorentina, supă ribollita, sandviș lampredotto, pappa al pomodoro, cantucci și Chianti Classico."
     },
     "havana": {
-      "culture": "Religie Santeria afro-cubană, istorie revoluționară, muzică son și salsa, trabucuri de talie mondială și spirit habaneros rezistent.",
+      "culture": "Religie Santería afro-cubană, istorie revoluționară, muzică son și salsa, trabucuri de talie mondială și spirit habaneros rezistent.",
       "cuisine": "Ropa vieja (carne de vită mărunțită), moros y cristianos (orez și fasole), tostones, sandviș cubanez, mojito și daiquiris."
     },
     "lisbon": {
@@ -121,8 +121,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Supă Tom Kha Gai, pad krapow, creveți tigru proaspeți, homar Phuket, curry Massaman și orez lipicios de mango."
     },
     "munich": {
-      "culture": "Tradiții bavareze cu pantaloni cu picioare, sărbătoarea Oktoberfest, moștenirea muzicală a lui Richard Wagner, cultura micului dejun Weißwurst.",
-      "cuisine": "WeiÃŸwurst cu muștar dulce, covrigei, șnițel, cioț de porc (schweinshaxe), Brotzeit și soiuri de bere germană."
+      "culture": "Tradiții bavareze cu pantaloni cu picioare, sărbătoarea Oktoberfest, moștenirea muzicală Richard Wagner, cultura pentru micul dejun Weißwurst.",
+      "cuisine": "Weißwurst cu muștar dulce, covrigei, șnițel, cioț de porc (schweinshaxe), Brotzeit și soiuri de bere germană."
     },
     "nairobi": {
       "culture": "Cultura războinicilor masai, 42 de grupuri etnice kenyene, istorie colonială, scena artistică vibrantă și filozofia Ubuntu.",
@@ -153,8 +153,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Tapas gratuite cu băuturi, gazpacho, jamón ibérico, tocană de cocido andaluz, papas a lo pobre și vinuri locale Tempranillo."
     },
     "argentina": {
-      "culture": "Locul nașterii tangoului, moștenirea Evita Perón, cultura fotbalistică pasionată (Boca Juniors), tradiția literară a cafenelei.",
-      "cuisine": "Asado (BBQ), empanadas, medialunas, dulce de leche, choripán, vin Malbec și Fernet con Coca."
+      "culture": "Locul nașterii tangoului, moștenirea Evita Perón, cultura fotbalistică pasionată (Boca Juniors), tradiția cafenelei literare.",
+      "cuisine": "Asado (BBQ), empanadas, medialunas, dulce de leche, choripán, Malbec wine și Fernet con Coca."
     },
     "srilanka": {
       "culture": "Moștenirea sinhaleză și tamilă, budismul Theravada cu relicvă a dintelui sacru, festivalul Kandy Esala Perahera.",
@@ -169,8 +169,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Gallo pinto (orez și fasole), farfurie casado, ceviche, tamales, prăjitură tres leches, horchata și sucuri tropicale proaspete."
     },
     "dubrovnik": {
-      "culture": "Moștenirea maritimă a Republicii Ragusan, biserici în stil baroc, dansul cu sabia moreÅ¡ka, muzică tradițională dalmată klapa.",
-      "cuisine": "Risotto negru (crni riÅ¾ot), carne peka prăjită lent, crustacee prstaci, stridii PeljeÅ¡ac, vin roșu DingaÄ."
+      "culture": "Moștenirea maritimă a Republicii Ragusan, biserici în stil baroc, dansul cu sabia Moreška, klapa de muzică tradițională dalmată.",
+      "cuisine": "Risotto negru (crni rižot), carne peka prăjită lent, crustacee prstaci, stridii Pelješac, vin roșu Dingac."
     },
     "argentina-patagonia": {
       "culture": "Cultura cowboy gaucho, tradiții indigene Mapuche, moștenirea coloniștilor galezi în Chubut, spirit de expediție epic.",
@@ -210,7 +210,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Moștenirea vikingă la Muzeul Vasa, design suedez și origini IKEA, moștenire ABBA și muzica pop, cultura cafelei fika.",
-      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surströmming, smörgÃ¥sbord, prăjitură prințesă și glögg vin fiert."
+      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surstr�mming, smörgåsbord, prăjitură prințesă și vin fiert glögg."
     },
     "galapagos": {
       "culture": "Moștenirea evoluției Charles Darwin, eco-turism durabil, conservarea speciilor endemice, tradițiile insulelor din Pacific.",
@@ -218,18 +218,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "oslo": {
       "culture": "Moștenirea vikingă, expresionismul Edvard Munch, tradiția Premiului Nobel pentru Pace, filozofia stilului de viață în aer liber friluftsliv.",
-      "cuisine": "Pește fermentat Rakfisk, chiftele kjättkaker, brânză brunost brună, cod uscat klippfisk și schnaps aquavit."
+      "cuisine": "Pește fermentat Rakfisk, chiftele kjøttkaker, brânză brunost brună, cod uscat klippfisk și schnaps aquavit."
     },
     "albania": {
       "culture": "Rădăcini străvechi ilire, cultura bazarului otoman, istoria buncărelor comuniste, dreptul cutumiar Kanun și ospitalitatea mediteraneană.",
-      "cuisine": "TavÃ« kosi (caserolă de miel și iaurt), fergese (ardei și brânză), produse de patiserie byrek, tave elbasani și coniac Skanderbeg."
+      "cuisine": "Tavë kosi (caserolă de miel și iaurt), fergese (ardei și brânză), produse de patiserie byrek, tave elbasani și coniac Skanderbeg."
     },
     "bhutan": {
       "culture": "Cultura budistă tibetană Vajrayana, filosofia fericirii naționale brute, festivalurile religioase anuale Tsechu, tirul cu arcul ca sport național.",
       "cuisine": "Ema datshi (tocană de brânză cu ardei iute), orez roșu, carne de porc phaksha paa, găluște hoentay, ceai cu unt suja și spirt de ara."
     },
     "namibia": {
-      "culture": "Arta stâncă antică San Bushmen, tradițiile oamenilor Himba, moștenirea colonială germană în Lüderitz, rochie de ceremonie Herero.",
+      "culture": "Arta rupestre antică San Bushmen, tradițiile oamenilor Himba, moștenirea colonială germană în Lüderitz, rochie de ceremonie Herero.",
       "cuisine": "Friptură de Oryx, carne uscată biltong, tocană potjiekos, pâine prăjită vetkoek, grătar pe strada kapana și bere Lager Windhoek."
     },
     "colombia": {
@@ -243,6 +243,414 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     "madagascar": {
       "culture": "Moștenirea austroneziană și africană malgașă, obiceiuri fady tabu, ceremonia de întoarcere famadihana a oaselor, posesia spiritului tromba.",
       "cuisine": "Tocană de vită și verdeață Romazava, fel de mâncare cu orez amin'anana variată, frunze de manioc ravitoto, carne de vită zebu la grătar și bere Three Horses."
+    },
+    "h1": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h2": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h3": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h4": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h5": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h6": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h70": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h71": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h72": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h73": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h74": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h75": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h76": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h77": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h78": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h79": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h80": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h81": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h82": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h83": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h84": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h85": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h86": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h87": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h88": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h89": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h90": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h91": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h92": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h93": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h94": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h95": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h96": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h97": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h98": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h99": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h100": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h101": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h102": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h103": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h104": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h105": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h106": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h107": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h108": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h109": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h110": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h111": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h112": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h113": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h114": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h115": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h116": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h117": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h118": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h119": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h120": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h121": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h122": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h123": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h124": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h125": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h126": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h127": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h128": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h129": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h130": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h131": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h132": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h133": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h134": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h135": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h136": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h137": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h138": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h142": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h143": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h144": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h145": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h146": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h147": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h148": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h149": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h150": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h151": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h152": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h157": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h158": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h159": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h160": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h161": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h162": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h163": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h164": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h165": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h166": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h167": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h168": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h169": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h170": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h171": {
+      "culture": "",
+      "cuisine": ""
     }
   },
   "ru": {
@@ -299,8 +707,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Свежий атлантический лосось, скир, баранина, приготовленная на медленном огне в геотермальных источниках, ферментированная акула хакарла и хот-доги."
     },
     "istanbul": {
-      "culture": "Слои византийской, османской и современной турецкой культуры — кружащиеся дервиши, хаммамы, чайные домики и турецкие ковры.",
-      "cuisine": "Дёнер-кебаб, пахлава, мезе, бутерброды со свежей рыбой на Босфоре, турецкий чай и симитные хлебные кольца."
+      "culture": "Слои византийской, османской и современной турецкой культуры – кружащиеся дервиши, хамамы, чайные домики и турецкие ковры.",
+      "cuisine": "Дёнер-кебаб, пахлава, ассорти мезе, бутерброды со свежей рыбой на Босфоре, турецкий чай и симитные хлебные кольца."
     },
     "sydney": {
       "culture": "Наследие аборигенов, мультикультурная городская жизнь, культура серфинга, образ жизни на открытом воздухе и исполнительское искусство мирового уровня.",
@@ -312,7 +720,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "rio": {
       "culture": "Яркая музыка самбы и босса-новы, карнавальная феерия, афро-бразильские религии, капоэйра и футбольная страсть.",
-      "cuisine": "Фейжоада (тушеная черная фасоль), барбекю чураско, миски аса, пао де кейхо, коктейли из кайпиринья и свежая коксинья."
+      "cuisine": "Фейжоада (тушеная черная фасоль), барбекю чураско, асаи боулы, пао де кейхо, коктейли из кайпиринья и свежая коксинья."
     },
     "marrakech": {
       "culture": "Берберское и арабское наследие, исламское искусство и архитектура, традиции хаммама, рассказчики, заклинатели змей и риады.",
@@ -320,14 +728,14 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "prague": {
       "culture": "Богемное художественное наследие, литературное наследие Кафки, архитектура в стиле модерн, классическая музыка и история бархатной революции.",
-      "cuisine": "Свечкова (говяжья вырезка), пирожное трдельник, гуляш с кнедликами, жареный сыр и всемирно известный чешский пилснер."
+      "cuisine": "Свичкова (говяжья вырезка), пирожное «трдельник», гуляш с кнедликами, жареный сыр и всемирно известный чешский пилснер."
     },
     "singapur": {
       "culture": "Китайская, малайская, индийская и перанаканская культуры сосуществуют, отмечаясь фестивалями, искусством и историческими кварталами.",
       "cuisine": "Курица по-хайнаньски, рис, краб с перцем чили, лакса, чар-куэй-теоу, сатай и рай уличной еды в Хоукер-центре."
     },
     "newzealand": {
-      "culture": "Наследие и традиции маори, новаторский дух, культура экстремальных видов спорта, места съемок «Властелина колец».",
+      "culture": "Наследие и традиции маори, новаторский дух, культура экстремального спорта, места съемок «Властелина колец».",
       "cuisine": "Новозеландская баранина, зеленогубые мидии, павлова, мороженое Hokey Pokey, фрукты фейхоа и вина Пино Нуар."
     },
     "cairo": {
@@ -347,7 +755,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Бистекка алла Фиорентина, суп риболлита, сэндвич с лампредотто, паппа аль помодоро, кантуччи и Кьянти Классико."
     },
     "havana": {
-      "culture": "Афро-кубинская религия Сантерия, революционная история, музыка сына и сальсы, сигары мирового класса и стойкий дух Хабанеро.",
+      "culture": "Афро-кубинская религия сантерия, революционная история, музыка сына и сальсы, сигары мирового класса и стойкий дух хабанеро.",
       "cuisine": "Ропа вьеха (тертая говядина), морос и кристианос (рис и фасоль), тостоны, кубинский сэндвич, мохито и дайкири."
     },
     "lisbon": {
@@ -367,8 +775,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Суп том кха гай, пад крапов, свежие тигровые креветки, пхукетский омар, карри массаман и клейкий рис с манго."
     },
     "munich": {
-      "culture": "Баварские традиции ледерхозен, празднование Октоберфеста, музыкальное наследие Рихарда Вагнера, культура завтрака WeiÃŸwurst.",
-      "cuisine": "WeiÃŸwurst со сладкой горчицей, крендельками, шницелем, свиной рулькой (schweinshaxe), Brotzeit и немецкими сортами пива."
+      "culture": "Баварские традиции ледерхозен, празднование Октоберфеста, музыкальное наследие Рихарда Вагнера, культура завтрака Weißwurst.",
+      "cuisine": "Weißwurst со сладкой горчицей, крендельками, шницелем, свиной рулькой (schweinshaxe), Brotzeit и немецкими сортами пива."
     },
     "nairobi": {
       "culture": "Культура воинов масаи, 42 кенийские этнические группы, колониальная история, яркая сцена искусства и философия Убунту.",
@@ -396,11 +804,11 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "granada": {
       "culture": "Мавританское и испанское христианское наследие, танцы фламенко в пещерах Сакромонте, литературное наследие Федерико Гарсиа Лорки.",
-      "cuisine": "Бесплатные тапас с напитками, гаспачо, хамон иберико, тушеное мясо косидо андалуз, папас а ло побре и местные вина Темпранильо."
+      "cuisine": "Бесплатные тапас с напитками, гаспачо, иберийский хамон, тушеное мясо косидо андалуз, папас а ло побре и местные вина Темпранильо."
     },
     "argentina": {
-      "culture": "Место рождения танго, наследие Эвиты Перон, страстная футбольная культура («Бока Хуниорс»), традиции литературных кафе.",
-      "cuisine": "Асадо (барбекю), эмпанадас, медилунас, дульсе де лече, чорипан, вино Мальбек и Ферне кон Кока."
+      "culture": "Место рождения танго, наследие Эвиты Перон, страстная футбольная культура (Бока Хуниорс), традиции литературных кафе.",
+      "cuisine": "Асадо (барбекю), эмпанадас, медиалунас, дульсе де лече, чорипан, вино Мальбек и Ферне кон Кока."
     },
     "srilanka": {
       "culture": "Сингальское и тамильское наследие, буддизм Тхеравады со священной реликвией зуба, фестиваль Канди Эсала Перахера.",
@@ -415,8 +823,8 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": "Галло пинто (рис и фасоль), тарелка касадо, севиче, тамалес, торт трес лечес, орчата и свежие тропические соки."
     },
     "dubrovnik": {
-      "culture": "Морское наследие Республики Рагуза, церкви в стиле барокко, танец с мечами морека, традиционная далматинская музыка клапа.",
-      "cuisine": "Черное ризотто (crni riÅ¾ot), мясо пека медленного обжаривания, моллюски прстачи, устрицы Пельешац, красное вино Дингаш."
+      "culture": "Морское наследие Республики Рагуза, церкви в стиле барокко, танец с мечами морешка, традиционная далматинская музыка клапа.",
+      "cuisine": "Черное ризотто (црни рижот), мясо пека медленного обжаривания, моллюски прстачи, устрицы Пелешац, красное вино Дингач."
     },
     "argentina-patagonia": {
       "culture": "Ковбойская культура гаучо, традиции коренных народов мапуче, наследие валлийских поселенцев в Чубуте, дух эпических экспедиций.",
@@ -456,7 +864,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Наследие викингов в музее Васа, шведский дизайн и происхождение IKEA, наследие ABBA и поп-музыки, кофейная культура фика.",
-      "cuisine": "Шведские фрикадельки с брусникой, гравлаксом, сюрстрёммингом, шведским столом, тортом «Принцесса» и глинтвейном «Глёгг»."
+      "cuisine": "Шведские котлеты с брусникой, гравлаксом, сюрстреммингом, шведским столом, тортом «Принцесса» и глинтвейном «Глёгг»."
     },
     "galapagos": {
       "culture": "Эволюционное наследие Чарльза Дарвина, устойчивый экотуризм, сохранение эндемичных видов, традиции жителей островов Тихого океана.",
@@ -489,6 +897,414 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     "madagascar": {
       "culture": "Малагасийское австронезийское и африканское наследие, табуированные обычаи фади, церемония переворачивания костей фамадихана, одержимость духом тромбы.",
       "cuisine": "Тушеная говядина Ромазава с зеленью, разнообразное блюдо из риса аминанана, лист маниоки равитото, говядина зебу на гриле и пиво «Три лошади»."
+    },
+    "h1": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h2": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h3": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h4": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h5": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h6": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h70": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h71": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h72": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h73": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h74": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h75": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h76": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h77": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h78": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h79": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h80": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h81": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h82": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h83": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h84": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h85": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h86": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h87": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h88": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h89": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h90": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h91": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h92": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h93": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h94": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h95": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h96": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h97": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h98": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h99": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h100": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h101": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h102": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h103": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h104": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h105": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h106": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h107": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h108": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h109": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h110": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h111": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h112": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h113": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h114": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h115": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h116": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h117": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h118": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h119": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h120": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h121": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h122": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h123": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h124": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h125": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h126": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h127": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h128": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h129": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h130": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h131": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h132": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h133": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h134": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h135": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h136": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h137": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h138": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h142": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h143": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h144": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h145": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h146": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h147": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h148": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h149": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h150": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h151": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h152": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h157": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h158": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h159": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h160": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h161": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h162": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h163": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h164": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h165": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h166": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h167": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h168": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h169": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h170": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h171": {
+      "culture": "",
+      "cuisine": ""
     }
   }
 };
