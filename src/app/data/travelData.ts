@@ -1883,7 +1883,7 @@ export const destinations: Destination[] = [
   },
 ];
 
-export const hotels: Hotel[] = [
+const rawHotels: Hotel[] = [
 {
     id: 'h1',
     name: 'Oia Sunset Palace',
@@ -4531,6 +4531,10 @@ stars: 4,
 
 ];
 
+export const hotels: Hotel[] = rawHotels.map((hotel) => ({
+  ...hotel,
+  images: [1, 2, 3, 4].map((index) => `/images/hotels/${hotel.id}/${index}.jpg`),
+}));
 
 export const rentals: Rental[] = [
   {

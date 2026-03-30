@@ -243,6 +243,414 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     "madagascar": {
       "culture": "Moștenirea austroneziană și africană malgașă, obiceiuri fady tabu, ceremonia de întoarcere famadihana a oaselor, posesia spiritului tromba.",
       "cuisine": "Tocană de vită și verdeață Romazava, fel de mâncare cu orez amin'anana variată, frunze de manioc ravitoto, carne de vită zebu la grătar și bere Three Horses."
+    },
+    "h1": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h2": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h3": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h4": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h5": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h6": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h70": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h71": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h72": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h73": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h74": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h75": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h76": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h77": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h78": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h79": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h80": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h81": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h82": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h83": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h84": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h85": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h86": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h87": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h88": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h89": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h90": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h91": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h92": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h93": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h94": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h95": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h96": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h97": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h98": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h99": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h100": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h101": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h102": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h103": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h104": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h105": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h106": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h107": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h108": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h109": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h110": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h111": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h112": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h113": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h114": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h115": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h116": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h117": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h118": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h119": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h120": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h121": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h122": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h123": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h124": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h125": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h126": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h127": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h128": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h129": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h130": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h131": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h132": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h133": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h134": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h135": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h136": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h137": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h138": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h142": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h143": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h144": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h145": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h146": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h147": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h148": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h149": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h150": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h151": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h152": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h157": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h158": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h159": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h160": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h161": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h162": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h163": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h164": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h165": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h166": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h167": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h168": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h169": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h170": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h171": {
+      "culture": "",
+      "cuisine": ""
     }
   },
   "ru": {
@@ -489,6 +897,414 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     "madagascar": {
       "culture": "Малагасийское австронезийское и африканское наследие, табуированные обычаи фади, церемония переворачивания костей фамадихана, одержимость духом тромбы.",
       "cuisine": "Тушеная говядина Ромазава с зеленью, разнообразное блюдо из риса аминанана, лист маниоки равитото, говядина зебу на гриле и пиво «Три лошади»."
+    },
+    "h1": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h2": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h3": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h4": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h5": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h6": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h70": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h71": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h72": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h73": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h74": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h75": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h76": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h77": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h78": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h79": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h80": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h81": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h82": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h83": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h84": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h85": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h86": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h87": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h88": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h89": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h90": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h91": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h92": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h93": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h94": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h95": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h96": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h97": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h98": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h99": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h100": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h101": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h102": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h103": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h104": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h105": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h106": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h107": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h108": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h109": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h110": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h111": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h112": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h113": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h114": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h115": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h116": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h117": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h118": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h119": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h120": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h121": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h122": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h123": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h124": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h125": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h126": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h127": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h128": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h129": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h130": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h131": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h132": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h133": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h134": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h135": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h136": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h137": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h138": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h142": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h143": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h144": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h145": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h146": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h147": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h148": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h149": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h150": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h151": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h152": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h157": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h158": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h159": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h160": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h161": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h162": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h163": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h164": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h165": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h166": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h167": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h168": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h169": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h170": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h171": {
+      "culture": "",
+      "cuisine": ""
     }
   }
 };
