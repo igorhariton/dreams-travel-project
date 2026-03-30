@@ -5,6 +5,7 @@ import { rentals } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const typeConfig = {
   apartment: { icon: <Building2 size={14} />, label: 'Apartment', color: 'bg-blue-100 text-blue-700' },
@@ -161,12 +162,25 @@ export default function RentalsPage() {
                 onChange={e => setSearch(e.target.value)}
                 className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
             </div>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-200 rounded-2xl text-sm text-gray-700 bg-white outline-none cursor-pointer hover:border-gray-300 transition-colors shadow-sm appearance-none">
-              <option value="rating">{translateDynamic('Top Rated')}</option>
-              <option value="price_asc">{translateDynamic('Price: Low to High')}</option>
-              <option value="price_desc">{translateDynamic('Price: High to Low')}</option>
-            </select>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'price_asc' | 'price_desc')}>
+              <SelectTrigger className="h-[46px] w-full sm:w-[220px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                className="z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+              >
+                <SelectItem value="rating" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  {translateDynamic('Top Rated')}
+                </SelectItem>
+                <SelectItem value="price_asc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  {translateDynamic('Price: Low to High')}
+                </SelectItem>
+                <SelectItem value="price_desc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  {translateDynamic('Price: High to Low')}
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <button onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <SlidersHorizontal size={15} /> {translateDynamic('Filters')}

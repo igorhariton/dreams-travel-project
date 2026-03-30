@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { destinations } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 const continents = ['All', 'Europe', 'Asia', 'Middle East', 'Americas', 'Africa'];
 const tags = ['Beach', 'Culture', 'Romance', 'Adventure', 'Food', 'Luxury', 'City', 'Nature'];
@@ -103,12 +104,25 @@ export default function DestinationsPage() {
           </div>
 
           <div className="flex items-center gap-3 mt-4">
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-200 rounded-2xl text-sm text-gray-700 bg-white outline-none cursor-pointer hover:border-gray-300 transition-colors shadow-sm appearance-none">
-              <option value="rating">{translateDynamic('Top Rated')}</option>
-              <option value="trending">{translateDynamic('Trending')}</option>
-              <option value="name">A-Z</option>
-            </select>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'name' | 'trending')}>
+              <SelectTrigger className="h-[46px] w-[160px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                className="z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+              >
+                <SelectItem value="rating" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  {translateDynamic('Top Rated')}
+                </SelectItem>
+                <SelectItem value="trending" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  {translateDynamic('Trending')}
+                </SelectItem>
+                <SelectItem value="name" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                  A-Z
+                </SelectItem>
+              </SelectContent>
+            </Select>
             <button onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <Filter size={16} /> {t('common.filter')}

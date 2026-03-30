@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { Navbar } from './Navbar';
@@ -7,6 +7,11 @@ import { Footer } from './Footer';
 export function Layout() {
   const location = useLocation();
   const isFirstLoad = location.key === 'default';
+  const isChatRoute = location.pathname.startsWith('/chat');
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.key]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -31,7 +36,7 @@ export function Layout() {
           </motion.div>
         </AnimatePresence>
       </main>
-      <Footer />
+      {!isChatRoute && <Footer />}
     </div>
   );
 }
