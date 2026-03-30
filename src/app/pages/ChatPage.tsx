@@ -1,220 +1,778 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, MapPin, Globe2, Plane, Hotel, Sparkles, RefreshCw, Mic } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Bot, Mic, RefreshCw, Send, User } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { ChatActionButtons } from '../components/chat/ChatActionButtons';
+import { ChatBookingWidget } from '../components/chat/ChatBookingWidget';
+import { ChatContactWidget } from '../components/chat/ChatContactWidget';
+import { ChatListingCards } from '../components/chat/ChatListingCards';
+import { ChatSupportWidget } from '../components/chat/ChatSupportWidget';
+import {
+  getAllChatListings,
+  getDefaultAssistantContext,
+  requestTravelAssistantReply,
+  submitBookingRequest,
+  submitContactRequest,
+  submitSupportRequest,
+} from '../chat/service';
+import type { AssistantAction, AssistantContextState, AssistantReply, ChatMessage } from '../chat/types';
 
-interface Message {
-  id: string;
-  role: 'user' | 'bot';
-  text: string;
-  timestamp: Date;
-  typing?: boolean;
-}
+const STORAGE_KEY = 'td_ai_assistant_session_v2';
 
-const QUICK_QUESTIONS = [
-  '🏖️ Best beach destinations for couples',
-  '🌿 Eco-friendly travel options',
-  '💰 Budget travel tips for Europe',
-  '🛂 Visa requirements for Maldives',
-  '🌡️ Best time to visit Bali',
-  '🍜 Must-try foods in Tokyo',
+const QUICK_PROMPTS = [
+  'Recommend destinations for a romantic beach trip',
+  'Find top-rated hotels in Santorini under $350',
+  'Show family rentals in Bali for 4 guests',
+  'What visa requirements apply for Maldives?',
+  'Plan a 4-day itinerary in Tokyo',
+  'I need support with a booking payment issue',
 ];
 
-const BOT_RESPONSES: Record<string, string> = {
-  'beach': 'Top beach destinations include the **Maldives** (crystal lagoons), **Santorini** (volcanic cliffs + sea), **Bali** (Seminyak & Uluwatu), and the **Amalfi Coast**. For couples, Maldives overwater bungalows are unbeatable! 🏖️',
-  'eco': '🌿 Top eco-friendly destinations: **Costa Rica** (rainforest lodges), **New Zealand** (sustainable tourism), **Iceland** (geothermal energy), and **Bhutan** (carbon-negative). Always choose certified eco-accommodations!',
-  'budget': '💡 Budget Europe tips: Travel in **shoulder season** (Mar-May, Sept-Nov), use **Eurail passes**, stay in **boutique hostels**, eat at local markets, and book **2-3 months ahead** for flights.',
-  'visa': '🛂 The Maldives offers a **free 30-day visa on arrival** for most nationalities! All you need is a valid passport, return ticket, and proof of accommodation. No visa application required.',
-  'bali': '🌴 Best time for Bali: **April-October** (dry season). July-August is peak but crowded. **May-June & Sept** are sweet spots — good weather, fewer tourists. Avoid December-March (monsoon season).',
-  'tokyo': '🍣 Must-try in Tokyo: **Tsukiji Outer Market** sushi, **ramen at Ichiran**, **wagyu beef**, **izakaya hopping** in Shinjuku, **convenience store onigiri**, and **matcha everything**! Tokyo has more Michelin stars than any city.',
-  'default': "Great question! I'm your AI travel assistant 🤖✈️. I can help with:\n\n• **Destination recommendations**\n• **Best travel seasons**\n• **Visa & entry requirements**\n• **Local cuisine & culture tips**\n• **Budget planning**\n• **Hotel & rental advice**\n\nWhat would you like to explore today?",
-};
+type ActiveComposer =
+  | { type: 'booking'; listingId?: string }
+  | { type: 'contact'; listingId?: string }
+  | { type: 'support' }
+  | null;
 
-function getBotResponse(input: string): string {
-  const lower = input.toLowerCase();
-  if (lower.includes('beach') || lower.includes('couples')) return BOT_RESPONSES['beach'];
-  if (lower.includes('eco') || lower.includes('sustainable') || lower.includes('environment')) return BOT_RESPONSES['eco'];
-  if (lower.includes('budget') || lower.includes('cheap') || lower.includes('europe')) return BOT_RESPONSES['budget'];
-  if (lower.includes('visa') || lower.includes('maldives') || lower.includes('entry')) return BOT_RESPONSES['visa'];
-  if (lower.includes('bali') || lower.includes('time') || lower.includes('season')) return BOT_RESPONSES['bali'];
-  if (lower.includes('tokyo') || lower.includes('japan') || lower.includes('food') || lower.includes('cuisine')) return BOT_RESPONSES['tokyo'];
-  if (lower.includes('santorini') || lower.includes('greece')) return '🇬🇷 **Santorini** is magical! Best visited **April-October**. Stay in **Oia** for sunsets, explore **Fira** for nightlife, visit **Akrotiri** ruins. Budget: $150-400/night for caldera-view hotels. Fly into **Athens (ATH)** then take a 45-min flight or 8-hr ferry.';
-  if (lower.includes('paris') || lower.includes('france')) return '🗼 **Paris** tips: Best in **April-May or September**. Must-see: **Eiffel Tower** (book online!), **Louvre**, **Montmartre**, **Versailles** day trip. Stay in Le Marais or Saint-Germain. Use the **Metro** — it\'s fast and cheap!';
-  if (lower.includes('dubai') || lower.includes('uae')) return '🌆 **Dubai** is best **November-March** (cooler weather). Highlights: **Burj Khalifa** (sunset views!), **Dubai Mall**, **Desert Safari**, **Dubai Marina**. Note: dress modestly in public areas. Business hotels often offer great weekend deals.';
-  return BOT_RESPONSES['default'];
+interface StoredSession {
+  sessionId: string;
+  messages: ChatMessage[];
+  context: AssistantContextState;
 }
 
-let msgId = 1;
+type VoiceState = 'idle' | 'listening' | 'processing' | 'error';
+
+interface SpeechRecognitionAlternativeLike {
+  transcript: string;
+}
+
+interface SpeechRecognitionResultLike {
+  isFinal: boolean;
+  [index: number]: SpeechRecognitionAlternativeLike;
+}
+
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+}
+
+interface SpeechRecognitionErrorEventLike {
+  error: string;
+}
+
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+function createId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function createWelcomeMessage(): ChatMessage {
+  return {
+    id: createId('assistant'),
+    role: 'assistant',
+    text:
+      "Hello, I'm your TravelDreams AI assistant.\n\n" +
+      "I can help with destination recommendations, hotel/rental search, reservation requests, host contact, visa guidance, itinerary planning, and support.\n\n" +
+      'Tell me your destination, dates, guest count, or budget to begin.',
+    timestamp: Date.now(),
+    suggestions: [
+      'Find me luxury hotels in Paris',
+      'Plan a budget trip under $250/night',
+      'I need a rental with pool in Bali',
+    ],
+  };
+}
+
+function sanitizeStoredMessages(raw: unknown): ChatMessage[] {
+  if (!Array.isArray(raw)) return [createWelcomeMessage()];
+  const result = raw
+    .map((item): ChatMessage | null => {
+      if (!item || typeof item !== 'object') return null;
+      const row = item as Record<string, unknown>;
+      if (typeof row.id !== 'string' || typeof row.text !== 'string' || typeof row.role !== 'string') return null;
+      return {
+        id: row.id,
+        role: row.role === 'user' || row.role === 'assistant' || row.role === 'system' ? row.role : 'assistant',
+        text: row.text,
+        timestamp: typeof row.timestamp === 'number' ? row.timestamp : Date.now(),
+        intent: typeof row.intent === 'string' ? (row.intent as ChatMessage['intent']) : undefined,
+        actions: Array.isArray(row.actions) ? (row.actions as AssistantAction[]) : undefined,
+        listings: Array.isArray(row.listings) ? (row.listings as ChatMessage['listings']) : undefined,
+        suggestions: Array.isArray(row.suggestions) ? row.suggestions.map((s) => String(s)).slice(0, 6) : undefined,
+      };
+    })
+    .filter((item): item is ChatMessage => Boolean(item));
+  return result.length > 0 ? result : [createWelcomeMessage()];
+}
+
+function loadSession(): StoredSession {
+  const fallback: StoredSession = {
+    sessionId: createId('session'),
+    messages: [createWelcomeMessage()],
+    context: getDefaultAssistantContext(),
+  };
+
+  if (typeof window === 'undefined') return fallback;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as Partial<StoredSession>;
+    return {
+      sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : fallback.sessionId,
+      messages: sanitizeStoredMessages(parsed.messages),
+      context: parsed.context && typeof parsed.context === 'object' ? { ...getDefaultAssistantContext(), ...parsed.context } : fallback.context,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function applyInlineFormatting(text: string) {
+  return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
+}
+
+function appendTranscriptToInput(currentInput: string, transcript: string) {
+  const normalizedTranscript = transcript.replace(/\s+/g, ' ').trim();
+  if (!normalizedTranscript) return currentInput;
+  if (!currentInput.trim()) return normalizedTranscript;
+
+  const needsSpace = !/[\s\n]$/.test(currentInput);
+  return `${currentInput}${needsSpace ? ' ' : ''}${normalizedTranscript}`;
+}
+
+function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null {
+  if (typeof window === 'undefined') return null;
+  const speechWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+
+  return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition || null;
+}
+
+function mapSpeechError(errorCode: string) {
+  switch (errorCode) {
+    case 'not-allowed':
+    case 'service-not-allowed':
+      return 'Microphone permission denied. Please allow microphone access and try again.';
+    case 'audio-capture':
+      return 'No microphone detected. Connect a microphone and try again.';
+    case 'no-speech':
+      return 'No speech detected. Please speak clearly and try again.';
+    case 'network':
+      return 'Network error while processing speech. Please check your connection.';
+    default:
+      return 'Voice recognition failed. Please try again.';
+  }
+}
+
+function createAssistantMessage(reply: AssistantReply): ChatMessage {
+  return {
+    id: createId('assistant'),
+    role: 'assistant',
+    text: reply.text,
+    timestamp: Date.now(),
+    intent: reply.intent,
+    actions: reply.actions,
+    listings: reply.listings,
+    suggestions: reply.suggestions,
+  };
+}
 
 export default function ChatPage() {
-  const { t, translateDynamic } = useApp();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: String(msgId++),
-      role: 'bot',
-      text: "Hello! I'm your **TravelDreams AI Assistant** 🌍✈️\n\nI'm here to help you plan the perfect journey. Ask me about destinations, hotels, visa requirements, local cuisine, or anything travel-related!\n\nWhere would you like to go? 🗺️",
-      timestamp: new Date(),
-    },
-  ]);
+  const { t, formatPrice } = useApp();
+  const navigate = useNavigate();
+  const initialSession = useMemo(() => loadSession(), []);
+
+  const [sessionId, setSessionId] = useState(initialSession.sessionId);
+  const [messages, setMessages] = useState<ChatMessage[]>(initialSession.messages);
+  const [contextState, setContextState] = useState<AssistantContextState>(initialSession.context);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const isInitialMount = useRef(true);
+  const [isSending, setIsSending] = useState(false);
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [activeComposer, setActiveComposer] = useState<ActiveComposer>(null);
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const hasMountedRef = useRef(false);
+  const previousMessageCountRef = useRef(messages.length);
+
+  const listingCatalog = useMemo(() => getAllChatListings(), []);
+
+  const recentListings = useMemo(() => {
+    const ordered: typeof listingCatalog = [];
+    const seen = new Set<string>();
+
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      const message = messages[i];
+      if (!message.listings || message.listings.length === 0) continue;
+      for (const listing of message.listings) {
+        if (seen.has(listing.id)) continue;
+        seen.add(listing.id);
+        ordered.push(listing);
+      }
+      if (ordered.length >= 10) break;
+    }
+
+    return ordered.length > 0 ? ordered : listingCatalog.slice(0, 10);
+  }, [listingCatalog, messages]);
+
+  const updateAutoScrollState = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom <= 100;
+  }, []);
+
+  useLayoutEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
+    shouldAutoScrollRef.current = true;
+    hasMountedRef.current = true;
+  }, []);
 
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const nextCount = messages.length;
+    const hadNewMessage = nextCount > previousMessageCountRef.current;
+    previousMessageCountRef.current = nextCount;
+
+    if (!hasMountedRef.current || !hadNewMessage || !shouldAutoScrollRef.current) {
       return;
     }
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async (text?: string) => {
-    const messageText = text || input.trim();
-    if (!messageText) return;
-    setInput('');
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const persisted: StoredSession = {
+      sessionId,
+      messages: messages.slice(-100),
+      context: contextState,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted));
+  }, [contextState, messages, sessionId]);
 
-    const userMsg: Message = { id: String(msgId++), role: 'user', text: messageText, timestamp: new Date() };
-    setMessages(prev => [...prev, userMsg]);
+  useEffect(() => {
+    return () => {
+      const recognition = speechRecognitionRef.current;
+      if (!recognition) return;
+      try {
+        recognition.abort();
+      } catch {
+        // no-op cleanup
+      }
+      recognition.onstart = null;
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
+    };
+  }, []);
 
-    setIsTyping(true);
-    await new Promise(r => setTimeout(r, 1000 + Math.random() * 800));
-    setIsTyping(false);
+  const sendMessage = useCallback(
+    async (text?: string) => {
+      const messageText = (text ?? input).trim();
+      if (!messageText || isSending) return;
 
-    const response = getBotResponse(messageText);
-    const botMsg: Message = { id: String(msgId++), role: 'bot', text: response, timestamp: new Date() };
-    setMessages(prev => [...prev, botMsg]);
+      setInput('');
+      const userMessage: ChatMessage = {
+        id: createId('user'),
+        role: 'user',
+        text: messageText,
+        timestamp: Date.now(),
+      };
+
+      const historyForRequest = [...messages, userMessage];
+      setMessages(historyForRequest);
+      setIsSending(true);
+
+      try {
+        const reply = await requestTravelAssistantReply({
+          sessionId,
+          message: messageText,
+          history: historyForRequest.slice(-16).map((item) => ({ role: item.role, text: item.text })),
+          context: contextState,
+        });
+
+        setContextState(reply.context);
+        setMessages((prev) => [...prev, createAssistantMessage(reply)]);
+      } catch {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text: 'I could not reach the assistant service right now. Please try again in a moment.',
+            timestamp: Date.now(),
+            actions: [
+              { id: createId('retry'), label: 'Retry', kind: 'check_availability' },
+              { id: createId('support'), label: 'Customer support', kind: 'open_support' },
+            ],
+          },
+        ]);
+      } finally {
+        setIsSending(false);
+      }
+    },
+    [contextState, input, isSending, messages, sessionId],
+  );
+
+  const handleAction = useCallback(
+    (action: AssistantAction) => {
+      const listingId = typeof action.payload?.listingId === 'string' ? action.payload.listingId : undefined;
+
+      if (action.kind === 'search_hotels') {
+        navigate('/hotels');
+        return;
+      }
+      if (action.kind === 'search_rentals') {
+        navigate('/rentals');
+        return;
+      }
+      if (action.kind === 'plan_trip') {
+        navigate('/planner');
+        return;
+      }
+
+      if (action.kind === 'book_now' || action.kind === 'check_availability' || action.kind === 'get_quote') {
+        setActiveComposer({ type: 'booking', listingId });
+        return;
+      }
+
+      if (action.kind === 'contact_host') {
+        setActiveComposer({ type: 'contact', listingId });
+        return;
+      }
+
+      if (action.kind === 'open_support') {
+        setActiveComposer({ type: 'support' });
+      }
+    },
+    [navigate],
+  );
+
+  const handleBookingSubmit = useCallback(
+    async (draft: Parameters<typeof submitBookingRequest>[1]) => {
+      const listing = listingCatalog.find((item) => item.id === draft.listingId);
+      const response = await submitBookingRequest(sessionId, draft);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId('system'),
+          role: 'system',
+          text:
+            `Reservation request submitted for ${listing?.title || 'selected property'} ` +
+            `(${draft.checkIn} → ${draft.checkOut}, ${draft.guests} guests).`,
+          timestamp: Date.now(),
+        },
+        {
+          id: createId('assistant'),
+          role: 'assistant',
+          text:
+            `${response.message || 'Your request has been submitted successfully.'}\n` +
+            `Reference ID: ${response.referenceId}`,
+          timestamp: Date.now(),
+          actions: [
+            { id: createId('contact-host'), kind: 'contact_host', label: 'Contact host', payload: { listingId: draft.listingId } },
+            { id: createId('support'), kind: 'open_support', label: 'Customer support' },
+          ],
+        },
+      ]);
+      setActiveComposer(null);
+    },
+    [listingCatalog, sessionId],
+  );
+
+  const handleContactSubmit = useCallback(
+    async (draft: Parameters<typeof submitContactRequest>[1]) => {
+      const response = await submitContactRequest(sessionId, draft);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId('assistant'),
+          role: 'assistant',
+          text:
+            `${response.message || 'Host contact request sent.'}\n` +
+            `Reference ID: ${response.referenceId}\n` +
+            'A host representative should reply shortly through your contact channel.',
+          timestamp: Date.now(),
+        },
+      ]);
+      setActiveComposer(null);
+    },
+    [sessionId],
+  );
+
+  const handleSupportSubmit = useCallback(
+    async (draft: Parameters<typeof submitSupportRequest>[1]) => {
+      const response = await submitSupportRequest(sessionId, draft);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: createId('assistant'),
+          role: 'assistant',
+          text:
+            `${response.message || 'Support request submitted.'}\n` +
+            `Reference ID: ${response.referenceId}\n` +
+            'Our support team will follow up with you as soon as possible.',
+          timestamp: Date.now(),
+        },
+      ]);
+      setActiveComposer(null);
+    },
+    [sessionId],
+  );
+
+  const stopVoiceRecognition = useCallback((forceAbort = false) => {
+    const recognition = speechRecognitionRef.current;
+    if (!recognition) return;
+
+    setVoiceState('processing');
+    try {
+      if (forceAbort) recognition.abort();
+      else recognition.stop();
+    } catch {
+      setVoiceState('idle');
+    }
+  }, []);
+
+  const startVoiceRecognition = useCallback(() => {
+    const RecognitionCtor = getSpeechRecognitionConstructor();
+    if (!RecognitionCtor) {
+      setVoiceError('Speech recognition is not supported in this browser.');
+      setVoiceState('error');
+      return;
+    }
+
+    let recognition = speechRecognitionRef.current;
+    if (!recognition) {
+      recognition = new RecognitionCtor();
+      speechRecognitionRef.current = recognition;
+    }
+
+    setVoiceError(null);
+    setInterimTranscript('');
+    recognition.lang = navigator.language || 'en-US';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      setVoiceError(null);
+      setVoiceState('listening');
+    };
+
+    recognition.onresult = (event) => {
+      let finalChunk = '';
+      let interimChunk = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = result?.[0]?.transcript?.trim();
+        if (!transcript) continue;
+
+        if (result.isFinal) finalChunk += `${transcript} `;
+        else interimChunk += `${transcript} `;
+      }
+
+      const normalizedFinal = finalChunk.trim();
+      const normalizedInterim = interimChunk.trim();
+
+      if (normalizedFinal) {
+        setInput((current) => appendTranscriptToInput(current, normalizedFinal));
+      }
+      setInterimTranscript(normalizedInterim);
+    };
+
+    recognition.onerror = (event) => {
+      setInterimTranscript('');
+      setVoiceError(mapSpeechError(event.error));
+      setVoiceState('error');
+    };
+
+    recognition.onend = () => {
+      setInterimTranscript('');
+      setVoiceState((current) => (current === 'error' ? 'error' : 'idle'));
+    };
+
+    setVoiceState('processing');
+    try {
+      recognition.start();
+    } catch {
+      setVoiceError('Voice recognition could not be started. Try again.');
+      setVoiceState('error');
+    }
+  }, []);
+
+  const handleMicrophoneClick = useCallback(() => {
+    if (voiceState === 'listening') {
+      stopVoiceRecognition(false);
+      return;
+    }
+
+    if (voiceState === 'processing') {
+      stopVoiceRecognition(true);
+      return;
+    }
+
+    startVoiceRecognition();
+  }, [startVoiceRecognition, stopVoiceRecognition, voiceState]);
+
+  const resetConversation = () => {
+    const newSessionId = createId('session');
+    setSessionId(newSessionId);
+    setMessages([createWelcomeMessage()]);
+    setContextState(getDefaultAssistantContext());
+    setActiveComposer(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   };
 
-  const formatText = (text: string) => {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br/>');
-  };
-
-  const clearChat = () => {
-    setMessages([{
-      id: String(msgId++),
-      role: 'bot',
-      text: "Chat cleared! 🌟 How can I help you plan your next adventure?",
-      timestamp: new Date(),
-    }]);
-  };
+  const activeListingId = activeComposer && 'listingId' in activeComposer ? activeComposer.listingId : undefined;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16">
-      <div className="max-w-5xl mx-auto px-4 py-6 h-[calc(100vh-4rem)] flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl p-5 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-              <Sparkles size={24} className="text-white" />
+    <div className="h-[100dvh] bg-[#F8FAFC] pt-16 dark:bg-[#0B1220]">
+      <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden px-4 py-6">
+        <div className="travel-shell mb-4 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white shadow-md">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="travel-panel flex h-12 w-12 items-center justify-center bg-white/20">
+              <Bot size={24} />
             </div>
-            <div>
-              <h1 className="text-white font-black text-lg">{t('chat.title')}</h1>
-              <div className="flex items-center gap-1.5 text-white/80 text-sm">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                {t('chat.online')} · {translateDynamic('Ready to help you travel')}
-              </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-black">Travel AI Assistant</h1>
+              <p className="truncate text-sm text-white/80">
+                Live booking guidance for destinations, properties, host contact, and support
+              </p>
             </div>
           </div>
-          <button onClick={clearChat} className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
-            <RefreshCw size={14} /> {translateDynamic('Clear')}
+          <button
+            type="button"
+            onClick={resetConversation}
+            className="travel-badge inline-flex items-center gap-2 bg-white/20 px-4 py-2 text-sm font-semibold transition hover:bg-white/30"
+          >
+            <RefreshCw size={14} />
+            New chat
           </button>
         </div>
 
-        {/* Quick Questions */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide mb-4">
-          {QUICK_QUESTIONS.map(q => (
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {QUICK_PROMPTS.map((prompt) => (
             <button
-              key={q}
-              onClick={() => sendMessage(q.slice(2))}
-              className="shrink-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-300 hover:bg-cyan-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 hover:text-cyan-700 dark:hover:text-cyan-400 px-4 py-2 rounded-full text-xs font-medium transition-all shadow-sm"
+              key={prompt}
+              type="button"
+              onClick={() => sendMessage(prompt)}
+              className="travel-badge shrink-0 border border-[#D9E2EC] bg-white px-4 py-2 text-xs font-medium text-[#475569] shadow-sm transition hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#CBD5E1] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
             >
-              {translateDynamic(q)}
+              {prompt}
             </button>
           ))}
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-hide bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
-          <AnimatePresence>
-            {messages.map(msg => (
+        <div
+          ref={messagesContainerRef}
+          onScroll={updateAutoScrollState}
+          className="chat-scroll travel-shell min-h-0 flex-1 overflow-y-auto border border-[#D9E2EC] bg-white p-5 shadow-sm dark:border-[#334155] dark:bg-[#111827]"
+        >
+          <AnimatePresence initial={false}>
+            {messages.map((message) => (
               <motion.div
-                key={msg.id}
+                key={message.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {/* Avatar */}
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${msg.role === 'bot' ? 'bg-gradient-to-br from-blue-600 to-cyan-500' : 'bg-gradient-to-br from-gray-600 to-gray-800'}`}>
-                  {msg.role === 'bot' ? <Bot size={16} className="text-white" /> : <User size={16} className="text-white" />}
-                </div>
+                {message.role === 'system' ? (
+                  <div className="travel-badge bg-[#EEF4FA] px-3 py-1.5 text-xs text-[#475569] dark:bg-[#243144] dark:text-[#CBD5E1]">
+                    {message.text}
+                  </div>
+                ) : (
+                  <div className={`flex max-w-[90%] gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div
+                      className={`travel-panel flex h-9 w-9 items-center justify-center ${
+                        message.role === 'assistant'
+                          ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white'
+                          : 'bg-gradient-to-br from-slate-700 to-slate-900 text-white'
+                      }`}
+                    >
+                      {message.role === 'assistant' ? <Bot size={15} /> : <User size={15} />}
+                    </div>
+                    <div className={`min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+                      <div
+                        className={`travel-panel px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                            : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#F9FAFB]'
+                        }`}
+                        dangerouslySetInnerHTML={{ __html: applyInlineFormatting(message.text) }}
+                      />
+                      <span className="mt-1 px-1 text-[11px] text-[#94A3B8]">
+                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
 
-                {/* Bubble */}
-                <div className={`max-w-lg ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-                  <div
-                    className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                      msg.role === 'user'
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-tr-sm'
-                        : 'bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 rounded-tl-sm'
-                    }`}
-                    dangerouslySetInnerHTML={{ __html: formatText(msg.role === 'bot' ? translateDynamic(msg.text) : msg.text) }}
-                  />
-                  <span className="text-xs text-gray-400 dark:text-gray-500 mt-1 mx-1">
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
+                      {message.role === 'assistant' && message.listings && message.listings.length > 0 && (
+                        <ChatListingCards listings={message.listings} formatPrice={formatPrice} onAction={handleAction} />
+                      )}
+
+                      {message.role === 'assistant' && message.actions && message.actions.length > 0 && (
+                        <ChatActionButtons actions={message.actions} onAction={handleAction} disabled={isSending} />
+                      )}
+
+                      {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {message.suggestions.map((suggestion) => (
+                            <button
+                              key={`${message.id}-${suggestion}`}
+                              type="button"
+                              onClick={() => sendMessage(suggestion)}
+                              className="travel-badge border border-[#D9E2EC] bg-white px-3 py-1.5 text-xs text-[#475569] transition hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#CBD5E1] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* Typing indicator */}
           <AnimatePresence>
-            {isTyping && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
-                  <Bot size={16} className="text-white" />
+            {isSending && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+                <div className="travel-panel flex h-9 w-9 items-center justify-center bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                  <Bot size={15} />
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 border border-gray-100 dark:border-gray-600 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-                  <div className="flex gap-1 items-center">
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="travel-panel border border-[#D9E2EC] bg-[#F8FAFC] px-4 py-3 shadow-sm dark:border-[#334155] dark:bg-[#1F2937]">
+                  <div className="flex items-center gap-1">
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '0ms' }} />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '120ms' }} />
+                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '240ms' }} />
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-2 flex gap-2">
+        {activeComposer?.type === 'booking' && (
+          <div className="chat-scroll mt-4 max-h-[42vh] overflow-y-auto">
+            <ChatBookingWidget
+              listings={recentListings}
+              defaultListingId={activeListingId}
+              formatPrice={formatPrice}
+              onSubmit={handleBookingSubmit}
+              onCancel={() => setActiveComposer(null)}
+            />
+          </div>
+        )}
+
+        {activeComposer?.type === 'contact' && (
+          <div className="chat-scroll mt-4 max-h-[38vh] overflow-y-auto">
+            <ChatContactWidget
+              listings={recentListings}
+              defaultListingId={activeListingId}
+              onSubmit={handleContactSubmit}
+              onCancel={() => setActiveComposer(null)}
+            />
+          </div>
+        )}
+
+        {activeComposer?.type === 'support' && (
+          <div className="chat-scroll mt-4 max-h-[38vh] overflow-y-auto">
+            <ChatSupportWidget onSubmit={handleSupportSubmit} onCancel={() => setActiveComposer(null)} />
+          </div>
+        )}
+
+        <div className="travel-shell mt-4 flex shrink-0 gap-2 border border-[#D9E2EC] bg-white p-2 shadow-sm dark:border-[#334155] dark:bg-[#111827]">
           <button
-            onClick={() => setIsListening(!isListening)}
-            className={`p-3 rounded-xl transition-all ${isListening ? 'bg-red-50 dark:bg-red-900 text-red-500' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+            type="button"
+            onClick={handleMicrophoneClick}
+            title={
+              voiceState === 'listening'
+                ? 'Stop voice input'
+                : voiceState === 'processing'
+                  ? 'Stopping voice input...'
+                  : 'Start voice input'
+            }
+            className={`travel-icon-button p-3 transition ${
+              voiceState === 'listening'
+                ? 'bg-red-50 text-red-500 ring-2 ring-red-200 dark:bg-red-500/20 dark:text-red-300 dark:ring-red-500/40'
+                : voiceState === 'processing'
+                  ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300'
+                  : voiceState === 'error'
+                    ? 'bg-red-50 text-red-600 dark:bg-red-500/20 dark:text-red-300'
+                    : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]'
+            }`}
           >
-            <Mic size={18} />
+            <Mic size={18} className={voiceState === 'listening' ? 'animate-pulse' : ''} />
           </button>
           <input
             type="text"
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void sendMessage();
+              }
+            }}
             placeholder={t('chat.placeholder')}
-            className="flex-1 outline-none text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent py-2"
+            className="travel-input-field h-auto flex-1 border-0 bg-transparent py-2 text-sm shadow-none focus:shadow-none"
           />
           <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim()}
-            className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            type="button"
+            onClick={() => void sendMessage()}
+            disabled={!input.trim() || isSending}
+            className="travel-primary-button inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Send size={16} /> {t('chat.send')}
+            <Send size={16} />
+            {t('chat.send')}
           </button>
         </div>
+
+        {(voiceState !== 'idle' || voiceError || interimTranscript) && (
+          <div
+            className={`mt-2 px-2 text-xs ${
+              voiceError
+                ? 'text-red-600 dark:text-red-300'
+                : voiceState === 'listening'
+                  ? 'text-emerald-600 dark:text-emerald-300'
+                  : 'text-[#64748B] dark:text-[#94A3B8]'
+            }`}
+          >
+            {voiceError
+              ? voiceError
+              : voiceState === 'listening'
+                ? `Listening...${interimTranscript ? ` ${interimTranscript}` : ''}`
+                : voiceState === 'processing'
+                  ? 'Processing voice input...'
+                  : null}
+          </div>
+        )}
       </div>
     </div>
   );
