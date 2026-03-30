@@ -671,8 +671,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // ── Theme (unchanged) ─────────────────────────────────────────────────────
   useEffect(() => {
     const htmlElement = document.documentElement;
-    if (theme === 'dark') { htmlElement.classList.add('dark'); }
-    else { htmlElement.classList.remove('dark'); }
+    const bodyElement = document.body;
+    const useDarkTheme = theme === 'dark';
+
+    htmlElement.classList.toggle('dark', useDarkTheme);
+    bodyElement.classList.toggle('dark', useDarkTheme);
     htmlElement.style.colorScheme = theme;
   }, [theme]);
 
