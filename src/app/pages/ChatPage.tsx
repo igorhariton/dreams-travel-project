@@ -195,9 +195,10 @@ function createAssistantMessage(reply: AssistantReply): ChatMessage {
 }
 
 export default function ChatPage() {
-  const { t, formatPrice } = useApp();
+  const { t, formatPrice, theme } = useApp();
   const navigate = useNavigate();
   const initialSession = useMemo(() => loadSession(), []);
+  const isDarkTheme = theme === 'dark';
 
   const [sessionId, setSessionId] = useState(initialSession.sessionId);
   const [messages, setMessages] = useState<ChatMessage[]>(initialSession.messages);
@@ -553,7 +554,7 @@ export default function ChatPage() {
   const activeListingId = activeComposer && 'listingId' in activeComposer ? activeComposer.listingId : undefined;
 
   return (
-    <div className="h-[100dvh] bg-[#F8FAFC] pt-16 dark:bg-[#0B1220]">
+    <div className={`h-[100dvh] pt-16 ${isDarkTheme ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
       <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden px-4 py-6">
         <div className="travel-shell mb-4 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white shadow-md">
           <div className="flex min-w-0 items-center gap-3">
@@ -583,7 +584,11 @@ export default function ChatPage() {
               key={prompt}
               type="button"
               onClick={() => sendMessage(prompt)}
-              className="travel-badge shrink-0 border border-[#D9E2EC] bg-white px-4 py-2 text-xs font-medium text-[#475569] shadow-sm transition hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#CBD5E1] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+              className={`travel-badge shrink-0 border px-4 py-2 text-xs font-medium shadow-sm transition ${
+                isDarkTheme
+                  ? 'border-[#334155] bg-[#1F2937] text-[#CBD5E1] hover:bg-[#243144] hover:text-[#F9FAFB]'
+                  : 'border-[#D9E2EC] bg-white text-[#475569] hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+              }`}
             >
               {prompt}
             </button>
@@ -593,7 +598,9 @@ export default function ChatPage() {
         <div
           ref={messagesContainerRef}
           onScroll={updateAutoScrollState}
-          className="chat-scroll travel-shell min-h-0 flex-1 overflow-y-auto border border-[#D9E2EC] bg-white p-5 shadow-sm dark:border-[#334155] dark:bg-[#111827]"
+          className={`chat-scroll travel-shell min-h-0 flex-1 overflow-y-auto border p-5 shadow-sm ${
+            isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+          }`}
         >
           <AnimatePresence initial={false}>
             {messages.map((message) => (
@@ -604,7 +611,11 @@ export default function ChatPage() {
                 className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 {message.role === 'system' ? (
-                  <div className="travel-badge bg-[#EEF4FA] px-3 py-1.5 text-xs text-[#475569] dark:bg-[#243144] dark:text-[#CBD5E1]">
+                  <div
+                    className={`travel-badge px-3 py-1.5 text-xs ${
+                      isDarkTheme ? 'bg-[#243144] text-[#CBD5E1]' : 'bg-[#EEF4FA] text-[#475569]'
+                    }`}
+                  >
                     {message.text}
                   </div>
                 ) : (
@@ -613,7 +624,9 @@ export default function ChatPage() {
                       className={`travel-panel flex h-9 w-9 items-center justify-center ${
                         message.role === 'assistant'
                           ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white'
-                          : 'bg-gradient-to-br from-slate-700 to-slate-900 text-white'
+                          : isDarkTheme
+                            ? 'bg-[#243144] text-[#F9FAFB]'
+                            : 'bg-[#EAF1F8] text-[#0F172A]'
                       }`}
                     >
                       {message.role === 'assistant' ? <Bot size={15} /> : <User size={15} />}
@@ -623,7 +636,9 @@ export default function ChatPage() {
                         className={`travel-panel px-4 py-3 text-sm leading-relaxed shadow-sm ${
                           message.role === 'user'
                             ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
-                            : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#F9FAFB]'
+                            : isDarkTheme
+                              ? 'border border-[#334155] bg-[#1F2937] text-[#F9FAFB]'
+                              : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A]'
                         }`}
                         dangerouslySetInnerHTML={{ __html: applyInlineFormatting(message.text) }}
                       />
@@ -646,7 +661,11 @@ export default function ChatPage() {
                               key={`${message.id}-${suggestion}`}
                               type="button"
                               onClick={() => sendMessage(suggestion)}
-                              className="travel-badge border border-[#D9E2EC] bg-white px-3 py-1.5 text-xs text-[#475569] transition hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:border-[#334155] dark:bg-[#1F2937] dark:text-[#CBD5E1] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+                              className={`travel-badge border px-3 py-1.5 text-xs transition ${
+                                isDarkTheme
+                                  ? 'border-[#334155] bg-[#1F2937] text-[#CBD5E1] hover:bg-[#243144] hover:text-[#F9FAFB]'
+                                  : 'border-[#D9E2EC] bg-white text-[#475569] hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+                              }`}
                             >
                               {suggestion}
                             </button>
@@ -666,7 +685,11 @@ export default function ChatPage() {
                 <div className="travel-panel flex h-9 w-9 items-center justify-center bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
                   <Bot size={15} />
                 </div>
-                <div className="travel-panel border border-[#D9E2EC] bg-[#F8FAFC] px-4 py-3 shadow-sm dark:border-[#334155] dark:bg-[#1F2937]">
+                <div
+                  className={`travel-panel border px-4 py-3 shadow-sm ${
+                    isDarkTheme ? 'border-[#334155] bg-[#1F2937]' : 'border-[#D9E2EC] bg-[#F8FAFC]'
+                  }`}
+                >
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '0ms' }} />
                     <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '120ms' }} />
@@ -707,7 +730,11 @@ export default function ChatPage() {
           </div>
         )}
 
-        <div className="travel-shell mt-4 flex shrink-0 gap-2 border border-[#D9E2EC] bg-white p-2 shadow-sm dark:border-[#334155] dark:bg-[#111827]">
+        <div
+          className={`travel-shell mt-4 flex shrink-0 gap-2 border p-2 shadow-sm ${
+            isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+          }`}
+        >
           <button
             type="button"
             onClick={handleMicrophoneClick}
@@ -725,7 +752,9 @@ export default function ChatPage() {
                   ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300'
                   : voiceState === 'error'
                     ? 'bg-red-50 text-red-600 dark:bg-red-500/20 dark:text-red-300'
-                    : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]'
+                  : isDarkTheme
+                    ? 'text-[#94A3B8] hover:bg-[#243144] hover:text-[#F9FAFB]'
+                    : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
             }`}
           >
             <Mic size={18} className={voiceState === 'listening' ? 'animate-pulse' : ''} />
@@ -761,7 +790,9 @@ export default function ChatPage() {
                 ? 'text-red-600 dark:text-red-300'
                 : voiceState === 'listening'
                   ? 'text-emerald-600 dark:text-emerald-300'
-                  : 'text-[#64748B] dark:text-[#94A3B8]'
+                : isDarkTheme
+                  ? 'text-[#94A3B8]'
+                  : 'text-[#64748B]'
             }`}
           >
             {voiceError
