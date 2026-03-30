@@ -101,11 +101,18 @@ function createEmptyForm(): ListingFormState {
 
 const CUSTOM_DESTINATION_VALUE = '__custom_destination__';
 
-const STATUS_STYLES: Record<ListingStatus, string> = {
-  draft: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
-  pending: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30',
-  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30',
-  rejected: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30',
+const STATUS_STYLES_LIGHT: Record<ListingStatus, string> = {
+  draft: 'bg-[#DBEAFE] text-[#1D4ED8] border-[#93C5FD]',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  approved: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  rejected: 'bg-red-50 text-red-700 border-red-200',
+};
+
+const STATUS_STYLES_DARK: Record<ListingStatus, string> = {
+  draft: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+  pending: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  approved: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  rejected: 'bg-red-500/10 text-red-300 border-red-500/30',
 };
 
 function inferCategory(listingType: HostListingType): HostListingCategory {
@@ -166,9 +173,10 @@ function statusIcon(status: ListingStatus) {
   return <Edit3 className="h-3.5 w-3.5" />;
 }
 
-function StatusBadge({ status }: { status: ListingStatus }) {
+function StatusBadge({ status, isDarkTheme }: { status: ListingStatus; isDarkTheme: boolean }) {
+  const toneClasses = isDarkTheme ? STATUS_STYLES_DARK[status] : STATUS_STYLES_LIGHT[status];
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${STATUS_STYLES[status]}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${toneClasses}`}>
       {statusIcon(status)}
       {status === 'pending' ? 'pending review' : status}
     </span>
@@ -179,6 +187,7 @@ export default function HostDashboardPage() {
   const {
     role,
     currentUser,
+    theme,
     formatPrice,
     addHostListing,
     updateHostListing,
@@ -199,6 +208,7 @@ export default function HostDashboardPage() {
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState<ListingFormState>(createEmptyForm());
+  const isDarkTheme = theme === 'dark';
 
   const myListings = getMyListings();
 
@@ -436,8 +446,8 @@ export default function HostDashboardPage() {
   function renderListingCollection(listings: HostListing[], emptyTitle: string, emptyText: string) {
     if (!listings.length) {
       return (
-        <div className="travel-panel border border-dashed border-slate-300 bg-white p-10 text-center dark:border-slate-700 dark:bg-slate-900/60">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        <div className={`travel-panel border border-dashed p-10 text-center ${isDarkTheme ? 'border-slate-700 bg-slate-900/60' : 'border-[#CFE0F0] bg-[#F8FBFF]'}`}>
+          <div className={`mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full ${isDarkTheme ? 'bg-slate-800 text-slate-400' : 'bg-[#EAF3FF] text-[#2563EB]'}`}>
             <Layers className="h-5 w-5" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{emptyTitle}</h3>
@@ -460,10 +470,10 @@ export default function HostDashboardPage() {
           const canSubmit = listing.status === 'draft';
           const canResubmit = listing.status === 'rejected';
           return (
-            <article key={listing.id} className="travel-panel border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 md:p-5">
+            <article key={listing.id} className={`travel-panel border p-4 shadow-sm md:p-5 ${isDarkTheme ? 'border-slate-700 bg-slate-900/70' : 'border-[#D6E4F2] bg-white'}`}>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex flex-1 gap-4">
-                  <div className="h-24 w-28 shrink-0 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                  <div className={`h-24 w-28 shrink-0 overflow-hidden rounded-2xl ${isDarkTheme ? 'bg-slate-800' : 'bg-[#EAF3FF]'}`}>
                     {listing.images[0] ? (
                       <img src={listing.images[0]} alt={listing.name} className="h-full w-full object-cover" />
                     ) : (
@@ -472,11 +482,11 @@ export default function HostDashboardPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={listing.status} />
+                      <StatusBadge status={listing.status} isDarkTheme={isDarkTheme} />
                       <span className="travel-badge bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
                         {toLabel(listing.listingType)}
                       </span>
-                      <span className="travel-badge bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      <span className={`travel-badge px-2.5 py-1 text-xs font-medium ${isDarkTheme ? 'bg-slate-800 text-slate-300' : 'bg-[#EAF3FF] text-[#325A8C]'}`}>
                         {listing.id}
                       </span>
                     </div>
@@ -491,7 +501,7 @@ export default function HostDashboardPage() {
                       <span>Updated {formatDate(listing.updatedAt)}</span>
                     </div>
                     {listing.reviewNote && (
-                      <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300">
+                      <p className={`mt-3 rounded-xl border px-3 py-2 text-xs ${isDarkTheme ? 'border-slate-700 bg-slate-800/70 text-slate-300' : 'border-[#D6E4F2] bg-[#F3F9FF] text-[#334155]'}`}>
                         <span className="font-semibold">Admin feedback:</span> {listing.reviewNote}
                       </p>
                     )}
@@ -558,15 +568,15 @@ export default function HostDashboardPage() {
 
   function renderListingFilters() {
     return (
-      <div className="travel-panel border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+      <div className={`travel-panel border p-4 shadow-sm ${isDarkTheme ? 'border-slate-700 bg-slate-900/70' : 'border-[#D6E4F2] bg-[#F8FBFF]'}`}>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search by title, id, location..."
-              className="travel-input-field w-full pl-10 text-sm"
+              className="travel-input-field host-search-input w-full text-sm"
             />
           </div>
 
@@ -620,7 +630,10 @@ export default function HostDashboardPage() {
 
     return (
       <div className="space-y-4">
-        <div className="travel-panel border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-6 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-6 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
@@ -630,7 +643,7 @@ export default function HostDashboardPage() {
                 Create a complete listing and submit it to admin review when ready.
               </p>
             </div>
-            {activeEdit?.status && <StatusBadge status={activeEdit.status} />}
+            {activeEdit?.status && <StatusBadge status={activeEdit.status} isDarkTheme={isDarkTheme} />}
           </div>
 
           {formError && (
@@ -887,35 +900,54 @@ export default function HostDashboardPage() {
   }
 
   function renderDashboard() {
+    const dashboardSectionClass = isDarkTheme
+      ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+      : 'travel-panel border border-[#D6E4F2] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(15,23,42,0.06)]';
+    const secondaryActionClass = isDarkTheme
+      ? 'travel-secondary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold'
+      : 'flex w-full items-center justify-center gap-2 rounded-xl border border-[#CFE0F0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0F172A] transition hover:bg-[#EEF6FF]';
+
     return (
       <div className="space-y-5">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Total listings</p>
-            <p className="mt-2 text-3xl font-black text-slate-900 dark:text-slate-100">{myListings.length}</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{listingsByStatus.approved.length} currently approved</p>
+          <div className={isDarkTheme
+            ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+            : 'travel-panel border border-[#BFD8FF] bg-gradient-to-br from-[#EEF4FF] to-[#E8F8FF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.09)]'}
+          >
+            <p className={`text-sm ${isDarkTheme ? 'text-slate-500 dark:text-slate-400' : 'text-[#1E3A8A]'}`}>Total listings</p>
+            <p className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-slate-900 dark:text-slate-100' : 'text-[#0F172A]'}`}>{myListings.length}</p>
+            <p className={`mt-1 text-xs ${isDarkTheme ? 'text-slate-500 dark:text-slate-400' : 'text-[#334155]'}`}>{listingsByStatus.approved.length} currently approved</p>
           </div>
-          <div className="travel-panel border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
-            <p className="text-sm text-amber-700 dark:text-amber-300">Pending review</p>
-            <p className="mt-2 text-3xl font-black text-amber-700 dark:text-amber-200">{listingsByStatus.pending.length}</p>
-            <p className="mt-1 text-xs text-amber-700/80 dark:text-amber-300/80">Awaiting admin decision</p>
+          <div className={isDarkTheme
+            ? 'travel-panel border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10'
+            : 'travel-panel border border-[#FCD34D] bg-[#FFFBEB] p-5 shadow-[0_10px_24px_rgba(234,179,8,0.16)]'}
+          >
+            <p className={`text-sm ${isDarkTheme ? 'text-amber-700 dark:text-amber-300' : 'text-[#B45309]'}`}>Pending review</p>
+            <p className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-amber-700 dark:text-amber-200' : 'text-[#B45309]'}`}>{listingsByStatus.pending.length}</p>
+            <p className={`mt-1 text-xs ${isDarkTheme ? 'text-amber-700/80 dark:text-amber-300/80' : 'text-[#92400E]'}`}>Awaiting admin decision</p>
           </div>
-          <div className="travel-panel border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
-            <p className="text-sm text-emerald-700 dark:text-emerald-300">Estimated earnings</p>
-            <p className="mt-2 text-3xl font-black text-emerald-700 dark:text-emerald-200">{formatPrice(totalEarnings)}</p>
-            <p className="mt-1 text-xs text-emerald-700/80 dark:text-emerald-300/80">From total approved+booked inventory</p>
+          <div className={isDarkTheme
+            ? 'travel-panel border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10'
+            : 'travel-panel border border-[#86EFAC] bg-[#ECFDF5] p-5 shadow-[0_10px_24px_rgba(16,185,129,0.14)]'}
+          >
+            <p className={`text-sm ${isDarkTheme ? 'text-emerald-700 dark:text-emerald-300' : 'text-[#065F46]'}`}>Estimated earnings</p>
+            <p className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-emerald-700 dark:text-emerald-200' : 'text-[#065F46]'}`}>{formatPrice(totalEarnings)}</p>
+            <p className={`mt-1 text-xs ${isDarkTheme ? 'text-emerald-700/80 dark:text-emerald-300/80' : 'text-[#047857]'}`}>From total approved+booked inventory</p>
           </div>
-          <div className="travel-panel border border-sky-200 bg-sky-50 p-5 shadow-sm dark:border-sky-500/30 dark:bg-sky-500/10">
-            <p className="text-sm text-sky-700 dark:text-sky-300">Avg nightly rate</p>
-            <p className="mt-2 text-3xl font-black text-sky-700 dark:text-sky-200">{formatPrice(averageNightlyPrice)}</p>
-            <p className="mt-1 text-xs text-sky-700/80 dark:text-sky-300/80">{totalBookings} total bookings tracked</p>
+          <div className={isDarkTheme
+            ? 'travel-panel border border-sky-200 bg-sky-50 p-5 shadow-sm dark:border-sky-500/30 dark:bg-sky-500/10'
+            : 'travel-panel border border-[#7DD3FC] bg-[#EFF6FF] p-5 shadow-[0_10px_24px_rgba(14,165,233,0.14)]'}
+          >
+            <p className={`text-sm ${isDarkTheme ? 'text-sky-700 dark:text-sky-300' : 'text-[#0C4A6E]'}`}>Avg nightly rate</p>
+            <p className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-sky-700 dark:text-sky-200' : 'text-[#0C4A6E]'}`}>{formatPrice(averageNightlyPrice)}</p>
+            <p className={`mt-1 text-xs ${isDarkTheme ? 'text-sky-700/80 dark:text-sky-300/80' : 'text-[#075985]'}`}>{totalBookings} total bookings tracked</p>
           </div>
         </section>
 
         <section className="grid gap-5 xl:grid-cols-3">
-          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 xl:col-span-2">
+          <div className={`${dashboardSectionClass} xl:col-span-2`}>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Recent listing activity</h2>
+              <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-slate-900 dark:text-slate-100' : 'text-[#0F172A]'}`}>Recent listing activity</h2>
               <button
                 onClick={() => setSection('my-listings')}
                 className="inline-flex items-center gap-1 text-sm font-semibold text-sky-600 hover:text-sky-700 dark:text-sky-400"
@@ -926,28 +958,28 @@ export default function HostDashboardPage() {
             </div>
             <div className="space-y-3">
               {(myListings.slice().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5)).map((listing) => (
-                <div key={listing.id} className="travel-surface travel-panel border p-3">
+                <div key={listing.id} className={isDarkTheme ? 'travel-panel border border-slate-700 bg-slate-800/70 p-3' : 'travel-panel border border-[#DCE8F5] bg-white p-3'}>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{listing.name}</p>
-                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      <p className={`text-sm font-semibold ${isDarkTheme ? 'text-slate-100' : 'text-[#0F172A]'}`}>{listing.name}</p>
+                      <p className={`mt-0.5 text-xs ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>
                         {listing.id} · {toLabel(listing.listingType)} · Updated {formatDate(listing.updatedAt)}
                       </p>
                     </div>
-                    <StatusBadge status={listing.status} />
+                    <StatusBadge status={listing.status} isDarkTheme={isDarkTheme} />
                   </div>
                 </div>
               ))}
               {!myListings.length && (
-                <p className="rounded-2xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                <p className={`rounded-2xl border border-dashed p-4 text-sm ${isDarkTheme ? 'border-slate-700 text-slate-400' : 'border-[#BFDBFE] text-[#325A8C]'}`}>
                   No listings yet. Add your first listing to start the host workflow.
                 </p>
               )}
             </div>
           </div>
 
-          <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Quick actions</h2>
+          <div className={dashboardSectionClass}>
+            <h2 className={`text-lg font-bold ${isDarkTheme ? 'text-slate-900 dark:text-slate-100' : 'text-[#0F172A]'}`}>Quick actions</h2>
             <div className="mt-4 space-y-2.5">
               <button
                 onClick={openCreateForm}
@@ -958,22 +990,25 @@ export default function HostDashboardPage() {
               </button>
               <button
                 onClick={() => setSection('pending-review')}
-                className="travel-secondary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+                className={secondaryActionClass}
               >
                 <Clock3 className="h-4 w-4" />
                 Review Queue
               </button>
               <button
                 onClick={() => setSection('rejected-listings')}
-                className="travel-secondary-button flex w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold"
+                className={secondaryActionClass}
               >
                 <TriangleAlert className="h-4 w-4" />
                 Fix Rejected Listings
               </button>
             </div>
-            <div className="travel-surface-secondary travel-summary-box mt-5 border p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Submission health</p>
-              <div className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <div className={isDarkTheme
+              ? 'travel-surface-secondary travel-summary-box mt-5 border p-4'
+              : 'travel-panel travel-summary-box mt-5 border border-[#CFE0F0] bg-[#EEF6FF] p-4'}
+            >
+              <p className={`text-xs font-semibold uppercase tracking-wide ${isDarkTheme ? 'text-slate-300' : 'text-[#1E3A8A]'}`}>Submission health</p>
+              <div className={`mt-3 space-y-2 text-sm ${isDarkTheme ? 'text-slate-200' : 'text-[#334155]'}`}>
                 <p>{listingsByStatus.draft.length} drafts ready to complete</p>
                 <p>{listingsByStatus.pending.length} waiting for admin</p>
                 <p>{listingsByStatus.rejected.length} need revision and resubmission</p>
@@ -988,7 +1023,10 @@ export default function HostDashboardPage() {
   function renderBookings() {
     return (
       <div className="space-y-4">
-        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Bookings Summary</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Bookings are derived from listing records until dedicated reservations management is connected.
@@ -1009,7 +1047,10 @@ export default function HostDashboardPage() {
           </div>
         </div>
 
-        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Listing performance</h3>
           <div className="mt-4 space-y-3">
             {myListings.map((listing) => (
@@ -1042,7 +1083,10 @@ export default function HostDashboardPage() {
       .slice(0, 6);
     return (
       <div className="space-y-4">
-        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Earnings</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
             Revenue snapshot tied to listing performance and nightly rates.
@@ -1063,7 +1107,10 @@ export default function HostDashboardPage() {
           </div>
         </div>
 
-        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Top earning listings</h3>
           <div className="mt-4 space-y-3">
             {sorted.map((listing) => {
@@ -1089,7 +1136,10 @@ export default function HostDashboardPage() {
 
   function renderMessages() {
     return (
-      <div className="travel-panel border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+      <div className={isDarkTheme
+        ? 'travel-panel border border-slate-700 bg-slate-900/70 p-6 shadow-sm'
+        : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-6 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+      >
         <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Messages & Support</h2>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Host support inbox is ready for integration. This section will include admin feedback threads and support messages.
@@ -1144,7 +1194,10 @@ export default function HostDashboardPage() {
 
     return (
       <div className="space-y-4">
-        <div className="travel-panel border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
           <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{header.title}</h2>
           <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{header.subtitle}</p>
           {(section === 'my-listings' || section === 'pending-review' || section === 'approved-listings' || section === 'rejected-listings') && (
@@ -1179,10 +1232,13 @@ export default function HostDashboardPage() {
 
   if (role !== 'host') {
     return (
-      <div className="min-h-screen bg-[var(--background)] pt-20">
+      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
         <div className="mx-auto max-w-xl px-4">
-          <div className="travel-panel border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          <div className={isDarkTheme
+            ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
+            : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-10 text-center shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+          >
+            <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full ${isDarkTheme ? 'bg-slate-800 text-slate-300' : 'bg-[#EAF3FF] text-[#2563EB]'}`}>
               <ShieldCheck className="h-6 w-6" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{translateDynamic('Access Restricted')}</h2>
@@ -1196,9 +1252,9 @@ export default function HostDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pt-20">
+    <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
       <div className="mx-auto max-w-[1500px] px-4 pb-10 sm:px-6">
-        <header className="travel-shell overflow-hidden border border-slate-200 bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-8 shadow-sm dark:border-slate-700">
+        <header className={`travel-shell overflow-hidden border bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-8 shadow-sm ${isDarkTheme ? 'border-slate-700' : 'border-[#BFD8FF]'}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="travel-badge inline-flex items-center gap-2 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
@@ -1219,20 +1275,26 @@ export default function HostDashboardPage() {
 
         <div className="mt-5 grid gap-5 xl:grid-cols-[280px,1fr]">
           <aside className="space-y-4">
-            <div className="travel-panel border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
+            <div
+              className={`host-nav-shell travel-panel border p-3 shadow-sm ${
+                isDarkTheme ? 'border-slate-700 bg-slate-900/70' : 'border-[#CFE0F0] bg-[#F8FBFF]'
+              }`}
+            >
               <div className="mb-2 flex items-center gap-2 px-2 py-1">
-                <ListFilter className="h-4 w-4 text-slate-500" />
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Host Menu</p>
+                <ListFilter className={`h-4 w-4 ${isDarkTheme ? 'text-slate-500' : 'text-[#2563EB]'}`} />
+                <p className={`text-sm font-semibold ${isDarkTheme ? 'text-slate-200' : 'text-[#1E3A8A]'}`}>Host Menu</p>
               </div>
               <nav className="space-y-1">
                 {navItems.map((item) => (
                   <button
                     key={item.key}
                     onClick={() => setSection(item.key)}
-                    className={`flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-sm font-semibold transition ${
+                    className={`host-nav-item flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-sm font-semibold transition ${
                       section === item.key
                         ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white'
-                        : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
+                        : isDarkTheme
+                          ? 'text-slate-200 hover:bg-slate-800'
+                          : 'text-[#23406A] hover:bg-[#EAF3FF] hover:text-[#0F2747]'
                     }`}
                   >
                     <span className="inline-flex items-center gap-2">
@@ -1240,7 +1302,15 @@ export default function HostDashboardPage() {
                       {item.label}
                     </span>
                     {typeof item.badge === 'number' && (
-                      <span className={`travel-badge px-2 py-0.5 text-xs ${section === item.key ? 'bg-white/30 text-white' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
+                      <span
+                        className={`host-nav-badge travel-badge px-2 py-0.5 text-xs ${
+                          section === item.key
+                            ? 'bg-white/30 text-white'
+                            : isDarkTheme
+                              ? 'bg-slate-800 text-slate-300'
+                              : 'bg-[#EAF3FF] text-[#325A8C]'
+                        }`}
+                      >
                         {item.badge}
                       </span>
                     )}
@@ -1257,17 +1327,17 @@ export default function HostDashboardPage() {
       {previewListing && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/55 p-4" onClick={() => setPreviewId(null)}>
           <div
-            className="travel-shell max-h-[92vh] w-full max-w-4xl overflow-hidden border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+            className={`travel-shell max-h-[92vh] w-full max-w-4xl overflow-hidden border shadow-2xl ${isDarkTheme ? 'border-slate-700 bg-slate-900' : 'border-[#CFE0F0] bg-[#F8FBFF]'}`}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+            <div className={`flex items-center justify-between border-b px-6 py-4 ${isDarkTheme ? 'border-slate-700' : 'border-[#D6E4F2]'}`}>
               <div>
                 <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{previewListing.id}</p>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{previewListing.name}</h3>
               </div>
               <button
                 onClick={() => setPreviewId(null)}
-                className="travel-icon-button flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className={`travel-icon-button flex h-9 w-9 items-center justify-center border ${isDarkTheme ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-[#D6E4F2] text-[#334155] hover:bg-[#EAF3FF]'}`}
               >
                 <XCircle className="h-4 w-4" />
               </button>
@@ -1275,7 +1345,7 @@ export default function HostDashboardPage() {
             <div className="app-modal-scroll max-h-[calc(92vh-84px)] overflow-y-auto px-6 py-5">
               <div className="grid gap-4 md:grid-cols-[1.2fr,1fr]">
                 <div className="space-y-4">
-                  <div className="h-56 overflow-hidden rounded-3xl bg-slate-100 dark:bg-slate-800">
+                  <div className={`h-56 overflow-hidden rounded-3xl ${isDarkTheme ? 'bg-slate-800' : 'bg-[#EAF3FF]'}`}>
                     {previewListing.images[0] ? (
                       <img src={previewListing.images[0]} alt={previewListing.name} className="h-full w-full object-cover" />
                     ) : null}
@@ -1302,7 +1372,7 @@ export default function HostDashboardPage() {
                     <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Amenities</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {previewListing.amenities.map((item) => (
-                        <span key={item} className="travel-badge bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        <span key={item} className={`travel-badge px-2.5 py-1 text-xs ${isDarkTheme ? 'bg-slate-800 text-slate-300' : 'bg-[#EAF3FF] text-[#325A8C]'}`}>
                           {item}
                         </span>
                       ))}
