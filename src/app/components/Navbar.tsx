@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
-import { useApp, Language, UserRole } from '../context/AppContext';
+import { useApp, Language } from '../context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 
 export function Navbar() {
-  const { language, setLanguage, role, setRole, favorites, t, theme } = useApp();
+  const { language, setLanguage, role, favorites, t, theme } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [roleOpen, setRoleOpen] = useState(false);
   const [activeTabRect, setActiveTabRect] = useState<{ x: number; width: number } | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     let ticking = false;
@@ -80,13 +78,6 @@ export function Navbar() {
     { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   ];
 
-  const roles: { value: UserRole; label: string; color: string }[] = useMemo(() => [
-    { value: 'user', label: t('nav.role.user'), color: 'bg-blue-100 text-blue-700' },
-    { value: 'host', label: t('nav.role.host'), color: 'bg-green-100 text-green-700' },
-    { value: 'admin', label: t('nav.role.admin'), color: 'bg-purple-100 text-purple-700' },
-  ], [t]);
-
-  const currentRole = roles.find(r => r.value === role)!;
   const currentLang = languages.find(l => l.code === language)!;
 
   const isActive = (to: string) => {
@@ -189,48 +180,10 @@ export function Navbar() {
 
           {/* Right controls */}
           <div className="hidden lg:flex items-center gap-2">
-            {/* Role switcher */}
-            <div className="relative">
-              <button
-                onClick={() => { setRoleOpen(!roleOpen); setLangOpen(false); }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${currentRole.color} border-transparent`}
-              >
-                <User size={14} />
-                {currentRole.label}
-                <ChevronDown size={12} />
-              </button>
-              <AnimatePresence>
-                {roleOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className={`absolute right-0 top-full mt-2 w-40 rounded-xl shadow-xl border overflow-hidden z-50 ${theme === 'dark' ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}
-                  >
-                    {roles.map(r => (
-                      <button
-                        key={r.value}
-                        onClick={() => {
-                          setRole(r.value);
-                          setRoleOpen(false);
-                          if (r.value === 'host') navigate('/host-dashboard');
-                          else if (r.value === 'admin') navigate('/admin');
-                          else navigate('/');
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${theme === 'dark' ? `hover:bg-slate-700 ${role === r.value ? 'bg-slate-700' : ''}` : `hover:bg-gray-50 ${role === r.value ? 'bg-gray-50' : ''}`}`}
-                      >
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${r.color}`}>{r.label}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             {/* Language switcher */}
             <div className="relative">
               <button
-                onClick={() => { setLangOpen(!langOpen); setRoleOpen(false); }}
+                onClick={() => setLangOpen(!langOpen)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                   scrolled
                     ? theme === 'dark'
@@ -317,30 +270,14 @@ export function Navbar() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2 flex-wrap pb-2">
-                {roles.map(r => (
-                  <button
-                    key={r.value}
-                    onClick={() => {
-                      setRole(r.value);
-                      if (r.value === 'host') navigate('/host-dashboard');
-                      else if (r.value === 'admin') navigate('/admin');
-                      else navigate('/');
-                    }}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium ${role === r.value ? 'ring-2 ring-cyan-500' : ''} ${r.color}`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Backdrop */}
-      {(langOpen || roleOpen) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setLangOpen(false); setRoleOpen(false); }} />
+      {langOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
       )}
     </nav>
   );
