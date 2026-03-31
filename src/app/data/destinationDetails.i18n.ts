@@ -210,7 +210,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Moștenirea vikingă la Muzeul Vasa, design suedez și origini IKEA, moștenire ABBA și muzica pop, cultura cafelei fika.",
-      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surstr�mming, smörgåsbord, prăjitură prințesă și vin fiert glögg."
+      "cuisine": "Chifteluțe suedeze cu lingonberry, gravlax, surströmming, smörgåsbord, prăjitură prințesă și vin fiert glögg."
     },
     "galapagos": {
       "culture": "Moștenirea evoluției Charles Darwin, eco-turism durabil, conservarea speciilor endemice, tradițiile insulelor din Pacific.",
@@ -864,7 +864,7 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
     },
     "stockholm": {
       "culture": "Наследие викингов в музее Васа, шведский дизайн и происхождение IKEA, наследие ABBA и поп-музыки, кофейная культура фика.",
-      "cuisine": "Шведские котлеты с брусникой, гравлаксом, сюрстреммингом, шведским столом, тортом «Принцесса» и глинтвейном «Глёгг»."
+      "cuisine": "Шведские котлеты с брусникой, гравлаксом, сюрстрёммингом, шведским столом, тортом «Принцесса» и глинтвейном Gögg."
     },
     "galapagos": {
       "culture": "Эволюционное наследие Чарльза Дарвина, устойчивый экотуризм, сохранение эндемичных видов, традиции жителей островов Тихого океана.",
