@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 
 function GoogleIcon() {
   return (
@@ -37,11 +38,52 @@ function FacebookIcon() {
 
 export default function TravelLoginPage() {
   const navigate = useNavigate();
+  const { login, isAuthLoading, currentUser } = useApp();
 
-  const [email, setEmail] = React.useState("");
+  const [identifier, setIdentifier] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [rememberMe, setRememberMe] = React.useState(true);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [error, setError] = React.useState("");
+
+  React.useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (currentUser.role === "host") {
+      navigate("/host-dashboard", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  }, [currentUser, navigate]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!identifier.trim() || !password) {
+      setError("Please enter username/email and password.");
+      return;
+    }
+
+    const result = await login(identifier, password);
+    if (!result.success) {
+      setError(result.error || "Login failed.");
+      return;
+    }
+
+    if (result.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (result.role === "host") {
+      navigate("/host-dashboard", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
@@ -125,12 +167,12 @@ export default function TravelLoginPage() {
               </h2>
             </div>
 
-            <form className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@traveldream.com"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="username or email"
                 className="h-14 w-full rounded-[14px] border border-[#cfd6e3] bg-white px-4"
               />
 
@@ -162,10 +204,27 @@ export default function TravelLoginPage() {
 
               <button
                 type="submit"
-                className="h-14 w-full rounded-[14px] bg-[linear-gradient(90deg,#111827_0%,#1f2937_100%)] text-base font-bold text-white"
+                disabled={isAuthLoading}
+                className="h-14 w-full rounded-[14px] bg-[linear-gradient(90deg,#111827_0%,#1f2937_100%)] text-base font-bold text-white disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Login
+                {isAuthLoading ? "Signing in..." : "Login"}
               </button>
+
+              {error && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {error}
+                </p>
+              )}
+
+              <div className="rounded-xl border border-[#d8dde8] bg-white/80 px-4 py-3 text-sm text-[#374151]">
+                <p className="font-semibold">Demo login credentials:</p>
+                <p className="mt-1">
+                  Admin: <span className="font-semibold">admin</span> / <span className="font-semibold">admin2026!</span>
+                </p>
+                <p>
+                  Host: <span className="font-semibold">host</span> / <span className="font-semibold">host2026!</span>
+                </p>
+              </div>
 
               <p className="text-center text-sm text-[#7d8494]">
                 Don&apos;t have an account?{" "}
