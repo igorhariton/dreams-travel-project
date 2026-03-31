@@ -1,11 +1,12 @@
 // @ts-nocheck
 import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Search, MapPin, Building2, Home, Star, Pencil, Trash2, Plus, AlertTriangle,
   LayoutDashboard, BarChart3, Database, Link2, ChevronRight, BedDouble, Users,
   Globe2, Download, X, ImagePlus, FileText, FolderKanban, CheckCircle2,
-  SlidersHorizontal, ArrowUpDown, Clock, XCircle, MessageSquare, ShieldCheck,
+  SlidersHorizontal, ArrowUpDown, Clock, XCircle, MessageSquare, ShieldCheck, LogOut,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -556,10 +557,12 @@ export default function AdminPageV2() {
   const [hotels, setHotels] = useState<Hotel[]>(initialHotels);
   const [rentals, setRentals] = useState<Rental[]>(initialRentals);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { language, setLanguage, hostListings, approveListing, rejectListing, theme } = useApp();
+  const { language, setLanguage, hostListings, approveListing, rejectListing, theme, logout } = useApp();
+  const navigate = useNavigate();
   const lang = language as Lang;
   const t = T[lang];
   const isDarkTheme = theme === 'dark';
+  const logoutText = lang === 'ro' ? 'Ieșire' : lang === 'ru' ? 'Выйти' : 'Logout';
   const [destPage, setDestPage] = useState(1);
   const [hotelPage, setHotelPage] = useState(1);
   const [rentalPage, setRentalPage] = useState(1);
@@ -1567,6 +1570,10 @@ export default function AdminPageV2() {
   const mSelectCls = 'w-full rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-cyan-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white';
   const mTextareaCls = 'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 resize-none dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500';
   const mLabelCls = 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400';
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className={`min-h-screen px-4 pb-6 pt-16 md:px-6 md:pt-20 ${isDarkTheme ? 'bg-slate-950' : 'bg-[#F1F5F9]'}`}>
@@ -1581,10 +1588,12 @@ export default function AdminPageV2() {
         {/* ── SIDEBAR */}
         <aside className={`sticky top-20 h-fit rounded-[28px] p-4 shadow-sm ${isDarkTheme ? 'bg-slate-900 border border-slate-700/50' : 'bg-white border border-slate-200'}`}>
           <div className={`flex items-center gap-3 px-2 pb-4 ${isDarkTheme ? 'border-b border-white/10' : 'border-b border-slate-200'}`}>
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 font-bold text-white">A</div>
-            <div>
-              <p className={`text-lg font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Travel Admin</p>
-              <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>Control center</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 font-bold text-white">A</div>
+              <div>
+                <p className={`text-lg font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Travel Admin</p>
+                <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>Control center</p>
+              </div>
             </div>
           </div>
           <div className="mt-4 space-y-1">
@@ -1635,6 +1644,13 @@ export default function AdminPageV2() {
               </Button>
               <Button variant="outline" onClick={exportData} className={`rounded-2xl ${isDarkTheme ? 'border-slate-600 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
                 <Download className="mr-2 h-4 w-4" /> {t.exportData}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className={`rounded-2xl ${isDarkTheme ? 'border-rose-500/50 bg-slate-800 text-rose-300 hover:bg-slate-700' : 'border-rose-200 bg-white text-rose-600 hover:bg-rose-50'}`}
+              >
+                <LogOut className="mr-2 h-4 w-4" /> {logoutText}
               </Button>
             </div>
           </div>
