@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   BedDouble,
@@ -23,6 +24,7 @@ import {
   Trash2,
   TriangleAlert,
   XCircle,
+  LogOut,
 } from 'lucide-react';
 import {
   useApp,
@@ -197,7 +199,10 @@ export default function HostDashboardPage() {
     duplicateHostListing,
     getMyListings,
     translateDynamic,
+    language,
+    logout,
   } = useApp();
+  const navigate = useNavigate();
 
   const [section, setSection] = useState<HostSection>('dashboard');
   const [query, setQuery] = useState('');
@@ -209,6 +214,7 @@ export default function HostDashboardPage() {
   const [formError, setFormError] = useState('');
   const [form, setForm] = useState<ListingFormState>(createEmptyForm());
   const isDarkTheme = theme === 'dark';
+  const logoutLabel = language === 'ro' ? 'Ieșire' : language === 'ru' ? 'Выйти' : 'Logout';
 
   const myListings = getMyListings();
 
@@ -308,6 +314,11 @@ export default function HostDashboardPage() {
     { key: 'earnings', label: 'Earnings', icon: <DollarSign className="h-4 w-4" /> },
     { key: 'messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
   ];
+
+  function handleLogout() {
+    logout();
+    navigate('/login');
+  }
 
   function openCreateForm() {
     setEditingId(null);
@@ -1317,6 +1328,19 @@ export default function HostDashboardPage() {
                   </button>
                 ))}
               </nav>
+              <div className={`mt-3 border-t pt-3 ${isDarkTheme ? 'border-slate-700' : 'border-[#D6E4F2]'}`}>
+                <button
+                  onClick={handleLogout}
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-[14px] border px-3 py-2.5 text-sm font-semibold transition ${
+                    isDarkTheme
+                      ? 'border-slate-600 bg-slate-800 text-rose-300 hover:bg-slate-700'
+                      : 'border-[#FBC8D1] bg-rose-50 text-rose-700 hover:bg-rose-100'
+                  }`}
+                >
+                  <LogOut className="h-4 w-4" />
+                  {logoutLabel}
+                </button>
+              </div>
             </div>
           </aside>
 
