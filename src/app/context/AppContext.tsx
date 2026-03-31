@@ -67,6 +67,7 @@ export type HostListing = {
 
 export type User = {
   id: string;
+  username?: string;
   name: string;
   email: string;
   phone: string;
@@ -75,19 +76,63 @@ export type User = {
 
 export type RegisterData = {
   name: string;
+  username?: string;
   email: string;
   phone: string;
   password: string;
   role: 'host';
 };
 
-const MOCK_USERS: (User & { password: string })[] = [
-  { id: 'admin-1', name: 'Admin TravelDreams', email: 'admin@traveldreams.com', phone: '+1 888 000 0000', role: 'admin', password: 'admin123' },
-  { id: 'host-1',  name: 'Maria Ionescu',      email: 'maria@host.com',         phone: '+40 721 000 001', role: 'host',  password: 'host123' },
-  { id: 'host-2',  name: 'John Smith',          email: 'john@host.com',          phone: '+44 7700 900001', role: 'host',  password: 'host123' },
+const MOCK_USERS: (User & { username: string; password: string })[] = [
+  {
+    id: 'admin-1',
+    username: 'admin',
+    name: 'Admin TravelDreams',
+    email: 'admin@traveldreams.com',
+    phone: '+1 888 000 0000',
+    role: 'admin',
+    password: 'admin2026!',
+  },
+  {
+    id: 'host-1',
+    username: 'host',
+    name: 'Maria Ionescu',
+    email: 'maria@host.com',
+    phone: '+40 721 000 001',
+    role: 'host',
+    password: 'host2026!',
+  },
+  {
+    id: 'host-2',
+    username: 'host2',
+    name: 'John Smith',
+    email: 'john@host.com',
+    phone: '+44 7700 900001',
+    role: 'host',
+    password: 'host22026!',
+  },
 ];
 
 const daysAgoIso = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+
+const normalizeCredential = (value: string) => value.trim().toLowerCase();
+
+function sanitizeUsername(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, '');
+}
+
+function isEmailTaken(users: (User & { username: string; password: string })[], email: string) {
+  const normalized = normalizeCredential(email);
+  return users.some((user) => normalizeCredential(user.email) === normalized);
+}
+
+function isUsernameTaken(users: (User & { username: string; password: string })[], username: string) {
+  const normalized = normalizeCredential(username);
+  return users.some((user) => normalizeCredential(user.username) === normalized);
+}
 
 function inferListingCategory(listingType: HostListingType): HostListingCategory {
   return listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel' ? 'hotel' : 'rental';
@@ -286,7 +331,7 @@ interface AppContextType {
   getCurrencySymbol: () => string;
   // ── New: Auth ──
   currentUser: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
   logout: () => void;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   isAuthLoading: boolean;
@@ -683,17 +728,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
   // ── NEW: Auth ─────────────────────────────────────────────────────────────
-  async function login(email: string, password: string) {
+  async function login(identifier: string, password: string) {
     setIsAuthLoading(true);
     await new Promise(r => setTimeout(r, 500));
-    const found = mockUsers.find(u => u.email === email && u.password === password);
+    const normalizedIdentifier = normalizeCredential(identifier);
+    const found = mockUsers.find((user) => {
+      const matchesIdentifier =
+        normalizeCredential(user.email) === normalizedIdentifier ||
+        normalizeCredential(user.username) === normalizedIdentifier ||
+        normalizeCredential(user.name) === normalizedIdentifier;
+      return matchesIdentifier && user.password === password;
+    });
     setIsAuthLoading(false);
-    if (!found) return { success: false, error: 'Invalid email or password.' };
+    if (!found) return { success: false, error: 'Invalid username/email or password.' };
     const { password: _pw, ...user } = found;
     setCurrentUser(user);
     setRole(user.role);
     localStorage.setItem('td_user', JSON.stringify(user));
-    return { success: true };
+    return { success: true, role: user.role };
   }
 
   function logout() {
@@ -705,9 +757,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
   async function register(data: RegisterData) {
     setIsAuthLoading(true);
     await new Promise(r => setTimeout(r, 500));
-    const exists = mockUsers.find(u => u.email === data.email);
-    if (exists) { setIsAuthLoading(false); return { success: false, error: 'Email already in use.' }; }
-    const newUser = { id: 'host-' + Date.now(), name: data.name, email: data.email, phone: data.phone, role: 'host' as UserRole, password: data.password };
+    if (isEmailTaken(mockUsers, data.email)) {
+      setIsAuthLoading(false);
+      return { success: false, error: 'Email already in use.' };
+    }
+
+    const usernameSource = data.username?.trim() || data.email.split('@')[0] || '';
+    const nextUsernameBase = sanitizeUsername(usernameSource);
+    const fallbackUsername = `host${Date.now().toString().slice(-4)}`;
+    const nextUsername = nextUsernameBase || fallbackUsername;
+    if (isUsernameTaken(mockUsers, nextUsername)) {
+      setIsAuthLoading(false);
+      return { success: false, error: 'Username already in use.' };
+    }
+
+    const newUser = {
+      id: 'host-' + Date.now(),
+      username: nextUsername,
+      name: data.name.trim(),
+      email: data.email.trim(),
+      phone: data.phone.trim(),
+      role: 'host' as UserRole,
+      password: data.password,
+    };
     setMockUsers(prev => [...prev, newUser]);
     const { password: _pw, ...user } = newUser;
     setCurrentUser(user);
@@ -719,11 +791,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function getHostActor(): User | null {
     if (currentUser?.role === 'host') return currentUser;
-    if (role !== 'host') return null;
-    const fallback = mockUsers.find((user) => user.role === 'host');
-    if (!fallback) return null;
-    const { password: _pw, ...hostUser } = fallback;
-    return hostUser;
+    return null;
   }
 
   // ── NEW: Host listing actions ──────────────────────────────────────────────
@@ -773,10 +841,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function updateHostListing(id: string, data: Partial<HostListing>) {
+    const hostActor = getHostActor();
+    if (!hostActor) return;
     const now = new Date().toISOString();
     setHostListings((prev) =>
       prev.map((listing) =>
-        listing.id === id
+        listing.id === id && listing.hostId === hostActor.id
           ? {
               ...listing,
               ...data,
@@ -797,14 +867,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function deleteHostListing(id: string) {
-    setHostListings((prev) => prev.filter((l) => l.id !== id));
+    const hostActor = getHostActor();
+    if (!hostActor) return;
+    setHostListings((prev) => prev.filter((l) => !(l.id === id && l.hostId === hostActor.id)));
   }
 
   function submitHostListing(id: string) {
+    const hostActor = getHostActor();
+    if (!hostActor) return;
     const now = new Date().toISOString();
     setHostListings((prev) =>
       prev.map((listing) =>
-        listing.id === id
+        listing.id === id && listing.hostId === hostActor.id
           ? {
               ...listing,
               status: 'pending',
@@ -825,7 +899,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function duplicateHostListing(id: string) {
     const hostActor = getHostActor();
     if (!hostActor) return null;
-    const source = hostListings.find((listing) => listing.id === id);
+    const source = hostListings.find((listing) => listing.id === id && listing.hostId === hostActor.id);
     if (!source) return null;
 
     const now = new Date().toISOString();
