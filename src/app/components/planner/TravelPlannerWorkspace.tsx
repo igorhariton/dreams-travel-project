@@ -245,7 +245,10 @@ export default function TravelPlannerWorkspace() {
           </aside>
 
           <main className="space-y-4 xl:col-span-8">
-            <section className="rounded-2xl border bg-white p-4 shadow-sm" style={{ borderColor: '#D9E3F0' }}>
+            <section
+              className="rounded-2xl border bg-white p-4 shadow-sm xl:sticky xl:top-20 xl:z-10"
+              style={{ borderColor: '#D9E3F0' }}
+            >
               <h2 className="text-lg font-black text-slate-900">Map / stops preview</h2>
               <p className="mb-3 text-sm text-slate-500">
                 Real-time map updates for Trip / Country / City / Category filters with list synchronization.
