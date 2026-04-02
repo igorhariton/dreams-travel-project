@@ -1,0 +1,11 @@
+export { default as AdminPage } from "./AdminPage";
+export { default as ChatPage } from "./ChatPage";
+export { default as DestinationsPage } from "./DestinationsPage";
+export { default as FavoritesPage } from "./FavoritesPage";
+export { default as HomePage } from "./HomePage";
+export { default as HostDashboardPage } from "./HostDashboardPage";
+export { default as HotelsPage } from "./HotelsPage";
+export { default as LoginPage } from "./LoginPage";
+export { default as PlannerPage } from "./PlannerPage";
+export { default as RegisterPage } from "./RegisterPage";
+export { default as RentalsPage } from "./RentalsPage";

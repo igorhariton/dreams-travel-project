@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
-import App from "./app/App";
-import "./styles/index.css";
+import App from "./App";
+import "./index.css";
 
 if (typeof window !== "undefined") {
   if ("scrollRestoration" in window.history) {

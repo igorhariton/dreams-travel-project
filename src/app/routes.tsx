@@ -1,19 +1,19 @@
 import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
-import { Layout } from './components/Layout';
-import { useApp } from './context/AppContext';
+import { AppLayout } from '../layouts';
+import { useApp } from '../context';
 
-const HomePage = lazy(() => import('./pages/HomePage'));
-const DestinationsPage = lazy(() => import('./pages/DestinationsPage'));
-const HotelsPage = lazy(() => import('./pages/HotelsPage'));
-const RentalsPage = lazy(() => import('./pages/RentalsPage'));
-const PlannerPage = lazy(() => import('./pages/PlannerPage'));
-const FavoritesPage = lazy(() => import('./pages/FavoritesPage'));
-const ChatPage = lazy(() => import('./pages/ChatPage'));
-const AdminPage = lazy(() => import('./pages/AdminPage'));
-const HostDashboardPage = lazy(() => import('./pages/HostDashboardPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage_TravelDreams_v2'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const HomePage = lazy(() => import('../pages/HomePage'));
+const DestinationsPage = lazy(() => import('../pages/DestinationsPage'));
+const HotelsPage = lazy(() => import('../pages/HotelsPage'));
+const RentalsPage = lazy(() => import('../pages/RentalsPage'));
+const PlannerPage = lazy(() => import('../pages/PlannerPage'));
+const FavoritesPage = lazy(() => import('../pages/FavoritesPage'));
+const ChatPage = lazy(() => import('../pages/ChatPage'));
+const AdminPage = lazy(() => import('../pages/AdminPage'));
+const HostDashboardPage = lazy(() => import('../pages/HostDashboardPage'));
+const LoginPage = lazy(() => import('../pages/LoginPage'));
+const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 
 // Only prefetch a small set of common routes on fast connections.
 function prefetchAllPages() {
@@ -24,9 +24,9 @@ function prefetchAllPages() {
   if (!shouldPrefetch) return;
 
   const pages = [
-    () => import('./pages/DestinationsPage'),
-    () => import('./pages/HotelsPage'),
-    () => import('./pages/RentalsPage'),
+    () => import('../pages/DestinationsPage'),
+    () => import('../pages/HotelsPage'),
+    () => import('../pages/RentalsPage'),
   ];
 
   if ('requestIdleCallback' in window) {
@@ -88,7 +88,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    Component: Layout,
+    Component: AppLayout,
     children: [
       {
         index: true,

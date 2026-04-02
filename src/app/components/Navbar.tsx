@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
-import { useApp, Language } from '../context/AppContext';
+import { useApp, Language } from '../../context';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
+import { supportedLanguages } from '../../i18n';
 
 export function Navbar() {
   const { language, setLanguage, role, favorites, t, theme } = useApp();
@@ -72,11 +73,13 @@ export function Navbar() {
     ...(role === 'admin' ? [{ to: '/admin', label: t('nav.admin'), icon: <Shield size={16} /> }] : []),
   ], [favorites.length, role, t]);
 
-  const languages: { code: Language; label: string; flag: string }[] = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'ro', label: 'Română', flag: '🇷🇴' },
-    { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  ];
+  const languages: { code: Language; label: string; nativeLabel: string; flag: string }[] =
+    supportedLanguages.map((lang) => ({
+      code: lang.code as Language,
+      label: lang.label,
+      nativeLabel: lang.nativeLabel,
+      flag: lang.flag,
+    }));
 
   const currentLang = languages.find(l => l.code === language)!;
 
@@ -215,7 +218,7 @@ export function Navbar() {
                         className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-2 transition-colors ${theme === 'dark' ? `hover:bg-slate-700 ${language === lang.code ? 'bg-cyan-600/30 text-cyan-400 font-medium' : 'text-slate-300'}` : `hover:bg-gray-50 ${language === lang.code ? 'bg-cyan-50 text-cyan-600 font-medium' : 'text-gray-700'}`}`}
                       >
                         <span className="text-lg">{lang.flag}</span> 
-                        <span>{lang.label}</span>
+                        <span>{lang.nativeLabel}</span>
                       </button>
                     ))}
                   </motion.div>
