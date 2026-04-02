@@ -48,7 +48,7 @@ function PopoverContent({
       sticky={sticky}
       hideWhenDetached={hideWhenDetached}
       className={cn(
-        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[180] max-w-[calc(100vw-1.5rem)] origin-[var(--radix-popover-content-transform-origin)] overflow-hidden rounded-[20px] border border-border p-0 shadow-[0_22px_48px_rgba(15,23,42,0.16)] outline-hidden will-change-[transform,opacity] dark:shadow-[0_20px_44px_rgba(2,6,23,0.44)]",
+        "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[2200] max-w-[calc(100vw-1.5rem)] origin-[var(--radix-popover-content-transform-origin)] overflow-hidden rounded-[20px] border border-border p-0 shadow-[0_22px_48px_rgba(15,23,42,0.16)] outline-hidden will-change-[transform,opacity] dark:shadow-[0_20px_44px_rgba(2,6,23,0.44)]",
         className,
       )}
       {...props}
