@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Heart, MapPin, Plus } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
 import type { TravelCategory, TravelPlace } from '../../types/travel';
 import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS } from '../../types/travel';
@@ -27,6 +28,8 @@ export function StayFavorites({
   onToggleFavorite,
   onCategoryFilter,
 }: StayFavoritesProps) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState<'all' | TravelCategory>('all');
 
   const listed = useMemo(
@@ -35,10 +38,17 @@ export function StayFavorites({
   );
 
   return (
-    <div className="rounded-2xl border bg-white p-3 shadow-sm" style={{ borderColor: '#D9E3F0' }}>
+    <div
+      className={`rounded-2xl border p-3 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+      style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+    >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-black text-slate-900">Stay + Favorites</h3>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+        <h3 className={`text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Stay + Favorites</h3>
+        <span
+          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+            isDark ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-700'
+          }`}
+        >
           {listed.length} items
         </span>
       </div>
@@ -52,12 +62,16 @@ export function StayFavorites({
               onCategoryFilter(tab);
             }}
             className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold transition ${
-              activeTab === tab ? 'text-white' : 'bg-white text-slate-600'
+              activeTab === tab
+                ? 'text-white'
+                : isDark
+                  ? 'bg-slate-800 text-slate-300'
+                  : 'bg-white text-slate-600'
             }`}
             style={
               activeTab === tab
                 ? { backgroundColor: tab === 'all' ? TRAVEL_COLORS.navy : TRAVEL_COLORS.category[tab], borderColor: 'transparent' }
-                : { borderColor: '#D9E3F0' }
+                : { borderColor: isDark ? '#475569' : '#D9E3F0' }
             }
           >
             {tab === 'all' ? 'All' : TRAVEL_CATEGORY_LABEL[tab]}
@@ -65,18 +79,25 @@ export function StayFavorites({
         ))}
       </div>
 
-      <div className="mb-3 rounded-xl border bg-slate-50 p-2" style={{ borderColor: '#D9E3F0' }}>
-        <div className="mb-1 text-xs font-semibold text-slate-600">Favorite Quick Add</div>
+      <div
+        className={`mb-3 rounded-xl border p-2 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`}
+        style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+      >
+        <div className={`mb-1 text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Favorite Quick Add</div>
         {!favorites.length ? (
-          <div className="text-xs text-slate-500">Mark places with heart and quickly add them to the active day.</div>
+          <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+            Mark places with heart and quickly add them to the active day.
+          </div>
         ) : (
           <div className="flex flex-wrap gap-1">
             {favorites.slice(0, 8).map((favorite) => (
               <button
                 key={favorite.id}
                 onClick={() => onQuickAdd(favorite.id)}
-                className="rounded-full border bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-100"
-                style={{ borderColor: '#D9E3F0' }}
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+                  isDark ? 'bg-slate-800 text-slate-200 hover:bg-slate-700' : 'bg-white text-slate-700 hover:bg-slate-100'
+                }`}
+                style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
               >
                 + {favorite.name}
               </button>
@@ -96,7 +117,11 @@ export function StayFavorites({
               className={`rounded-xl border p-2 transition ${
                 selected ? 'shadow-sm ring-1' : ''
               }`}
-              style={selected ? { borderColor: TRAVEL_COLORS.blue, boxShadow: '0 0 0 1px #2563EB inset' } : { borderColor: '#D9E3F0' }}
+              style={
+                selected
+                  ? { borderColor: TRAVEL_COLORS.blue, boxShadow: '0 0 0 1px #2563EB inset' }
+                  : { borderColor: isDark ? '#475569' : '#D9E3F0' }
+              }
             >
               <button
                 onClick={() => onSelectPlace(place.id)}
@@ -104,8 +129,8 @@ export function StayFavorites({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">{place.name}</div>
-                    <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500">
+                    <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{place.name}</div>
+                    <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <MapPin size={11} />
                       {place.city || place.country || place.address || 'Unknown'}
                     </div>
@@ -122,15 +147,27 @@ export function StayFavorites({
                 <button
                   onClick={() => onToggleFavorite(place.id)}
                   className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold ${
-                    place.isFavorite ? 'bg-rose-50 text-rose-600' : 'bg-white text-slate-600'
+                    place.isFavorite
+                      ? isDark
+                        ? 'bg-rose-950/40 text-rose-300'
+                        : 'bg-rose-50 text-rose-600'
+                      : isDark
+                        ? 'bg-slate-800 text-slate-300'
+                        : 'bg-white text-slate-600'
                   }`}
-                  style={{ borderColor: '#D9E3F0' }}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                 >
                   <Heart size={12} fill={place.isFavorite ? 'currentColor' : 'none'} />
                   Favorite
                 </button>
                 {added ? (
-                  <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-600">Added</span>
+                  <span
+                    className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                      isDark ? 'bg-emerald-950/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
+                    }`}
+                  >
+                    Added
+                  </span>
                 ) : (
                   <Button size="sm" variant="secondary" onClick={() => onQuickAdd(place.id)}>
                     <Plus size={12} />
