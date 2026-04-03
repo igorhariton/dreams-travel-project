@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS, type TravelCategory } from '../../types/travel';
+import { TRAVEL_COLORS, type TravelCategory } from '../../types/travel';
 
 type MapLegendProps = {
   showing: number;
@@ -10,7 +10,7 @@ type MapLegendProps = {
 const categories: TravelCategory[] = ['hotel', 'rental', 'activity', 'restaurant', 'stop'];
 
 export function MapLegend({ showing, total }: MapLegendProps) {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
 
   return (
@@ -24,7 +24,7 @@ export function MapLegend({ showing, total }: MapLegendProps) {
           style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border }}
         >
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: TRAVEL_COLORS.category[category] }} />
-          {TRAVEL_CATEGORY_LABEL[category]}
+          {t(`planner.category.${category}`)}
         </span>
       ))}
       <span
@@ -33,7 +33,7 @@ export function MapLegend({ showing, total }: MapLegendProps) {
         }`}
         style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border }}
       >
-        Showing {showing} / {total}
+        {t('planner.showing')} {showing} / {total}
       </span>
     </div>
   );
