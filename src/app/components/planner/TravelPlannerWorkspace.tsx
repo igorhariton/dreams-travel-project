@@ -36,27 +36,33 @@ type PlannerDateFieldProps = {
 };
 
 function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldProps) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
   const selected = parseIsoDate(value);
   const min = parseIsoDate(minDate);
 
   return (
-    <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
+    <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
       {label}
       <Popover>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="flex h-10 w-full items-center justify-between rounded-2xl border bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:ring-2"
-            style={{ borderColor: '#D9E3F0' }}
+            className={`flex h-10 w-full items-center justify-between rounded-2xl border px-3 text-sm font-semibold outline-none transition focus:ring-2 ${
+              isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+            }`}
+            style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
           >
             <span>{selected ? format(selected, 'MM/dd/yyyy') : 'Select date'}</span>
-            <CalendarDays size={15} className="text-slate-500" />
+            <CalendarDays size={15} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
           </button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
           sideOffset={6}
-          className="w-auto rounded-2xl border border-[#D9E3F0] bg-white p-3 shadow-[0_18px_46px_rgba(15,23,42,0.18)]"
+          className={`w-auto rounded-2xl border p-3 shadow-[0_18px_46px_rgba(15,23,42,0.18)] ${
+            isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-[#D9E3F0] bg-white'
+          }`}
         >
           <Calendar
             mode="single"
@@ -65,18 +71,22 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
             disabled={min ? { before: min } : undefined}
             initialFocus
           />
-          <div className="mt-3 flex items-center justify-between border-t border-[#E2E8F0] pt-2">
+          <div className={`mt-3 flex items-center justify-between border-t pt-2 ${isDark ? 'border-slate-700' : 'border-[#E2E8F0]'}`}>
             <button
               type="button"
               onClick={() => onChange('')}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+              }`}
             >
               Clear
             </button>
             <button
               type="button"
               onClick={() => onChange(toIsoDate(new Date()))}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50"
+              className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                isDark ? 'text-cyan-300 hover:bg-slate-800' : 'text-blue-600 hover:bg-blue-50'
+              }`}
             >
               Today
             </button>
@@ -88,17 +98,21 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
 }
 
 export default function TravelPlannerWorkspace() {
-  const { formatPrice, translateDynamic } = useApp();
+  const { formatPrice, translateDynamic, theme } = useApp();
+  const isDark = theme === 'dark';
   const planner = useTravelPlanner();
 
   const activeDayId = planner.activeDay?.id || '';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <div className="mx-auto max-w-[1450px] space-y-4 p-4 md:p-6">
         <div className="grid gap-4 xl:grid-cols-3">
-          <section className="rounded-2xl border bg-white p-4 shadow-sm" style={{ borderColor: '#D9E3F0' }}>
-            <h2 className="mb-3 text-base font-black text-slate-900">Trip Settings</h2>
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Trip Settings</h2>
             <div className="grid gap-2">
               <Select
                 label="Active trip"
@@ -106,22 +120,26 @@ export default function TravelPlannerWorkspace() {
                 options={planner.filterOptions.trips.filter((trip) => trip.value !== 'all')}
                 onChange={planner.setTripFilter}
               />
-              <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                 Trip name
                 <input
                   value={planner.activeTrip?.name || ''}
                   onChange={(event) => planner.updateTripSettings({ name: event.target.value })}
-                  className="h-10 rounded-xl border px-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E3F0' }}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                 />
               </label>
-              <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                 Destination
                 <input
                   value={planner.activeTrip?.destination || ''}
                   onChange={(event) => planner.updateTripSettings({ destination: event.target.value })}
-                  className="h-10 rounded-xl border px-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E3F0' }}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                 />
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -137,22 +155,27 @@ export default function TravelPlannerWorkspace() {
                   onChange={(next) => planner.updateTripSettings({ endDate: next })}
                 />
               </div>
-              <label className="flex flex-col gap-1.5 text-xs font-semibold text-slate-500">
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                 Budget target
                 <input
                   type="number"
                   min={0}
                   value={planner.activeTrip?.budget || 0}
                   onChange={(event) => planner.updateTripSettings({ budget: Number(event.target.value) || 0 })}
-                  className="h-10 rounded-xl border px-3 text-sm font-semibold text-slate-800 outline-none focus:ring-2"
-                  style={{ borderColor: '#D9E3F0' }}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                 />
               </label>
             </div>
           </section>
 
-          <section className="rounded-2xl border bg-white p-4 shadow-sm" style={{ borderColor: '#D9E3F0' }}>
-            <h2 className="mb-3 text-base font-black text-slate-900">Suggest Settings</h2>
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Suggest Settings</h2>
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">
                 {suggestModes.map((mode) => (
@@ -162,7 +185,9 @@ export default function TravelPlannerWorkspace() {
                     className={`rounded-full border px-2 py-1 text-xs font-semibold ${
                       planner.activeSuggestMode === mode
                         ? 'border-transparent bg-slate-900 text-white'
-                        : 'border-slate-200 bg-white text-slate-600'
+                        : isDark
+                          ? 'border-slate-600 bg-slate-800 text-slate-300'
+                          : 'border-slate-200 bg-white text-slate-600'
                     }`}
                   >
                     {TRAVEL_MODE_LABEL[mode]}
@@ -184,34 +209,44 @@ export default function TravelPlannerWorkspace() {
                   Suggest itinerary
                 </Button>
               </div>
-              <div className="rounded-xl border bg-slate-50 p-3 text-xs text-slate-600" style={{ borderColor: '#D9E3F0' }}>
+              <div
+                className={`rounded-xl border p-3 text-xs ${isDark ? 'bg-slate-700/60 text-slate-300' : 'bg-slate-50 text-slate-600'}`}
+                style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+              >
                 Selected mode applies instant suggestions and updates day cards + map in sync.
               </div>
             </div>
           </section>
 
-          <section className="rounded-2xl border bg-white p-4 shadow-sm" style={{ borderColor: '#D9E3F0' }}>
-            <h2 className="mb-3 text-base font-black text-slate-900">Budget Summary</h2>
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Budget Summary</h2>
             <div className="grid gap-2">
-              <div className="rounded-xl border bg-slate-50 p-3" style={{ borderColor: '#D9E3F0' }}>
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500">Total trip</span>
-                  <PiggyBank size={16} className="text-slate-500" />
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Total trip</span>
+                  <PiggyBank size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                 </div>
-                <div className="mt-1 text-xl font-black text-slate-900">{formatPrice(planner.budget?.total || 0)}</div>
+                <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.total || 0)}</div>
               </div>
-              <div className="rounded-xl border bg-slate-50 p-3" style={{ borderColor: '#D9E3F0' }}>
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-slate-500">Average / day</span>
-                  <CalendarRange size={16} className="text-slate-500" />
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Average / day</span>
+                  <CalendarRange size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                 </div>
-                <div className="mt-1 text-xl font-black text-slate-900">{formatPrice(planner.budget?.averagePerDay || 0)}</div>
+                <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.averagePerDay || 0)}</div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 {Object.entries(planner.budget?.byCategory || {}).map(([category, value]) => (
-                  <div key={category} className="rounded-lg border bg-white p-2 text-slate-600" style={{ borderColor: '#D9E3F0' }}>
+                  <div
+                    key={category}
+                    className={`rounded-lg border p-2 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}
+                    style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+                  >
                     <div className="font-semibold">{translateDynamic(category)}</div>
-                    <div className="mt-0.5 text-sm font-black text-slate-900">{formatPrice(value)}</div>
+                    <div className={`mt-0.5 text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(value)}</div>
                   </div>
                 ))}
               </div>
@@ -246,11 +281,11 @@ export default function TravelPlannerWorkspace() {
 
           <main className="space-y-4 xl:col-span-8">
             <section
-              className="rounded-2xl border bg-white p-4 shadow-sm xl:sticky xl:top-20 xl:z-10"
-              style={{ borderColor: '#D9E3F0' }}
+              className={`rounded-2xl border p-4 shadow-sm xl:sticky xl:top-20 xl:z-10 ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+              style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
             >
-              <h2 className="text-lg font-black text-slate-900">Map / stops preview</h2>
-              <p className="mb-3 text-sm text-slate-500">
+              <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Map / stops preview</h2>
+              <p className={`mb-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
                 Real-time map updates for Trip / Country / City / Category filters with list synchronization.
               </p>
               <MapFilters
