@@ -3,7 +3,6 @@ import { Copy, Sparkles, Trash2, Utensils, Camera, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
 import type { TravelDayMode } from '../../types/travel';
-import { TRAVEL_MODE_LABEL } from '../../types/travel';
 
 type DayToolbarProps = {
   mode: TravelDayMode;
@@ -28,7 +27,7 @@ export function DayToolbar({
   onAddRestaurant,
   onAddAttraction,
 }: DayToolbarProps) {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
 
   return (
@@ -45,16 +44,16 @@ export function DayToolbar({
                 : 'border-slate-200 bg-white text-slate-600'
           }`}
         >
-          {TRAVEL_MODE_LABEL[entry]}
+          {t(`planner.mode.${entry}`)}
         </button>
       ))}
 
-      <Button size="sm" variant="secondary" onClick={onAddActivity}><Plus size={12} />Add Activity</Button>
-      <Button size="sm" variant="secondary" onClick={onAddRestaurant}><Utensils size={12} />Food</Button>
-      <Button size="sm" variant="secondary" onClick={onAddAttraction}><Camera size={12} />Attractions</Button>
-      <Button size="sm" variant="secondary" onClick={onSuggestDay}><Sparkles size={12} />Suggest</Button>
-      <Button size="sm" variant="secondary" onClick={onDuplicateDay}><Copy size={12} />Duplicate</Button>
-      <Button size="sm" variant="danger" onClick={onClearDay}><Trash2 size={12} />Clear</Button>
+      <Button size="sm" variant="secondary" onClick={onAddActivity}><Plus size={12} />{t('planner.add_activity')}</Button>
+      <Button size="sm" variant="secondary" onClick={onAddRestaurant}><Utensils size={12} />{t('planner.mode.food')}</Button>
+      <Button size="sm" variant="secondary" onClick={onAddAttraction}><Camera size={12} />{t('planner.mode.attractions')}</Button>
+      <Button size="sm" variant="secondary" onClick={onSuggestDay}><Sparkles size={12} />{t('planner.suggest')}</Button>
+      <Button size="sm" variant="secondary" onClick={onDuplicateDay}><Copy size={12} />{t('planner.duplicate')}</Button>
+      <Button size="sm" variant="danger" onClick={onClearDay}><Trash2 size={12} />{t('planner.clear')}</Button>
     </div>
   );
 }
