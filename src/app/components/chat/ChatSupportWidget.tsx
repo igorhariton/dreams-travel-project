@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Headset, Mail, SendHorizontal, User, X } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { SupportDraft } from '../../chat/types';
 
@@ -17,6 +18,8 @@ const SUPPORT_TOPICS = [
 ];
 
 export function ChatSupportWidget({ onSubmit, onCancel }: ChatSupportWidgetProps) {
+  const { theme } = useApp();
+  const isDarkTheme = theme === 'dark';
   const [topic, setTopic] = useState(SUPPORT_TOPICS[0].value);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -41,16 +44,24 @@ export function ChatSupportWidget({ onSubmit, onCancel }: ChatSupportWidgetProps
   };
 
   return (
-    <div className="travel-shell border border-[#D9E2EC] bg-white p-4 shadow-sm dark:border-[#334155] dark:bg-[#111827]">
+    <div
+      className={`travel-shell border p-4 shadow-sm ${
+        isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F9FAFB]">Customer Support</h3>
-          <p className="mt-1 text-xs text-[#64748B] dark:text-[#94A3B8]">Open a support ticket directly from chat.</p>
+          <h3 className={`text-sm font-bold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>Customer Support</h3>
+          <p className={`mt-1 text-xs ${isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>Open a support ticket directly from chat.</p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="travel-icon-button p-2 text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+          className={`travel-icon-button p-2 ${
+            isDarkTheme
+              ? 'text-[#94A3B8] hover:bg-[#243144] hover:text-[#F9FAFB]'
+              : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+          }`}
         >
           <X size={14} />
         </button>
@@ -58,7 +69,7 @@ export function ChatSupportWidget({ onSubmit, onCancel }: ChatSupportWidgetProps
 
       <div className="mt-4 space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Issue Type</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Issue Type</label>
           <Select value={topic} onValueChange={setTopic}>
             <SelectTrigger className="travel-select-trigger h-11 rounded-[18px] text-sm">
               <SelectValue placeholder="Choose issue type" />
@@ -74,43 +85,43 @@ export function ChatSupportWidget({ onSubmit, onCancel }: ChatSupportWidgetProps
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Full Name</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Full Name</label>
           <div className="travel-input-field flex h-11 items-center gap-2">
-            <User size={14} className="text-[#64748B] dark:text-[#94A3B8]" />
+            <User size={14} className={isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'} />
             <input
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="John Doe"
-              className="w-full bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Email</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Email</label>
           <div className="travel-input-field flex h-11 items-center gap-2">
-            <Mail size={14} className="text-[#64748B] dark:text-[#94A3B8]" />
+            <Mail size={14} className={isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'} />
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
-              className="w-full bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Describe the issue</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Describe the issue</label>
           <div className="travel-input-field flex gap-2">
-            <Headset size={14} className="mt-1 text-[#64748B] dark:text-[#94A3B8]" />
+            <Headset size={14} className={`mt-1 ${isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'}`} />
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               rows={3}
               placeholder="Share your booking ID, issue details, and preferred resolution."
-              className="w-full resize-none bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full resize-none bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
