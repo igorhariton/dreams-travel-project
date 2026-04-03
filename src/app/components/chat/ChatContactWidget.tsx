@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Mail, MessageCircle, SendHorizontal, User, X } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { AssistantListing, ContactDraft } from '../../chat/types';
 
@@ -16,6 +17,8 @@ export function ChatContactWidget({
   onSubmit,
   onCancel,
 }: ChatContactWidgetProps) {
+  const { theme } = useApp();
+  const isDarkTheme = theme === 'dark';
   const [listingId, setListingId] = useState(defaultListingId || listings[0]?.id || '');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -44,16 +47,24 @@ export function ChatContactWidget({
   };
 
   return (
-    <div className="travel-shell border border-[#D9E2EC] bg-white p-4 shadow-sm dark:border-[#334155] dark:bg-[#111827]">
+    <div
+      className={`travel-shell border p-4 shadow-sm ${
+        isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F9FAFB]">Contact Host</h3>
-          <p className="mt-1 text-xs text-[#64748B] dark:text-[#94A3B8]">Send a direct message to host or property team.</p>
+          <h3 className={`text-sm font-bold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>Contact Host</h3>
+          <p className={`mt-1 text-xs ${isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>Send a direct message to host or property team.</p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="travel-icon-button p-2 text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+          className={`travel-icon-button p-2 ${
+            isDarkTheme
+              ? 'text-[#94A3B8] hover:bg-[#243144] hover:text-[#F9FAFB]'
+              : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+          }`}
         >
           <X size={14} />
         </button>
@@ -61,7 +72,7 @@ export function ChatContactWidget({
 
       <div className="mt-4 space-y-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Property (optional)</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Property (optional)</label>
           <Select value={listingId} onValueChange={setListingId}>
             <SelectTrigger className="travel-select-trigger h-11 rounded-[18px] text-sm">
               <SelectValue placeholder="Select property" />
@@ -77,43 +88,43 @@ export function ChatContactWidget({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Your Name</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Your Name</label>
           <div className="travel-input-field flex h-11 items-center gap-2">
-            <User size={14} className="text-[#64748B] dark:text-[#94A3B8]" />
+            <User size={14} className={isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'} />
             <input
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="John Doe"
-              className="w-full bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Email</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Email</label>
           <div className="travel-input-field flex h-11 items-center gap-2">
-            <Mail size={14} className="text-[#64748B] dark:text-[#94A3B8]" />
+            <Mail size={14} className={isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'} />
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="john@example.com"
-              className="w-full bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Message</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Message</label>
           <div className="travel-input-field flex gap-2">
-            <MessageCircle size={14} className="mt-1 text-[#64748B] dark:text-[#94A3B8]" />
+            <MessageCircle size={14} className={`mt-1 ${isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'}`} />
             <textarea
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               rows={3}
               placeholder="Hi, is early check-in available and is airport transfer included?"
-              className="w-full resize-none bg-transparent text-sm text-[#0F172A] outline-none dark:text-[#F9FAFB]"
+              className={`w-full resize-none bg-transparent text-sm outline-none ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}
             />
           </div>
         </div>
