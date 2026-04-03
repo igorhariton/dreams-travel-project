@@ -576,6 +576,16 @@ export default function AdminPageV2() {
 
   const destinationMap = useMemo(() => buildDestinationMap(destinations), [destinations]);
 
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    const shouldUseDark = theme === 'dark';
+
+    htmlElement.classList.toggle('dark', shouldUseDark);
+    bodyElement.classList.toggle('dark', shouldUseDark);
+    htmlElement.style.colorScheme = shouldUseDark ? 'dark' : 'light';
+  }, [theme]);
+
   const continentOptions = useMemo(() => {
     return ['all', ...Array.from(new Set(destinations.map((item) => item.continent).filter(Boolean)))];
   }, [destinations]);
@@ -1147,11 +1157,37 @@ export default function AdminPageV2() {
           <SectionCard>
             <CardHeader><CardTitle className="text-lg text-slate-900 dark:text-white">{t.projectRisk}</CardTitle></CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-b from-orange-50 to-rose-50 p-6 text-center dark:from-orange-950/40 dark:to-rose-950/40">
-                <div className="flex h-28 w-28 items-center justify-center rounded-full border-[10px] border-dashed border-orange-200 bg-white text-3xl font-semibold text-orange-500 dark:border-orange-700 dark:bg-slate-900">{brokenLinks}</div>
-                <p className="mt-4 text-sm font-medium text-slate-700 dark:text-slate-200">{t.linkConsistency}</p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t.linkConsistencySub}</p>
-                <Button onClick={() => setSection('broken-links')} className="mt-5 w-full rounded-2xl bg-orange-400 text-white hover:bg-orange-500">{t.openBrokenLinks}</Button>
+              <div
+                className={
+                  'flex flex-col items-center justify-center rounded-3xl border p-6 text-center ' +
+                  (isDarkTheme
+                    ? 'border-orange-700/30 bg-gradient-to-b from-orange-950/35 via-slate-900 to-slate-900'
+                    : 'border-[#BFDBFE] bg-gradient-to-b from-[#EEF6FF] via-[#ECFEFF] to-[#E0F2FE]')
+                }
+              >
+                <div
+                  className={
+                    'flex h-28 w-28 items-center justify-center rounded-full border-[10px] border-dashed text-3xl font-semibold ' +
+                    (isDarkTheme
+                      ? 'border-orange-700 bg-slate-900 text-orange-300'
+                      : 'border-[#93C5FD] bg-white text-[#2563EB] shadow-[0_10px_24px_rgba(37,99,235,0.16)]')
+                  }
+                >
+                  {brokenLinks}
+                </div>
+                <p className={'mt-4 text-sm font-semibold ' + (isDarkTheme ? 'text-slate-100' : 'text-[#1E3A8A]')}>{t.linkConsistency}</p>
+                <p className={'mt-1 text-xs ' + (isDarkTheme ? 'text-slate-400' : 'text-[#475569]')}>{t.linkConsistencySub}</p>
+                <Button
+                  onClick={() => setSection('broken-links')}
+                  className={
+                    'mt-5 w-full rounded-2xl text-white ' +
+                    (isDarkTheme
+                      ? 'bg-orange-500 hover:bg-orange-400'
+                      : 'bg-gradient-to-r from-[#2563EB] to-[#06B6D4] hover:brightness-105')
+                  }
+                >
+                  {t.openBrokenLinks}
+                </Button>
               </div>
             </CardContent>
           </SectionCard>
@@ -1576,7 +1612,7 @@ export default function AdminPageV2() {
   };
 
   return (
-    <div className={`min-h-screen px-4 pb-6 pt-16 md:px-6 md:pt-20 ${isDarkTheme ? 'bg-slate-950' : 'bg-[#F1F5F9]'}`}>
+    <div className={`admin-dashboard ${isDarkTheme ? 'admin-theme-dark' : 'admin-theme-light'} min-h-screen px-4 pb-6 pt-16 md:px-6 md:pt-20 ${isDarkTheme ? 'bg-slate-950' : 'bg-[#F1F5F9]'}`}>
       <style>{`
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
