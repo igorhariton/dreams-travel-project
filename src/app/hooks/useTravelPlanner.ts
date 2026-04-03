@@ -176,7 +176,7 @@ const buildTripsFromTravelData = (): TravelTrip[] => {
     const startDate = addDays(baseStart, index % 10);
     const trip: TravelTrip = {
       id: tripId,
-      name: `${destination.name} Planner`,
+      name: destination.name,
       destination: destination.name,
       country: destination.country,
       startDate,
