@@ -4,6 +4,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-cluster/dist/assets/MarkerCluster.css';
+import { useApp } from '../../context/AppContext';
 import type { TravelCategory, TravelPlace } from '../../types/travel';
 import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS } from '../../types/travel';
 
@@ -96,14 +97,18 @@ export function TripMap({
   height = 330,
   isLoading = false,
 }: TripMapProps) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
   const validPlaces = useMemo(() => places.filter(validCoords), [places]);
   const markerRefs = useRef<Record<string, L.Marker>>({});
 
   if (isLoading) {
     return (
       <div
-        className="grid place-items-center rounded-2xl border border-dashed bg-slate-50 text-sm text-slate-500"
-        style={{ borderColor: TRAVEL_COLORS.border, minHeight: height }}
+        className={`grid place-items-center rounded-2xl border border-dashed text-sm ${
+          isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-500'
+        }`}
+        style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border, minHeight: height }}
       >
         Loading map locations...
       </div>
@@ -113,8 +118,10 @@ export function TripMap({
   if (!validPlaces.length) {
     return (
       <div
-        className="grid place-items-center rounded-2xl border border-dashed bg-slate-50 text-sm text-slate-500"
-        style={{ borderColor: TRAVEL_COLORS.border, minHeight: height }}
+        className={`grid place-items-center rounded-2xl border border-dashed text-sm ${
+          isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-500'
+        }`}
+        style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border, minHeight: height }}
       >
         No valid locations for current filters.
       </div>
@@ -122,7 +129,10 @@ export function TripMap({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-white" style={{ borderColor: TRAVEL_COLORS.border }}>
+    <div
+      className={`overflow-hidden rounded-2xl border ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+      style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border }}
+    >
       <MapContainer
         center={DEFAULT_CENTER}
         zoom={DEFAULT_ZOOM}
