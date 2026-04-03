@@ -1,4 +1,5 @@
 import React from 'react';
+import { useApp } from '../../context/AppContext';
 import { TRAVEL_COLORS } from '../../types/travel';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -8,20 +9,6 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
   size?: Size;
   fullWidth?: boolean;
-};
-
-const variantStyles: Record<Variant, string> = {
-  primary: 'border-transparent text-white shadow-sm',
-  secondary: 'bg-white text-slate-700',
-  ghost: 'border-transparent bg-transparent text-slate-600 hover:bg-slate-100',
-  danger: 'border-transparent bg-rose-500 text-white',
-};
-
-const variantInlineStyle: Record<Variant, React.CSSProperties> = {
-  primary: { background: `linear-gradient(135deg, ${TRAVEL_COLORS.blue}, ${TRAVEL_COLORS.cyan})` },
-  secondary: { borderColor: TRAVEL_COLORS.border, backgroundColor: '#ffffff' },
-  ghost: {},
-  danger: { backgroundColor: '#EF4444' },
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -37,6 +24,30 @@ export function Button({
   fullWidth = false,
   ...props
 }: ButtonProps) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const variantStyles: Record<Variant, string> = {
+    primary: 'border-transparent text-white shadow-sm',
+    secondary: isDark
+      ? 'bg-slate-800 text-slate-100 hover:bg-slate-700'
+      : 'bg-white text-slate-700 hover:bg-slate-50',
+    ghost: isDark
+      ? 'border-transparent bg-transparent text-slate-300 hover:bg-slate-800'
+      : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-100',
+    danger: 'border-transparent bg-rose-500 text-white',
+  };
+
+  const variantInlineStyle: Record<Variant, React.CSSProperties> = {
+    primary: { background: `linear-gradient(135deg, ${TRAVEL_COLORS.blue}, ${TRAVEL_COLORS.cyan})` },
+    secondary: {
+      borderColor: isDark ? '#475569' : TRAVEL_COLORS.border,
+      backgroundColor: isDark ? '#1E293B' : '#ffffff',
+    },
+    ghost: {},
+    danger: { backgroundColor: '#EF4444' },
+  };
+
   return (
     <button
       className={`inline-flex items-center justify-center gap-2 rounded-xl border font-semibold transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-45 ${variantStyles[variant]} ${sizeStyles[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
