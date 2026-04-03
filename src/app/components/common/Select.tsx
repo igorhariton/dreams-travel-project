@@ -27,7 +27,7 @@ export function Select<T extends string>({
   options,
   onChange,
 }: SelectProps<T>) {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
 
   return (
@@ -43,7 +43,7 @@ export function Select<T extends string>({
             boxShadow: '0 1px 0 rgba(15,23,42,0.02)',
           }}
         >
-          <SelectValue placeholder={options[0]?.label || 'Select'} />
+          <SelectValue placeholder={options[0]?.label || t('planner.select')} />
         </SelectTrigger>
         <SelectContent
           className={`max-h-80 rounded-2xl border p-1.5 shadow-[0_14px_36px_rgba(15,23,42,0.14)] ${
