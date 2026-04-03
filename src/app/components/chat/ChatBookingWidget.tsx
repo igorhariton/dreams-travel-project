@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, Minus, Plus, X } from 'lucide-react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
+import { useApp } from '../../context/AppContext';
 import { Calendar } from '../ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -30,6 +31,8 @@ export function ChatBookingWidget({
   onSubmit,
   onCancel,
 }: ChatBookingWidgetProps) {
+  const { theme } = useApp();
+  const isDarkTheme = theme === 'dark';
   const [selectedListingId, setSelectedListingId] = useState(defaultListingId || listings[0]?.id || '');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [guests, setGuests] = useState(2);
@@ -69,18 +72,26 @@ export function ChatBookingWidget({
   };
 
   return (
-    <div className="travel-shell border border-[#D9E2EC] bg-white p-4 shadow-sm dark:border-[#334155] dark:bg-[#111827]">
+    <div
+      className={`travel-shell border p-4 shadow-sm ${
+        isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-[#0F172A] dark:text-[#F9FAFB]">Reservation Request</h3>
-          <p className="mt-1 text-xs text-[#64748B] dark:text-[#94A3B8]">
+          <h3 className={`text-sm font-bold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>Reservation Request</h3>
+          <p className={`mt-1 text-xs ${isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>
             Choose dates, guests, and send a booking request in chat.
           </p>
         </div>
         <button
           type="button"
           onClick={onCancel}
-          className="travel-icon-button p-2 text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A] dark:text-[#94A3B8] dark:hover:bg-[#243144] dark:hover:text-[#F9FAFB]"
+          className={`travel-icon-button p-2 ${
+            isDarkTheme
+              ? 'text-[#94A3B8] hover:bg-[#243144] hover:text-[#F9FAFB]'
+              : 'text-[#64748B] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+          }`}
         >
           <X size={14} />
         </button>
@@ -88,7 +99,7 @@ export function ChatBookingWidget({
 
       <div className="mt-4 grid gap-3">
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Property</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Property</label>
           <Select value={selectedListingId} onValueChange={setSelectedListingId}>
             <SelectTrigger className="travel-select-trigger h-11 rounded-[18px] text-sm">
               <SelectValue placeholder="Select property" />
@@ -104,19 +115,19 @@ export function ChatBookingWidget({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Stay Dates</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Stay Dates</label>
           <Popover>
             <PopoverTrigger asChild>
               <button
                 type="button"
                 className="travel-input-field travel-date-input inline-flex h-11 w-full items-center justify-between text-left text-sm"
               >
-                <span className="text-[#0F172A] dark:text-[#F9FAFB]">
+                <span className={isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}>
                   {dateRange?.from && dateRange?.to
                     ? `${toDisplayDate(dateRange.from)} - ${toDisplayDate(dateRange.to)}`
                     : 'Select check-in and check-out'}
                 </span>
-                <CalendarDays size={16} className="text-[#64748B] dark:text-[#94A3B8]" />
+                <CalendarDays size={16} className={isDarkTheme ? 'text-[#94A3B8]' : 'text-[#64748B]'} />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -137,20 +148,24 @@ export function ChatBookingWidget({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Guests</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Guests</label>
           <div className="travel-input-field flex h-11 items-center justify-between">
             <button
               type="button"
               onClick={() => setGuests((prev) => Math.max(1, prev - 1))}
-              className="travel-icon-button p-1 text-[#475569] hover:bg-[#EFF6FF] dark:text-[#CBD5E1] dark:hover:bg-[#243144]"
+              className={`travel-icon-button p-1 ${
+                isDarkTheme ? 'text-[#CBD5E1] hover:bg-[#243144]' : 'text-[#475569] hover:bg-[#EFF6FF]'
+              }`}
             >
               <Minus size={14} />
             </button>
-            <span className="text-sm font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{guests}</span>
+            <span className={`text-sm font-semibold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>{guests}</span>
             <button
               type="button"
               onClick={() => setGuests((prev) => Math.min(16, prev + 1))}
-              className="travel-icon-button p-1 text-[#475569] hover:bg-[#EFF6FF] dark:text-[#CBD5E1] dark:hover:bg-[#243144]"
+              className={`travel-icon-button p-1 ${
+                isDarkTheme ? 'text-[#CBD5E1] hover:bg-[#243144]' : 'text-[#475569] hover:bg-[#EFF6FF]'
+              }`}
             >
               <Plus size={14} />
             </button>
@@ -158,7 +173,7 @@ export function ChatBookingWidget({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold text-[#475569] dark:text-[#CBD5E1]">Message (optional)</label>
+          <label className={`mb-1 block text-xs font-semibold ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>Message (optional)</label>
           <textarea
             value={note}
             onChange={(event) => setNote(event.target.value)}
@@ -169,22 +184,30 @@ export function ChatBookingWidget({
         </div>
       </div>
 
-      <div className="travel-summary-box mt-4 border border-[#D9E2EC] bg-[#F1F5F9] p-3 dark:border-[#334155] dark:bg-[#1F2937]">
-        <div className="flex items-center justify-between text-xs text-[#475569] dark:text-[#CBD5E1]">
+      <div
+        className={`travel-summary-box mt-4 border p-3 ${
+          isDarkTheme ? 'border-[#334155] bg-[#1F2937]' : 'border-[#D9E2EC] bg-[#F1F5F9]'
+        }`}
+      >
+        <div className={`flex items-center justify-between text-xs ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
           <span>Nightly rate</span>
-          <span className="font-semibold text-[#0F172A] dark:text-[#F9FAFB]">
+          <span className={`font-semibold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>
             {selectedListing ? formatPrice(selectedListing.pricePerNight) : '--'} / night
           </span>
         </div>
-        <div className="mt-1 flex items-center justify-between text-xs text-[#475569] dark:text-[#CBD5E1]">
+        <div className={`mt-1 flex items-center justify-between text-xs ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
           <span>Nights</span>
-          <span className="font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{nights || '--'}</span>
+          <span className={`font-semibold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>{nights || '--'}</span>
         </div>
-        <div className="mt-1 flex items-center justify-between text-xs text-[#475569] dark:text-[#CBD5E1]">
+        <div className={`mt-1 flex items-center justify-between text-xs ${isDarkTheme ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
           <span>Service fee</span>
-          <span className="font-semibold text-[#0F172A] dark:text-[#F9FAFB]">{formatPrice(serviceFee)}</span>
+          <span className={`font-semibold ${isDarkTheme ? 'text-[#F9FAFB]' : 'text-[#0F172A]'}`}>{formatPrice(serviceFee)}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-[#D9E2EC] pt-2 text-sm font-bold text-[#0F172A] dark:border-[#334155] dark:text-[#F9FAFB]">
+        <div
+          className={`mt-2 flex items-center justify-between border-t pt-2 text-sm font-bold ${
+            isDarkTheme ? 'border-[#334155] text-[#F9FAFB]' : 'border-[#D9E2EC] text-[#0F172A]'
+          }`}
+        >
           <span>Total</span>
           <span>{formatPrice(total)}</span>
         </div>
