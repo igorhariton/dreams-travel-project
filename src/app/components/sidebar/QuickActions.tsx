@@ -25,7 +25,7 @@ export function QuickActions({
   onAddAttraction,
   onSuggestItinerary,
 }: QuickActionsProps) {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
 
   return (
@@ -33,16 +33,16 @@ export function QuickActions({
       className={`rounded-2xl border p-3 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
       style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
     >
-      <h3 className={`mb-3 text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Quick actions</h3>
+      <h3 className={`mb-3 text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.quick_actions')}</h3>
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="primary" size="sm" onClick={onAddDay}><Plus size={14} />Add Day</Button>
-        <Button variant="secondary" size="sm" onClick={onAddActivity}><Plus size={14} />Add Activity</Button>
-        <Button variant="secondary" size="sm" onClick={() => onSuggestDay('full-day')}><Sparkles size={14} />Suggest Day</Button>
-        <Button variant="secondary" size="sm" onClick={onSuggestItinerary}><Sparkles size={14} />Suggest itinerary</Button>
-        <Button variant="secondary" size="sm" onClick={onAddRestaurant}><Utensils size={14} />Add Restaurant</Button>
-        <Button variant="secondary" size="sm" onClick={onAddAttraction}><Camera size={14} />Add Attraction</Button>
-        <Button variant="secondary" size="sm" onClick={onDuplicateDay}><Copy size={14} />Duplicate Day</Button>
-        <Button variant="danger" size="sm" onClick={onClearDay}><Trash2 size={14} />Clear Day</Button>
+        <Button variant="primary" size="sm" onClick={onAddDay}><Plus size={14} />{t('planner.add_day')}</Button>
+        <Button variant="secondary" size="sm" onClick={onAddActivity}><Plus size={14} />{t('planner.add_activity')}</Button>
+        <Button variant="secondary" size="sm" onClick={() => onSuggestDay('full-day')}><Sparkles size={14} />{t('planner.suggest_day')}</Button>
+        <Button variant="secondary" size="sm" onClick={onSuggestItinerary}><Sparkles size={14} />{t('planner.suggest_itinerary')}</Button>
+        <Button variant="secondary" size="sm" onClick={onAddRestaurant}><Utensils size={14} />{t('planner.add_restaurant')}</Button>
+        <Button variant="secondary" size="sm" onClick={onAddAttraction}><Camera size={14} />{t('planner.add_attraction')}</Button>
+        <Button variant="secondary" size="sm" onClick={onDuplicateDay}><Copy size={14} />{t('planner.duplicate_day')}</Button>
+        <Button variant="danger" size="sm" onClick={onClearDay}><Trash2 size={14} />{t('planner.clear_day')}</Button>
       </div>
     </div>
   );
