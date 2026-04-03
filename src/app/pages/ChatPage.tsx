@@ -596,137 +596,161 @@ export default function ChatPage() {
         </div>
 
         <div
-          ref={messagesContainerRef}
-          onScroll={updateAutoScrollState}
-          className={`chat-scroll travel-shell min-h-0 flex-1 overflow-y-auto border p-5 shadow-sm ${
+          className={`travel-shell min-h-0 flex-1 overflow-hidden border p-1.5 shadow-sm ${
             isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
           }`}
         >
-          <AnimatePresence initial={false}>
-            {messages.map((message) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                {message.role === 'system' ? (
-                  <div
-                    className={`travel-badge px-3 py-1.5 text-xs ${
-                      isDarkTheme ? 'bg-[#243144] text-[#CBD5E1]' : 'bg-[#EEF4FA] text-[#475569]'
-                    }`}
-                  >
-                    {message.text}
-                  </div>
-                ) : (
-                  <div className={`flex max-w-[90%] gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+          <div
+            ref={messagesContainerRef}
+            onScroll={updateAutoScrollState}
+            className={`chat-scroll h-full overflow-y-auto rounded-[22px] px-5 py-4 ${
+              isDarkTheme ? 'bg-[#111827]' : 'bg-white'
+            }`}
+          >
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mb-4 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  {message.role === 'system' ? (
                     <div
-                      className={`travel-panel flex h-9 w-9 items-center justify-center ${
-                        message.role === 'assistant'
-                          ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white'
-                          : isDarkTheme
-                            ? 'bg-[#243144] text-[#F9FAFB]'
-                            : 'bg-[#EAF1F8] text-[#0F172A]'
+                      className={`travel-badge px-3 py-1.5 text-xs ${
+                        isDarkTheme ? 'bg-[#243144] text-[#CBD5E1]' : 'bg-[#EEF4FA] text-[#475569]'
                       }`}
                     >
-                      {message.role === 'assistant' ? <Bot size={15} /> : <User size={15} />}
+                      {message.text}
                     </div>
-                    <div className={`min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+                  ) : (
+                    <div className={`flex max-w-[90%] gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                       <div
-                        className={`travel-panel px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                          message.role === 'user'
-                            ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                        className={`travel-panel flex h-9 w-9 items-center justify-center ${
+                          message.role === 'assistant'
+                            ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white'
                             : isDarkTheme
-                              ? 'border border-[#334155] bg-[#1F2937] text-[#F9FAFB]'
-                              : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A]'
+                              ? 'bg-[#243144] text-[#F9FAFB]'
+                              : 'bg-[#EAF1F8] text-[#0F172A]'
                         }`}
-                        dangerouslySetInnerHTML={{ __html: applyInlineFormatting(message.text) }}
-                      />
-                      <span className="mt-1 px-1 text-[11px] text-[#94A3B8]">
-                        {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      >
+                        {message.role === 'assistant' ? <Bot size={15} /> : <User size={15} />}
+                      </div>
+                      <div className={`min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+                        <div
+                          className={`travel-panel px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                            message.role === 'user'
+                              ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                              : isDarkTheme
+                                ? 'border border-[#334155] bg-[#1F2937] text-[#F9FAFB]'
+                                : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A]'
+                          }`}
+                          dangerouslySetInnerHTML={{ __html: applyInlineFormatting(message.text) }}
+                        />
+                        <span className="mt-1 px-1 text-[11px] text-[#94A3B8]">
+                          {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
 
-                      {message.role === 'assistant' && message.listings && message.listings.length > 0 && (
-                        <ChatListingCards listings={message.listings} formatPrice={formatPrice} onAction={handleAction} />
-                      )}
+                        {message.role === 'assistant' && message.listings && message.listings.length > 0 && (
+                          <ChatListingCards listings={message.listings} formatPrice={formatPrice} onAction={handleAction} />
+                        )}
 
-                      {message.role === 'assistant' && message.actions && message.actions.length > 0 && (
-                        <ChatActionButtons actions={message.actions} onAction={handleAction} disabled={isSending} />
-                      )}
+                        {message.role === 'assistant' && message.actions && message.actions.length > 0 && (
+                          <ChatActionButtons actions={message.actions} onAction={handleAction} disabled={isSending} />
+                        )}
 
-                      {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {message.suggestions.map((suggestion) => (
-                            <button
-                              key={`${message.id}-${suggestion}`}
-                              type="button"
-                              onClick={() => sendMessage(suggestion)}
-                              className={`travel-badge border px-3 py-1.5 text-xs transition ${
-                                isDarkTheme
-                                  ? 'border-[#334155] bg-[#1F2937] text-[#CBD5E1] hover:bg-[#243144] hover:text-[#F9FAFB]'
-                                  : 'border-[#D9E2EC] bg-white text-[#475569] hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
-                              }`}
-                            >
-                              {suggestion}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                        {message.role === 'assistant' && message.suggestions && message.suggestions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {message.suggestions.map((suggestion) => (
+                              <button
+                                key={`${message.id}-${suggestion}`}
+                                type="button"
+                                onClick={() => sendMessage(suggestion)}
+                                className={`travel-badge border px-3 py-1.5 text-xs transition ${
+                                  isDarkTheme
+                                    ? 'border-[#334155] bg-[#1F2937] text-[#CBD5E1] hover:bg-[#243144] hover:text-[#F9FAFB]'
+                                    : 'border-[#D9E2EC] bg-white text-[#475569] hover:border-[#60A5FA] hover:bg-[#EFF6FF] hover:text-[#0F172A]'
+                                }`}
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {isSending && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
+                  <div className="travel-panel flex h-9 w-9 items-center justify-center bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                    <Bot size={15} />
+                  </div>
+                  <div
+                    className={`travel-panel border px-4 py-3 shadow-sm ${
+                      isDarkTheme ? 'border-[#334155] bg-[#1F2937]' : 'border-[#D9E2EC] bg-[#F8FAFC]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1">
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '0ms' }} />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '120ms' }} />
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '240ms' }} />
                     </div>
                   </div>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {isSending && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-                <div className="travel-panel flex h-9 w-9 items-center justify-center bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
-                  <Bot size={15} />
-                </div>
-                <div
-                  className={`travel-panel border px-4 py-3 shadow-sm ${
-                    isDarkTheme ? 'border-[#334155] bg-[#1F2937]' : 'border-[#D9E2EC] bg-[#F8FAFC]'
-                  }`}
-                >
-                  <div className="flex items-center gap-1">
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '0ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '120ms' }} />
-                    <div className="h-2 w-2 animate-bounce rounded-full bg-[#94A3B8]" style={{ animationDelay: '240ms' }} />
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {activeComposer?.type === 'booking' && (
-          <div className="chat-scroll mt-4 max-h-[42vh] overflow-y-auto">
-            <ChatBookingWidget
-              listings={recentListings}
-              defaultListingId={activeListingId}
-              formatPrice={formatPrice}
-              onSubmit={handleBookingSubmit}
-              onCancel={() => setActiveComposer(null)}
-            />
+          <div
+            className={`travel-shell mt-4 overflow-hidden border p-1.5 shadow-sm ${
+              isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+            }`}
+          >
+            <div className="chat-scroll max-h-[42vh] overflow-y-auto rounded-[22px] pr-1">
+              <ChatBookingWidget
+                listings={recentListings}
+                defaultListingId={activeListingId}
+                formatPrice={formatPrice}
+                onSubmit={handleBookingSubmit}
+                onCancel={() => setActiveComposer(null)}
+              />
+            </div>
           </div>
         )}
 
         {activeComposer?.type === 'contact' && (
-          <div className="chat-scroll mt-4 max-h-[38vh] overflow-y-auto">
-            <ChatContactWidget
-              listings={recentListings}
-              defaultListingId={activeListingId}
-              onSubmit={handleContactSubmit}
-              onCancel={() => setActiveComposer(null)}
-            />
+          <div
+            className={`travel-shell mt-4 overflow-hidden border p-1.5 shadow-sm ${
+              isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+            }`}
+          >
+            <div className="chat-scroll max-h-[38vh] overflow-y-auto rounded-[22px] pr-1">
+              <ChatContactWidget
+                listings={recentListings}
+                defaultListingId={activeListingId}
+                onSubmit={handleContactSubmit}
+                onCancel={() => setActiveComposer(null)}
+              />
+            </div>
           </div>
         )}
 
         {activeComposer?.type === 'support' && (
-          <div className="chat-scroll mt-4 max-h-[38vh] overflow-y-auto">
-            <ChatSupportWidget onSubmit={handleSupportSubmit} onCancel={() => setActiveComposer(null)} />
+          <div
+            className={`travel-shell mt-4 overflow-hidden border p-1.5 shadow-sm ${
+              isDarkTheme ? 'border-[#334155] bg-[#111827]' : 'border-[#D9E2EC] bg-white'
+            }`}
+          >
+            <div className="chat-scroll max-h-[38vh] overflow-y-auto rounded-[22px] pr-1">
+              <ChatSupportWidget onSubmit={handleSupportSubmit} onCancel={() => setActiveComposer(null)} />
+            </div>
           </div>
         )}
 
