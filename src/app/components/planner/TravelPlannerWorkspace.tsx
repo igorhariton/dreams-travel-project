@@ -14,8 +14,7 @@ import { TripMap } from '../map/TripMap';
 import { DayCard } from '../days/DayCard';
 import { QuickActions } from '../sidebar/QuickActions';
 import { StayFavorites } from '../sidebar/StayFavorites';
-import type { TravelDayMode } from '../../types/travel';
-import { TRAVEL_MODE_LABEL } from '../../types/travel';
+import type { TravelCategory, TravelDayMode } from '../../types/travel';
 
 const suggestModes: TravelDayMode[] = ['full-day', 'food', 'attractions', 'mixed'];
 
@@ -36,7 +35,7 @@ type PlannerDateFieldProps = {
 };
 
 function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldProps) {
-  const { theme } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
   const selected = parseIsoDate(value);
   const min = parseIsoDate(minDate);
@@ -53,7 +52,7 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
             }`}
             style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
           >
-            <span>{selected ? format(selected, 'MM/dd/yyyy') : 'Select date'}</span>
+            <span>{selected ? format(selected, 'MM/dd/yyyy') : t('planner.select_date')}</span>
             <CalendarDays size={15} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
           </button>
         </PopoverTrigger>
@@ -79,7 +78,7 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
                 isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
               }`}
             >
-              Clear
+              {t('planner.clear')}
             </button>
             <button
               type="button"
@@ -88,7 +87,7 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
                 isDark ? 'text-cyan-300 hover:bg-slate-800' : 'text-blue-600 hover:bg-blue-50'
               }`}
             >
-              Today
+              {t('planner.today')}
             </button>
           </div>
         </PopoverContent>
@@ -98,11 +97,14 @@ function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldP
 }
 
 export default function TravelPlannerWorkspace() {
-  const { formatPrice, translateDynamic, theme } = useApp();
+  const { formatPrice, theme, t, translateDynamic } = useApp();
   const isDark = theme === 'dark';
   const planner = useTravelPlanner();
 
   const activeDayId = planner.activeDay?.id || '';
+  const activeTripOptions = planner.filterOptions.trips
+    .filter((trip) => trip.value !== 'all')
+    .map((trip) => ({ ...trip, label: translateDynamic(trip.label) }));
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -112,16 +114,16 @@ export default function TravelPlannerWorkspace() {
             className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
             style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
           >
-            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Trip Settings</h2>
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.trip_settings')}</h2>
             <div className="grid gap-2">
               <Select
-                label="Active trip"
+                label={t('planner.active_trip')}
                 value={planner.activeTripId}
-                options={planner.filterOptions.trips.filter((trip) => trip.value !== 'all')}
+                options={activeTripOptions}
                 onChange={planner.setTripFilter}
               />
               <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                Trip name
+                {t('planner.trip_name')}
                 <input
                   value={planner.activeTrip?.name || ''}
                   onChange={(event) => planner.updateTripSettings({ name: event.target.value })}
@@ -132,7 +134,7 @@ export default function TravelPlannerWorkspace() {
                 />
               </label>
               <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                Destination
+                {t('planner.destination')}
                 <input
                   value={planner.activeTrip?.destination || ''}
                   onChange={(event) => planner.updateTripSettings({ destination: event.target.value })}
@@ -144,19 +146,19 @@ export default function TravelPlannerWorkspace() {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <PlannerDateField
-                  label="Start date"
+                  label={t('planner.start_date')}
                   value={planner.activeTrip?.startDate || ''}
                   onChange={(next) => planner.updateTripSettings({ startDate: next })}
                 />
                 <PlannerDateField
-                  label="End date"
+                  label={t('planner.end_date')}
                   value={planner.activeTrip?.endDate || ''}
                   minDate={planner.activeTrip?.startDate || ''}
                   onChange={(next) => planner.updateTripSettings({ endDate: next })}
                 />
               </div>
               <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                Budget target
+                {t('planner.budget_target')}
                 <input
                   type="number"
                   min={0}
@@ -175,7 +177,7 @@ export default function TravelPlannerWorkspace() {
             className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
             style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
           >
-            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Suggest Settings</h2>
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.suggest_settings')}</h2>
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">
                 {suggestModes.map((mode) => (
@@ -190,7 +192,7 @@ export default function TravelPlannerWorkspace() {
                           : 'border-slate-200 bg-white text-slate-600'
                     }`}
                   >
-                    {TRAVEL_MODE_LABEL[mode]}
+                    {t(`planner.mode.${mode}`)}
                   </button>
                 ))}
               </div>
@@ -202,18 +204,18 @@ export default function TravelPlannerWorkspace() {
                   onClick={() => planner.activeDay && planner.suggestDay(planner.activeDay.id, 'full-day')}
                 >
                   <Sparkles size={14} />
-                  Suggest Day
+                  {t('planner.suggest_day')}
                 </Button>
                 <Button variant="secondary" size="sm" onClick={planner.suggestItinerary}>
                   <Sparkles size={14} />
-                  Suggest itinerary
+                  {t('planner.suggest_itinerary')}
                 </Button>
               </div>
               <div
                 className={`rounded-xl border p-3 text-xs ${isDark ? 'bg-slate-700/60 text-slate-300' : 'bg-slate-50 text-slate-600'}`}
                 style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
               >
-                Selected mode applies instant suggestions and updates day cards + map in sync.
+                {t('planner.suggest_mode_hint')}
               </div>
             </div>
           </section>
@@ -222,18 +224,18 @@ export default function TravelPlannerWorkspace() {
             className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
             style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
           >
-            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Budget Summary</h2>
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.budget_summary')}</h2>
             <div className="grid gap-2">
               <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Total trip</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('planner.total_trip')}</span>
                   <PiggyBank size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                 </div>
                 <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.total || 0)}</div>
               </div>
               <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
                 <div className="flex items-center justify-between">
-                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>Average / day</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('planner.average_per_day')}</span>
                   <CalendarRange size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
                 </div>
                 <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.averagePerDay || 0)}</div>
@@ -245,7 +247,7 @@ export default function TravelPlannerWorkspace() {
                     className={`rounded-lg border p-2 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}
                     style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                   >
-                    <div className="font-semibold">{translateDynamic(category)}</div>
+                    <div className="font-semibold">{t(`planner.category.${category as TravelCategory}`)}</div>
                     <div className={`mt-0.5 text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(value)}</div>
                   </div>
                 ))}
@@ -284,9 +286,9 @@ export default function TravelPlannerWorkspace() {
               className={`rounded-2xl border p-4 shadow-sm xl:sticky xl:top-20 xl:z-10 ${isDark ? 'bg-slate-800' : 'bg-white'}`}
               style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
             >
-              <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Map / stops preview</h2>
+              <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.map_preview')}</h2>
               <p className={`mb-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                Real-time map updates for Trip / Country / City / Category filters with list synchronization.
+                {t('planner.map_sync_hint')}
               </p>
               <MapFilters
                 filters={planner.filters}
