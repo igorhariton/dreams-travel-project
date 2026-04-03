@@ -3,7 +3,7 @@ import { Heart, MapPin, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
 import type { TravelCategory, TravelPlace } from '../../types/travel';
-import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS } from '../../types/travel';
+import { TRAVEL_COLORS } from '../../types/travel';
 
 type StayFavoritesProps = {
   places: TravelPlace[];
@@ -28,7 +28,7 @@ export function StayFavorites({
   onToggleFavorite,
   onCategoryFilter,
 }: StayFavoritesProps) {
-  const { theme } = useApp();
+  const { theme, t, translateDynamic } = useApp();
   const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState<'all' | TravelCategory>('all');
 
@@ -43,13 +43,13 @@ export function StayFavorites({
       style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
     >
       <div className="mb-2 flex items-center justify-between">
-        <h3 className={`text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>Stay + Favorites</h3>
+        <h3 className={`text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.stay_favorites')}</h3>
         <span
           className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
             isDark ? 'bg-slate-700 text-slate-200' : 'bg-slate-100 text-slate-700'
           }`}
         >
-          {listed.length} items
+          {listed.length} {t('planner.items')}
         </span>
       </div>
 
@@ -74,7 +74,7 @@ export function StayFavorites({
                 : { borderColor: isDark ? '#475569' : '#D9E3F0' }
             }
           >
-            {tab === 'all' ? 'All' : TRAVEL_CATEGORY_LABEL[tab]}
+            {tab === 'all' ? t('planner.filter.all') : t(`planner.category.${tab}`)}
           </button>
         ))}
       </div>
@@ -83,10 +83,10 @@ export function StayFavorites({
         className={`mb-3 rounded-xl border p-2 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`}
         style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
       >
-        <div className={`mb-1 text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>Favorite Quick Add</div>
+        <div className={`mb-1 text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-600'}`}>{t('planner.favorite_quick_add')}</div>
         {!favorites.length ? (
           <div className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-            Mark places with heart and quickly add them to the active day.
+            {t('planner.favorite_quick_add_hint')}
           </div>
         ) : (
           <div className="flex flex-wrap gap-1">
@@ -99,7 +99,7 @@ export function StayFavorites({
                 }`}
                 style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
               >
-                + {favorite.name}
+                + {translateDynamic(favorite.name)}
               </button>
             ))}
           </div>
@@ -129,17 +129,17 @@ export function StayFavorites({
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{place.name}</div>
+                    <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(place.name)}</div>
                     <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <MapPin size={11} />
-                      {place.city || place.country || place.address || 'Unknown'}
+                      {translateDynamic(place.city || place.country || place.address || t('planner.unknown'))}
                     </div>
                   </div>
                   <span
                     className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
                     style={{ backgroundColor: TRAVEL_COLORS.category[place.category] }}
                   >
-                    {TRAVEL_CATEGORY_LABEL[place.category]}
+                    {t(`planner.category.${place.category}`)}
                   </span>
                 </div>
               </button>
@@ -158,7 +158,7 @@ export function StayFavorites({
                   style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
                 >
                   <Heart size={12} fill={place.isFavorite ? 'currentColor' : 'none'} />
-                  Favorite
+                  {t('planner.favorite')}
                 </button>
                 {added ? (
                   <span
@@ -166,12 +166,12 @@ export function StayFavorites({
                       isDark ? 'bg-emerald-950/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
                     }`}
                   >
-                    Added
+                    {t('planner.added')}
                   </span>
                 ) : (
                   <Button size="sm" variant="secondary" onClick={() => onQuickAdd(place.id)}>
                     <Plus size={12} />
-                    Add
+                    {t('planner.add')}
                   </Button>
                 )}
               </div>
