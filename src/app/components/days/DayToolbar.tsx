@@ -1,5 +1,6 @@
 import React from 'react';
 import { Copy, Sparkles, Trash2, Utensils, Camera, Plus } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
 import type { TravelDayMode } from '../../types/travel';
 import { TRAVEL_MODE_LABEL } from '../../types/travel';
@@ -27,6 +28,9 @@ export function DayToolbar({
   onAddRestaurant,
   onAddAttraction,
 }: DayToolbarProps) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {modes.map((entry) => (
@@ -34,7 +38,11 @@ export function DayToolbar({
           key={entry}
           onClick={() => onModeChange(entry)}
           className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold transition ${
-            mode === entry ? 'border-transparent bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600'
+            mode === entry
+              ? 'border-transparent bg-slate-900 text-white'
+              : isDark
+                ? 'border-slate-600 bg-slate-800 text-slate-300'
+                : 'border-slate-200 bg-white text-slate-600'
           }`}
         >
           {TRAVEL_MODE_LABEL[entry]}
