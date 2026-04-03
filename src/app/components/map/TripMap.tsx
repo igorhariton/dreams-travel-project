@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-cluster/dist/assets/MarkerCluster.css';
 import { useApp } from '../../context/AppContext';
 import type { TravelCategory, TravelPlace } from '../../types/travel';
-import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS } from '../../types/travel';
+import { TRAVEL_COLORS } from '../../types/travel';
 
 type TripMapProps = {
   places: TravelPlace[];
@@ -97,7 +97,7 @@ export function TripMap({
   height = 330,
   isLoading = false,
 }: TripMapProps) {
-  const { theme } = useApp();
+  const { theme, t, translateDynamic } = useApp();
   const isDark = theme === 'dark';
   const validPlaces = useMemo(() => places.filter(validCoords), [places]);
   const markerRefs = useRef<Record<string, L.Marker>>({});
@@ -110,7 +110,7 @@ export function TripMap({
         }`}
         style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border, minHeight: height }}
       >
-        Loading map locations...
+        {t('planner.loading_map_locations')}
       </div>
     );
   }
@@ -123,7 +123,7 @@ export function TripMap({
         }`}
         style={{ borderColor: isDark ? '#475569' : TRAVEL_COLORS.border, minHeight: height }}
       >
-        No valid locations for current filters.
+        {t('planner.no_valid_locations')}
       </div>
     );
   }
@@ -184,16 +184,16 @@ export function TripMap({
             >
               <Popup>
                 <div className="min-w-[220px] text-slate-800">
-                  <div className="font-bold">{place.name}</div>
-                  <div className="mt-1 text-xs text-slate-600">{place.address || 'Unknown address'}</div>
+                  <div className="font-bold">{translateDynamic(place.name)}</div>
+                  <div className="mt-1 text-xs text-slate-600">{translateDynamic(place.address || t('planner.unknown_address'))}</div>
                   <div className="mt-2 text-xs">
-                    <b>Category:</b> {TRAVEL_CATEGORY_LABEL[place.category]}
+                    <b>{t('planner.filter.category')}:</b> {t(`planner.category.${place.category}`)}
                   </div>
                   <div className="text-xs">
-                    <b>City:</b> {place.city || 'N/A'}
+                    <b>{t('planner.filter.city')}:</b> {translateDynamic(place.city || t('planner.na'))}
                   </div>
                   <div className="text-xs">
-                    <b>Country:</b> {place.country || 'N/A'}
+                    <b>{t('planner.filter.country')}:</b> {translateDynamic(place.country || t('planner.na'))}
                   </div>
                 </div>
               </Popup>
