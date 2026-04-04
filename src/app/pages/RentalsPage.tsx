@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, Home, Building2, Trees, Mountain, Users, Bed, Bath, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { rentals } from '../data/travelData';
+import type { Rental } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
@@ -39,7 +39,7 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 }
 
 export default function RentalsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicRentals } = useApp();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<string>('all');
@@ -54,15 +54,15 @@ export default function RentalsPage() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const typeCounts = useMemo(() => ({
-    all: rentals.length,
-    villa: rentals.filter(r => r.type === 'villa').length,
-    apartment: rentals.filter(r => r.type === 'apartment').length,
-    traditional: rentals.filter(r => r.type === 'traditional').length,
-    chalet: rentals.filter(r => r.type === 'chalet').length,
-  }), []);
+    all: publicRentals.length,
+    villa: publicRentals.filter(r => r.type === 'villa').length,
+    apartment: publicRentals.filter(r => r.type === 'apartment').length,
+    traditional: publicRentals.filter(r => r.type === 'traditional').length,
+    chalet: publicRentals.filter(r => r.type === 'chalet').length,
+  }), [publicRentals]);
 
   const filtered = useMemo(() => {
-    const f = rentals.filter(r => {
+    const f = publicRentals.filter(r => {
       const normalizedSearch = deferredSearch.toLowerCase();
       const matchSearch = r.name.toLowerCase().includes(normalizedSearch) || r.location.toLowerCase().includes(normalizedSearch);
       const matchType = typeFilter === 'all' || r.type === typeFilter;
@@ -73,7 +73,7 @@ export default function RentalsPage() {
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
+  }, [publicRentals, deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
 
   const pageSize = 18;
   const visibleRentals = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
@@ -99,13 +99,13 @@ export default function RentalsPage() {
     return () => observer.disconnect();
   }, [hasMore, pageSize, filtered.length]);
 
-  const handleFavorite = useCallback((e: React.MouseEvent, rental: typeof rentals[0]) => {
+  const handleFavorite = useCallback((e: React.MouseEvent, rental: Rental) => {
     e.stopPropagation();
     if (isFavorite(rental.id)) removeFavorite(rental.id);
     else addFavorite({ id: rental.id, type: 'rental', name: rental.name, image: rental.images[0], price: rental.pricePerNight, rating: rental.rating, location: rental.location });
   }, [isFavorite, addFavorite, removeFavorite]);
 
-  const openRentalDetails = useCallback((rental: typeof rentals[0]) => {
+  const openRentalDetails = useCallback((rental: Rental) => {
     setActiveItem({
       id: rental.id,
       kind: 'rental',
