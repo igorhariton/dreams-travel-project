@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home } from 'lucide-react';
+import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home, LogOut } from 'lucide-react';
 import { useApp, Language } from '../../context';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 import { supportedLanguages } from '../../i18n';
 
 export function Navbar() {
-  const { language, setLanguage, role, favorites, t, theme } = useApp();
+  const { language, setLanguage, role, favorites, t, theme, currentUser, logout } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -68,10 +68,10 @@ export function Navbar() {
     { to: '/planner', label: t('nav.planner') },
     { to: '/favorites', label: t('nav.favorites'), badge: favorites.length },
     { to: '/chat', label: t('nav.chat'), icon: <MessageCircle size={16} /> },
-    { to: '/login', label: t('nav.signin'), icon: <User size={16} /> },
+    ...(!currentUser ? [{ to: '/login', label: t('nav.signin'), icon: <User size={16} /> }] : []),
     ...(role === 'host' ? [{ to: '/host-dashboard', label: t('nav.role.host'), icon: <Shield size={16} /> }] : []),
     ...(role === 'admin' ? [{ to: '/admin', label: t('nav.admin'), icon: <Shield size={16} /> }] : []),
-  ], [favorites.length, role, t]);
+  ], [currentUser, favorites.length, role, t]);
 
   const languages: { code: Language; label: string; nativeLabel: string; flag: string }[] =
     supportedLanguages.map((lang) => ({
@@ -82,6 +82,7 @@ export function Navbar() {
     }));
 
   const currentLang = languages.find(l => l.code === language)!;
+  const accountLabel = currentUser?.name?.split(' ')[0] || currentUser?.username || null;
 
   const isActive = (to: string) => {
     if (to === '/') return location.pathname === '/';
@@ -188,6 +189,24 @@ export function Navbar() {
 
           {/* Right controls */}
           <div className="hidden lg:flex items-center gap-2">
+            {currentUser && (
+              <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${
+                scrolled
+                  ? theme === 'dark'
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-100 text-slate-700'
+                  : darkNav
+                    ? 'bg-white/10 text-white'
+                    : lightHomeTop
+                      ? 'bg-white/70 text-slate-700'
+                      : theme === 'dark'
+                        ? 'bg-slate-800 text-slate-200'
+                        : 'bg-slate-100 text-slate-700'
+              }`}>
+                <User size={14} />
+                <span>{accountLabel}</span>
+              </div>
+            )}
             {/* Language switcher */}
             <div className="relative">
               <button
@@ -233,6 +252,29 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
+            {currentUser && (
+              <button
+                type="button"
+                onClick={logout}
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all ${
+                  scrolled
+                    ? theme === 'dark'
+                      ? 'text-slate-300 hover:bg-slate-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                    : darkNav
+                      ? 'text-white/90 hover:bg-white/10'
+                      : lightHomeTop
+                        ? 'text-gray-700 hover:bg-white/60'
+                        : theme === 'dark'
+                          ? 'text-slate-300 hover:bg-slate-700'
+                          : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <LogOut size={14} />
+                <span>Logout</span>
+              </button>
+            )}
+
             {/* Theme toggle */}
             <ThemeToggle />
           </div>
@@ -257,6 +299,11 @@ export function Navbar() {
             className={`lg:hidden backdrop-blur-md border-t ${theme === 'dark' ? 'bg-slate-800/95 border-slate-700' : 'bg-white/95 border-gray-100'}`}
           >
             <div className="px-4 py-3 space-y-1">
+              {currentUser && (
+                <div className={`mb-3 rounded-xl border px-4 py-3 text-sm ${theme === 'dark' ? 'border-slate-700 bg-slate-900 text-slate-200' : 'border-gray-200 bg-gray-50 text-gray-700'}`}>
+                  Signed in as <span className="font-semibold">{currentUser.name}</span>
+                </div>
+              )}
               {navLinks.map(link => (
                 <Link
                   key={link.to}
@@ -279,6 +326,18 @@ export function Navbar() {
                     {lang.flag} {lang.code.toUpperCase()}
                   </button>
                 ))}
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={logout}
+                    className={`ml-auto inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium ${
+                      theme === 'dark' ? 'bg-slate-700 text-slate-200' : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <LogOut size={12} />
+                    Logout
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
