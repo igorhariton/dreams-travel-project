@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, SlidersHorizontal, Wifi, Coffee, Car, Waves, Dumbbell, Utensils } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { hotels, destinations } from '../data/travelData';
+import type { Hotel, Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
@@ -40,7 +40,7 @@ function LazyCard({ children, minHeight = 320 }: { children: React.ReactNode; mi
 }
 
 export default function HotelsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicHotels, publicDestinations } = useApp();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [destFilter, setDestFilter] = useState('all');
@@ -56,7 +56,7 @@ export default function HotelsPage() {
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
-    const f = hotels.filter(h => {
+    const f = publicHotels.filter(h => {
       const normalizedSearch = deferredSearch.toLowerCase();
       const matchSearch = h.name.toLowerCase().includes(normalizedSearch) || h.location.toLowerCase().includes(normalizedSearch);
       const matchDest = destFilter === 'all' || h.destinationId === destFilter;
@@ -67,7 +67,7 @@ export default function HotelsPage() {
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [deferredSearch, destFilter, maxPrice, minStars, sortBy]);
+  }, [publicHotels, deferredSearch, destFilter, maxPrice, minStars, sortBy]);
 
   const pageSize = viewMode === 'grid' ? 18 : 12;
   const visibleHotels = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
@@ -93,13 +93,13 @@ export default function HotelsPage() {
     return () => observer.disconnect();
   }, [hasMore, pageSize, filtered.length]);
 
-  const handleFavoriteHotel = useCallback((e: React.MouseEvent, hotel: typeof hotels[0]) => {
+  const handleFavoriteHotel = useCallback((e: React.MouseEvent, hotel: Hotel) => {
     e.stopPropagation();
     if (isFavorite(hotel.id)) removeFavorite(hotel.id);
     else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location });
   }, [isFavorite, addFavorite, removeFavorite]);
 
-  const openHotelDetails = useCallback((hotel: typeof hotels[0]) => {
+  const openHotelDetails = useCallback((hotel: Hotel) => {
     setActiveItem({
       id: hotel.id,
       kind: 'hotel',
@@ -172,7 +172,7 @@ export default function HotelsPage() {
                 <SelectItem value="all" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
                   {translateDynamic('All Destinations')}
                 </SelectItem>
-                {destinations.map(d => (
+                {publicDestinations.map((d: Destination) => (
                   <SelectItem
                     key={d.id}
                     value={d.id}
