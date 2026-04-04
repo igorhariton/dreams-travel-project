@@ -12,6 +12,7 @@ import {
   getAllChatListings,
   getDefaultAssistantContext,
   requestTravelAssistantReply,
+  setAssistantCatalogData,
   submitBookingRequest,
   submitContactRequest,
   submitSupportRequest,
@@ -195,7 +196,7 @@ function createAssistantMessage(reply: AssistantReply): ChatMessage {
 }
 
 export default function ChatPage() {
-  const { t, formatPrice, theme } = useApp();
+  const { t, formatPrice, theme, publicDestinations, publicHotels, publicRentals } = useApp();
   const navigate = useNavigate();
   const initialSession = useMemo(() => loadSession(), []);
   const isDarkTheme = theme === 'dark';
@@ -221,7 +222,22 @@ export default function ChatPage() {
   const hasMountedRef = useRef(false);
   const previousMessageCountRef = useRef(messages.length);
 
-  const listingCatalog = useMemo(() => getAllChatListings(), []);
+  useEffect(() => {
+    setAssistantCatalogData({
+      destinations: publicDestinations,
+      hotels: publicHotels,
+      rentals: publicRentals,
+    });
+  }, [publicDestinations, publicHotels, publicRentals]);
+
+  const listingCatalog = useMemo(() => {
+    setAssistantCatalogData({
+      destinations: publicDestinations,
+      hotels: publicHotels,
+      rentals: publicRentals,
+    });
+    return getAllChatListings();
+  }, [publicDestinations, publicHotels, publicRentals]);
 
   const recentListings = useMemo(() => {
     const ordered: typeof listingCatalog = [];
