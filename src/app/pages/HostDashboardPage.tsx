@@ -486,7 +486,14 @@ export default function HostDashboardPage() {
                 <div className="flex flex-1 gap-4">
                   <div className={`h-24 w-28 shrink-0 overflow-hidden rounded-2xl ${isDarkTheme ? 'bg-slate-800' : 'bg-[#EAF3FF]'}`}>
                     {listing.images[0] ? (
-                      <img src={listing.images[0]} alt={listing.name} className="h-full w-full object-cover" />
+                      <img
+                        src={listing.images[0]}
+                        alt={listing.name}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
                     )}
@@ -1371,7 +1378,14 @@ export default function HostDashboardPage() {
                 <div className="space-y-4">
                   <div className={`h-56 overflow-hidden rounded-3xl ${isDarkTheme ? 'bg-slate-800' : 'bg-[#EAF3FF]'}`}>
                     {previewListing.images[0] ? (
-                      <img src={previewListing.images[0]} alt={previewListing.name} className="h-full w-full object-cover" />
+                      <img
+                        src={previewListing.images[0]}
+                        alt={previewListing.name}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                      />
                     ) : null}
                   </div>
                   <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{previewListing.description}</p>
