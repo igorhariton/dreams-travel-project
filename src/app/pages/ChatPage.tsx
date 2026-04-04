@@ -211,7 +211,12 @@ export default function ChatPage() {
   const [activeComposer, setActiveComposer] = useState<ActiveComposer>(null);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const quickPromptsRef = useRef<HTMLDivElement>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const isQuickDraggingRef = useRef(false);
+  const quickDragMovedRef = useRef(false);
+  const quickDragStartXRef = useRef(0);
+  const quickDragStartLeftRef = useRef(0);
   const shouldAutoScrollRef = useRef(true);
   const hasMountedRef = useRef(false);
   const previousMessageCountRef = useRef(messages.length);
@@ -553,6 +558,51 @@ export default function ChatPage() {
 
   const activeListingId = activeComposer && 'listingId' in activeComposer ? activeComposer.listingId : undefined;
 
+  const handleQuickPromptsWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    const container = quickPromptsRef.current;
+    if (!container) return;
+
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+    if (container.scrollWidth <= container.clientWidth) return;
+
+    event.preventDefault();
+    container.scrollLeft += event.deltaY;
+  }, []);
+
+  const handleQuickPromptsMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const container = quickPromptsRef.current;
+    if (!container) return;
+    if (container.scrollWidth <= container.clientWidth) return;
+
+    isQuickDraggingRef.current = true;
+    quickDragMovedRef.current = false;
+    quickDragStartXRef.current = event.clientX;
+    quickDragStartLeftRef.current = container.scrollLeft;
+  }, []);
+
+  const handleQuickPromptsMouseMove = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const container = quickPromptsRef.current;
+    if (!container) return;
+    if (!isQuickDraggingRef.current) return;
+
+    const delta = event.clientX - quickDragStartXRef.current;
+    if (Math.abs(delta) > 4) quickDragMovedRef.current = true;
+    container.scrollLeft = quickDragStartLeftRef.current - delta;
+  }, []);
+
+  const handleQuickPromptsMouseUp = useCallback(() => {
+    isQuickDraggingRef.current = false;
+    window.setTimeout(() => {
+      quickDragMovedRef.current = false;
+    }, 0);
+  }, []);
+
+  const handleQuickPromptsClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!quickDragMovedRef.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
+
   return (
     <div className={`h-[100dvh] pt-16 ${isDarkTheme ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
       <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden px-4 py-6">
@@ -578,7 +628,17 @@ export default function ChatPage() {
           </button>
         </div>
 
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div
+          ref={quickPromptsRef}
+          onWheel={handleQuickPromptsWheel}
+          onMouseDown={handleQuickPromptsMouseDown}
+          onMouseMove={handleQuickPromptsMouseMove}
+          onMouseUp={handleQuickPromptsMouseUp}
+          onMouseLeave={handleQuickPromptsMouseUp}
+          onClickCapture={handleQuickPromptsClickCapture}
+          className="quick-prompts-scroll mb-3 flex cursor-grab gap-2 overflow-x-auto overflow-y-hidden pb-2 active:cursor-grabbing select-none"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {QUICK_PROMPTS.map((prompt) => (
             <button
               key={prompt}
