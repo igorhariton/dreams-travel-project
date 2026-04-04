@@ -25,7 +25,14 @@ export function ChatListingCards({ listings, formatPrice, onAction }: ChatListin
           }`}
         >
           <div className="relative h-28 w-full overflow-hidden">
-            <img src={listing.image} alt={listing.title} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={listing.image}
+            alt={listing.title}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+          />
             <span
               className={`travel-badge absolute left-2 top-2 px-2 py-1 text-[11px] font-semibold text-white ${
                 isDarkTheme ? 'bg-black/65' : 'bg-[#1D4ED8]/85'
