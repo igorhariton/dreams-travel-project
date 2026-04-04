@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { destinations, hotels, rentals } from '../data/travelData';
+import { useApp } from '../context/AppContext';
+import type { Destination, Hotel, Rental } from '../data/travelData';
 import { useMapController } from './useMapController';
 import type {
   TravelCategory,
@@ -73,7 +74,11 @@ const seedDays = (trip: TravelTrip): TravelDay[] => {
   }));
 };
 
-const buildTripsFromTravelData = (): TravelTrip[] => {
+const buildTripsFromTravelData = (
+  destinations: Destination[],
+  hotels: Hotel[],
+  rentals: Rental[],
+): TravelTrip[] => {
   const baseStart = todayIso();
 
   return destinations.map((destination, index) => {
@@ -196,7 +201,11 @@ const buildTripsFromTravelData = (): TravelTrip[] => {
 type UpdateTrip = (trip: TravelTrip) => TravelTrip;
 
 export const useTravelPlanner = () => {
-  const seededTrips = useMemo(() => buildTripsFromTravelData(), []);
+  const { publicDestinations, publicHotels, publicRentals } = useApp();
+  const seededTrips = useMemo(
+    () => buildTripsFromTravelData(publicDestinations, publicHotels, publicRentals),
+    [publicDestinations, publicHotels, publicRentals],
+  );
   const defaultTrip = seededTrips.find((trip) => trip.id === 'trip-santorini') || seededTrips[0];
   const defaultDay = defaultTrip?.days[0];
 
