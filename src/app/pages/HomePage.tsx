@@ -3,17 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
-import { destinations, hotels } from '../data/travelData';
+import type { Hotel as HotelItem } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
-
-const HOME_STATS = [
-  { value: '50+', label: 'Countries', icon: <Map size={20} /> },
-  { value: '2,400+', label: 'Hotels', icon: <Hotel size={20} /> },
-  { value: '1.2M', label: 'Happy Travelers', icon: <Users size={20} /> },
-  { value: '4.9★', label: 'Average Rating', icon: <Star size={20} /> },
-];
 
 const HOME_STEPS = [
   { icon: <Search size={28} />, title: 'Search & Discover', desc: 'Browse hundreds of destinations, hotels, and unique rentals.' },
@@ -34,7 +27,19 @@ const BELOW_FOLD_SECTION_STYLE: React.CSSProperties = {
 };
 
 export default function HomePage() {
-  const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme, language } = useApp();
+  const {
+    t,
+    translateDynamic,
+    addFavorite,
+    isFavorite,
+    removeFavorite,
+    formatPrice,
+    theme,
+    language,
+    publicDestinations,
+    publicHotels,
+    publicRentals,
+  } = useApp();
   const navigate = useNavigate();
   const heroSectionRef = useRef<HTMLElement>(null);
   const heroFrameRef = useRef<HTMLIFrameElement>(null);
@@ -43,8 +48,8 @@ export default function HomePage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [mountHero, setMountHero] = useState(false);
 
-  const featuredDestinations = useMemo(() => destinations.slice(0, 4), []);
-  const featuredHotels = useMemo(() => hotels.slice(0, 3), []);
+  const featuredDestinations = useMemo(() => publicDestinations.slice(0, 4), [publicDestinations]);
+  const featuredHotels = useMemo(() => publicHotels.slice(0, 3), [publicHotels]);
   const heroSrc = useMemo(() => (theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html'), [theme]);
   const heroOverlayStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -57,9 +62,23 @@ export default function HomePage() {
   );
 
   const allDestinationNames = useMemo(
-    () => Array.from(new Set(destinations.map((item) => `${item.name}, ${item.country}`))),
-    [],
+    () => Array.from(new Set(publicDestinations.map((item) => `${item.name}, ${item.country}`))),
+    [publicDestinations],
   );
+
+  const homeStats = useMemo(() => {
+    const avgRatingSource = [...publicDestinations, ...publicHotels, ...publicRentals];
+    const avgRating = avgRatingSource.length
+      ? (avgRatingSource.reduce((sum, item) => sum + item.rating, 0) / avgRatingSource.length).toFixed(1)
+      : '0.0';
+
+    return [
+      { value: `${new Set(publicDestinations.map((item) => item.country)).size}+`, label: 'Countries', icon: <Map size={20} /> },
+      { value: `${publicHotels.length}+`, label: 'Hotels', icon: <Hotel size={20} /> },
+      { value: `${Math.max(1, Math.round(avgRatingSource.reduce((sum, item) => sum + item.reviews, 0) / 120)).toLocaleString()}K+`, label: 'Happy Travelers', icon: <Users size={20} /> },
+      { value: `${avgRating}★`, label: 'Average Rating', icon: <Star size={20} /> },
+    ];
+  }, [publicDestinations, publicHotels, publicRentals]);
 
   const postDestinationsToHero = useCallback((targetWindow: WindowProxy | null) => {
     if (!targetWindow) return;
@@ -188,7 +207,7 @@ export default function HomePage() {
     postLanguageToHero(heroFrameRef.current?.contentWindow ?? null);
   }, [language, postLanguageToHero]);
 
-  const openHotelDetails = (hotel: typeof hotels[0]) => {
+  const openHotelDetails = (hotel: HotelItem) => {
     setActiveItem({
       id: hotel.id,
       kind: 'hotel',
@@ -259,7 +278,7 @@ export default function HomePage() {
       >
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {HOME_STATS.map((s, i) => (
+            {homeStats.map((s, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
