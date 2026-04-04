@@ -128,15 +128,19 @@ html.dark {
   * {
     border-color: var(--border);
     outline-color: color-mix(in srgb, var(--ring) 50%, transparent);
-    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    backface-visibility: hidden;
+  }
+
+  :where(a, button, input, select, textarea, [role='button'], .theme-transition) {
+    transition:
+      background-color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-family: 'Inter', sans-serif;
-    will-change: background-color, color;
   }
 
   html.modal-open,
@@ -675,8 +679,12 @@ html.dark .travel-summary-box {
 
 html.dark {
   color-scheme: dark;
-  will-change: background-color, color;
-  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(a, button, input, select, textarea, [role='button'], .theme-transition) {
+    transition: none;
+  }
 }
 
 /* Force dark background on all major containers */
