@@ -34,14 +34,25 @@ const validCoords = (place: TravelPlace) =>
   place.lng >= -180 &&
   place.lng <= 180;
 
-const markerIcon = (category: TravelCategory, selected: boolean) =>
-  L.divIcon({
+const markerIconCache = new Map<string, L.DivIcon>();
+
+const markerIcon = (category: TravelCategory, selected: boolean) => {
+  const key = `${category}-${selected ? 'selected' : 'default'}`;
+  const cached = markerIconCache.get(key);
+  if (cached) return cached;
+
+  const size = selected ? 18 : 14;
+  const border = selected ? 3 : 2;
+  const icon = L.divIcon({
     className: 'planner-map-marker',
-    html: `<span style="display:block;width:${selected ? 18 : 14}px;height:${selected ? 18 : 14}px;border-radius:999px;background:${TRAVEL_COLORS.category[category]};border:${selected ? 3 : 2}px solid #ffffff;box-shadow:0 2px 10px rgba(15,23,42,0.35)"></span>`,
-    iconSize: [selected ? 18 : 14, selected ? 18 : 14],
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:999px;background:${TRAVEL_COLORS.category[category]};border:${border}px solid #ffffff;box-shadow:0 2px 10px rgba(15,23,42,0.35)"></span>`,
+    iconSize: [size, size],
     iconAnchor: [selected ? 9 : 7, selected ? 9 : 7],
     popupAnchor: [0, -9],
   });
+  markerIconCache.set(key, icon);
+  return icon;
+};
 
 function FitBounds({ places }: { places: TravelPlace[] }) {
   const map = useMap();
