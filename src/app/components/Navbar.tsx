@@ -100,7 +100,8 @@ export function Navbar() {
   // fully transparent (so you would see the hero background). A glass/solid navbar
   // keeps the menu readable regardless of the background.
   const onHome = location.pathname === '/';
-  const darkNav = onHome && !scrolled;
+  const darkNav = onHome && !scrolled && theme === 'dark';
+  const lightHomeTop = onHome && !scrolled && theme !== 'dark';
 
   return (
     <nav
@@ -111,6 +112,8 @@ export function Navbar() {
             : 'bg-white/95 backdrop-blur-md shadow-lg'
           : darkNav
             ? 'bg-black/35 backdrop-blur-md'
+            : lightHomeTop
+              ? 'bg-white/65 backdrop-blur-md shadow-sm border-b border-white/40'
             : theme === 'dark'
               ? 'bg-slate-900/90 backdrop-blur-md shadow-sm'
               : 'bg-white/95 backdrop-blur-md shadow-sm'
@@ -166,6 +169,8 @@ export function Navbar() {
                         : 'text-gray-700 hover:text-gray-900'
                       : darkNav
                         ? 'text-white/90 hover:text-white'
+                        : lightHomeTop
+                          ? 'text-gray-700 hover:text-gray-900'
                         : theme === 'dark'
                           ? 'text-slate-300 hover:text-slate-100'
                           : 'text-gray-700 hover:text-gray-900'
@@ -194,6 +199,8 @@ export function Navbar() {
                       : 'text-gray-700 hover:bg-gray-100'
                     : darkNav
                       ? 'text-white/90 hover:bg-white/10'
+                      : lightHomeTop
+                        ? 'text-gray-700 hover:bg-white/60'
                       : theme === 'dark'
                         ? 'text-slate-300 hover:bg-slate-700'
                         : 'text-gray-700 hover:bg-gray-100'
