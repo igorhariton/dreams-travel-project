@@ -214,7 +214,14 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     </div>
 
                     <div className="mt-4 flex gap-4 rounded-[1.25rem] border border-[#D9E2EC] bg-[#EEF4FA] p-4 dark:border-white/10 dark:bg-white/5">
-                      <img src={item.images[0]} alt={item.name} className="h-20 w-24 rounded-xl object-cover ring-1 ring-[#D9E2EC] dark:ring-white/10" />
+                      <img
+                        src={item.images[0]}
+                        alt={item.name}
+                        className="h-20 w-24 rounded-xl object-cover ring-1 ring-[#D9E2EC] dark:ring-white/10"
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="high"
+                      />
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate font-semibold text-[#0F172A] dark:text-white">{item.name}</h3>
                         <p className="truncate text-sm text-[#475569] dark:text-slate-300">{item.location}</p>
