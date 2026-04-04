@@ -1,13 +1,11 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Filter, Star, MapPin, Globe2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { destinations } from '../data/travelData';
+import type { Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-
-const continents = ['All', 'Europe', 'Asia', 'Middle East', 'Americas', 'Africa'];
-const tags = ['Beach', 'Culture', 'Romance', 'Adventure', 'Food', 'Luxury', 'City', 'Nature'];
 
 // Renders only when visible in viewport
 function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; minHeight?: number }) {
@@ -33,19 +31,30 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 }
 
 export default function DestinationsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, publicDestinations } = useApp();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [activeContinent, setActiveContinent] = useState('All');
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [selectedDest, setSelectedDest] = useState<typeof destinations[0] | null>(null);
+  const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'culture' | 'cuisine' | 'mustvisit'>('overview');
   const [sortBy, setSortBy] = useState<'rating' | 'name' | 'trending'>('rating');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
 
+  const continents = useMemo(
+    () => ['All', ...Array.from(new Set(publicDestinations.map((destination) => destination.continent).filter(Boolean)))],
+    [publicDestinations],
+  );
+
+  const tags = useMemo(
+    () => Array.from(new Set(publicDestinations.flatMap((destination) => destination.tags))).sort((a, b) => a.localeCompare(b)),
+    [publicDestinations],
+  );
+
   const sorted = useMemo(() => {
-    const filtered = destinations.filter(d => {
+    const filtered = publicDestinations.filter(d => {
       const normalizedSearch = deferredSearch.toLowerCase();
       const matchSearch = d.name.toLowerCase().includes(normalizedSearch) || d.country.toLowerCase().includes(normalizedSearch);
       const matchContinent = activeContinent === 'All' || d.continent === activeContinent;
@@ -55,13 +64,13 @@ export default function DestinationsPage() {
     if (sortBy === 'rating') return [...filtered].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'name') return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     return [...filtered].sort((a, b) => b.reviews - a.reviews);
-  }, [deferredSearch, activeContinent, activeTags, sortBy]);
+  }, [publicDestinations, deferredSearch, activeContinent, activeTags, sortBy]);
 
   const toggleTag = useCallback((tag: string) => {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   }, []);
 
-  const handleFavorite = useCallback((e: React.MouseEvent, dest: typeof destinations[0]) => {
+  const handleFavorite = useCallback((e: React.MouseEvent, dest: Destination) => {
     e.stopPropagation();
     if (isFavorite(dest.id)) removeFavorite(dest.id);
     else addFavorite({ id: dest.id, type: 'destination', name: dest.name, image: dest.images[0], rating: dest.rating, location: dest.country });
@@ -350,7 +359,11 @@ export default function DestinationsPage() {
                   className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
                   {isFavorite(selectedDest.id) ? `❤️ ${translateDynamic('In Favorites')}` : `🤍 ${translateDynamic('Add to Favorites')}`}
                 </button>
-                <button className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
+                <button
+                  type="button"
+                  onClick={() => navigate('/hotels')}
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm"
+                >
                   {translateDynamic('Explore Hotels')} →
                 </button>
               </div>
