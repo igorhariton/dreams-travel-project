@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -8,43 +8,60 @@ import { ImageCarousel } from '../components/ImageCarousel';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
+const HOME_STATS = [
+  { value: '50+', label: 'Countries', icon: <Map size={20} /> },
+  { value: '2,400+', label: 'Hotels', icon: <Hotel size={20} /> },
+  { value: '1.2M', label: 'Happy Travelers', icon: <Users size={20} /> },
+  { value: '4.9★', label: 'Average Rating', icon: <Star size={20} /> },
+];
+
+const HOME_STEPS = [
+  { icon: <Search size={28} />, title: 'Search & Discover', desc: 'Browse hundreds of destinations, hotels, and unique rentals.' },
+  { icon: <Calendar size={28} />, title: 'Plan & Customize', desc: 'Build your perfect itinerary with our smart travel planner.' },
+  { icon: <Shield size={28} />, title: 'Book Securely', desc: 'Reserve with confidence — free cancellation on most bookings.' },
+  { icon: <Plane size={28} />, title: 'Travel & Enjoy', desc: 'Explore the world and create memories that last a lifetime.' },
+];
+
+const CUISINE_ITEMS = [
+  { img: '/images/_site/food-1.jpg', name: 'Asian Street Food', dest: 'Bangkok & Tokyo' },
+  { img: '/images/_site/food-2.jpg', name: 'Italian Cuisine', dest: 'Rome & Florence' },
+  { img: '/images/_site/food-3.jpg', name: 'Balinese Feasts', dest: 'Ubud, Bali' },
+];
+
+const BELOW_FOLD_SECTION_STYLE: React.CSSProperties = {
+  contentVisibility: 'auto',
+  containIntrinsicSize: '900px',
+};
+
 export default function HomePage() {
   const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
   const navigate = useNavigate();
+  const heroSectionRef = useRef<HTMLElement>(null);
   const heroFrameRef = useRef<HTMLIFrameElement>(null);
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [mountHero, setMountHero] = useState(false);
 
-  const featuredDestinations = destinations.slice(0, 4);
-  const featuredHotels = hotels.slice(0, 3);
-  const heroSrc = theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html';
-
-  const stats = [
-    { value: '50+', label: 'Countries', icon: <Map size={20} /> },
-    { value: '2,400+', label: 'Hotels', icon: <Hotel size={20} /> },
-    { value: '1.2M', label: 'Happy Travelers', icon: <Users size={20} /> },
-    { value: '4.9★', label: 'Average Rating', icon: <Star size={20} /> },
-  ];
-
-  const howItWorks = [
-    { icon: <Search size={28} />, title: 'Search & Discover', desc: 'Browse hundreds of destinations, hotels, and unique rentals.' },
-    { icon: <Calendar size={28} />, title: 'Plan & Customize', desc: 'Build your perfect itinerary with our smart travel planner.' },
-    { icon: <Shield size={28} />, title: 'Book Securely', desc: 'Reserve with confidence — free cancellation on most bookings.' },
-    { icon: <Plane size={28} />, title: 'Travel & Enjoy', desc: 'Explore the world and create memories that last a lifetime.' },
-  ];
-
-  const cuisineItems = [
-    { img: '/images/_site/food-1.jpg', name: 'Asian Street Food', dest: 'Bangkok & Tokyo' },
-    { img: '/images/_site/food-2.jpg', name: 'Italian Cuisine', dest: 'Rome & Florence' },
-    { img: '/images/_site/food-3.jpg', name: 'Balinese Feasts', dest: 'Ubud, Bali' },
-  ];
-
-  const allDestinationNames = Array.from(
-    new Set(destinations.map((item) => `${item.name}, ${item.country}`))
+  const featuredDestinations = useMemo(() => destinations.slice(0, 4), []);
+  const featuredHotels = useMemo(() => hotels.slice(0, 3), []);
+  const heroSrc = useMemo(() => (theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html'), [theme]);
+  const heroOverlayStyle = useMemo<React.CSSProperties>(
+    () => ({
+      background:
+        theme === 'dark'
+          ? 'linear-gradient(to bottom, rgba(2,6,23,0.28), rgba(2,6,23,0.18), rgba(2,6,23,0.34))'
+          : 'linear-gradient(to bottom, rgba(15,23,42,0.18), rgba(15,23,42,0.08), rgba(15,23,42,0.22))',
+    }),
+    [theme],
   );
 
-  const postDestinationsToHero = (targetWindow: WindowProxy | null) => {
+  const allDestinationNames = useMemo(
+    () => Array.from(new Set(destinations.map((item) => `${item.name}, ${item.country}`))),
+    [],
+  );
+
+  const postDestinationsToHero = useCallback((targetWindow: WindowProxy | null) => {
     if (!targetWindow) return;
     targetWindow.postMessage(
       {
@@ -54,7 +71,28 @@ export default function HomePage() {
       },
       window.location.origin
     );
-  };
+  }, [allDestinationNames]);
+
+  useEffect(() => {
+    let timerId: number | null = null;
+    let idleId: number | null = null;
+
+    const mount = () => setMountHero(true);
+    const requestIdle = (window as { requestIdleCallback?: (cb: () => void, options?: { timeout: number }) => number }).requestIdleCallback;
+    const cancelIdle = (window as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback;
+
+    if (requestIdle) {
+      idleId = requestIdle(mount, { timeout: 900 });
+      timerId = window.setTimeout(mount, 1000);
+    } else {
+      timerId = window.setTimeout(mount, 120);
+    }
+
+    return () => {
+      if (timerId !== null) window.clearTimeout(timerId);
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+    };
+  }, []);
 
   useEffect(() => {
     const onHeroMessage = (event: MessageEvent) => {
@@ -89,11 +127,44 @@ export default function HomePage() {
 
     window.addEventListener('message', onHeroMessage);
     return () => window.removeEventListener('message', onHeroMessage);
-  }, [navigate]);
+  }, [navigate, postDestinationsToHero]);
 
-  const handleHeroFrameLoad = () => {
+  useEffect(() => {
+    const heroEl = heroSectionRef.current;
+    if (!heroEl) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        heroFrameRef.current?.contentWindow?.postMessage(
+          {
+            source: 'travel-app',
+            type: 'hero-visibility',
+            visible: entry.isIntersecting,
+          },
+          window.location.origin,
+        );
+      },
+      {
+        root: null,
+        threshold: 0.02,
+      },
+    );
+
+    observer.observe(heroEl);
+    return () => observer.disconnect();
+  }, []);
+
+  const handleHeroFrameLoad = useCallback(() => {
     postDestinationsToHero(heroFrameRef.current?.contentWindow ?? null);
-  };
+    heroFrameRef.current?.contentWindow?.postMessage(
+      {
+        source: 'travel-app',
+        type: 'hero-visibility',
+        visible: true,
+      },
+      window.location.origin,
+    );
+  }, [postDestinationsToHero]);
 
   const openHotelDetails = (hotel: typeof hotels[0]) => {
     setActiveItem({
@@ -132,27 +203,41 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-screen overflow-visible">
-        <iframe
-          ref={heroFrameRef}
-          key={theme}
-          title="Travel hero"
-          src={heroSrc}
-          className="absolute inset-0 w-full h-full border-0 pointer-events-auto"
-          onLoad={handleHeroFrameLoad}
-        />
+      <section ref={heroSectionRef} className="relative min-h-screen overflow-visible">
+        {mountHero ? (
+          <iframe
+            ref={heroFrameRef}
+            key={theme}
+            title="Travel hero"
+            src={heroSrc}
+            className="absolute inset-0 w-full h-full border-0 pointer-events-auto"
+            onLoad={handleHeroFrameLoad}
+          />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{ background: theme === 'dark' ? 'linear-gradient(135deg, #0f172a, #1e293b, #0e7490)' : 'linear-gradient(135deg, #0b3a5b, #0f6ea8, #22d3ee)' }}
+            aria-hidden="true"
+          />
+        )}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), rgba(0,0,0,0.25), rgba(0,0,0,0.55))' }}
+          style={heroOverlayStyle}
           aria-hidden="true"
         />
       </section>
 
       {/* Stats */}
-      <section className="bg-gradient-to-r from-blue-900 to-cyan-800 py-12">
+      <section
+        className="py-12"
+        style={{
+          ...BELOW_FOLD_SECTION_STYLE,
+          background: 'linear-gradient(90deg, #5e7384 0%, #557c8b 48%, #4a8797 100%)',
+        }}
+      >
         <div className="max-w-5xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((s, i) => (
+            {HOME_STATS.map((s, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -165,7 +250,7 @@ export default function HomePage() {
                   {s.icon}
                 </div>
                 <div className="text-3xl font-black mb-1">{s.value}</div>
-                <div className="text-sm text-blue-200">{translateDynamic(s.label)}</div>
+                <div className="text-sm text-slate-100/90">{translateDynamic(s.label)}</div>
               </motion.div>
             ))}
           </div>
@@ -173,7 +258,7 @@ export default function HomePage() {
       </section>
 
       {/* Top Destinations */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -255,7 +340,7 @@ export default function HomePage() {
       </section>
 
       {/* Culture & Cuisine */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
@@ -284,12 +369,19 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {cuisineItems.map((item, i) => (
+              {CUISINE_ITEMS.map((item, i) => (
                 <div
                   key={i}
                   className={`relative rounded-2xl overflow-hidden ${i === 0 ? 'col-span-2 h-48' : 'h-40'} group`}
                 >
-                  <img src={item.img} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    loading="lazy"
+                    decoding="async"
+                    fetchPriority="low"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4 text-white">
                     <div className="font-semibold">{translateDynamic(item.name)}</div>
@@ -303,7 +395,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Hotels */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-gray-50" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -379,15 +471,22 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-black text-gray-900">{t('section.how_it_works')}</h2>
             <p className="text-gray-500 mt-2">{translateDynamic('Simple steps to your perfect journey')}</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8 relative">
-            <div className="hidden md:block absolute top-10 left-1/4 right-1/4 h-px bg-gradient-to-r from-blue-200 to-cyan-200" style={{ left: '12.5%', right: '12.5%' }} />
-            {howItWorks.map((item, i) => (
+            <div
+              className="hidden md:block absolute top-10 left-1/4 right-1/4 h-px"
+              style={{
+                left: '12.5%',
+                right: '12.5%',
+                background: 'linear-gradient(90deg, rgba(94,115,132,0.38) 0%, rgba(74,135,151,0.5) 100%)',
+              }}
+            />
+            {HOME_STEPS.map((item, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
@@ -396,10 +495,24 @@ export default function HomePage() {
                 transition={{ delay: i * 0.15 }}
                 className="text-center relative"
               >
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-lg shadow-blue-200">
+                <div
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white"
+                  style={{
+                    background: 'linear-gradient(135deg, #5e7384 0%, #4a8797 100%)',
+                    boxShadow: '0 14px 30px rgba(74, 135, 151, 0.24)',
+                  }}
+                >
                   {item.icon}
                 </div>
-                <div className="absolute -top-2 -right-2 w-7 h-7 bg-gradient-to-br from-orange-400 to-red-500 rounded-full text-white text-sm font-bold flex items-center justify-center shadow-md">{i + 1}</div>
+                <div
+                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full text-white text-sm font-bold flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #5a7284 0%, #467f90 100%)',
+                    boxShadow: '0 8px 14px rgba(70, 121, 140, 0.28)',
+                  }}
+                >
+                  {i + 1}
+                </div>
                 <h3 className="font-bold text-gray-900 mb-2">{translateDynamic(item.title)}</h3>
                 <p className="text-sm text-gray-500">{translateDynamic(item.desc)}</p>
               </motion.div>
@@ -409,9 +522,9 @@ export default function HomePage() {
       </section>
 
       {/* CTA Banner */}
-      <section className="relative py-20 overflow-hidden">
+      <section className="relative py-20 overflow-hidden" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="absolute inset-0">
-          <img src="/images/_site/cta.jpg" alt="CTA" className="w-full h-full object-cover" />
+          <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-cyan-900/80" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
