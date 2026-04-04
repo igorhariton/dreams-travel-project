@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TravelDreams — Ultra Hero Dark</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -114,16 +116,20 @@ html, body {
 }
 .search-row { display: flex; align-items: stretch; gap: 0; }
 .sf {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px;
   padding: 10px 14px; border-right: 1px solid rgba(148,163,184,0.15);
   cursor: pointer; border-radius: 12px; transition: background .2s;
+  overflow: hidden;
 }
 .sf:last-of-type { border-right: none; }
 .sf:hover { background: rgba(96,165,250,0.12); }
-.sf-lbl { font-size: 9px; font-weight: 700; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; }
-.sf-val { font-size: 13px; font-weight: 500; color: var(--ink); }
+.sf-lbl { font-size: 9px; font-weight: 700; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-val { font-size: 13px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .sf-val.typing::after { content:'|'; animation: cursor .6s step-end infinite; color: var(--deep); }
 @keyframes cursor { 0%,100%{opacity:1} 50%{opacity:0} }
+#sf-destination { flex: 1 1 0; min-width: 0; }
+#sf-dates { flex: 0 0 148px; max-width: 148px; }
+#sf-guests { flex: 0 0 118px; max-width: 118px; }
 .s-btn {
   background: linear-gradient(135deg, var(--ocean), var(--deep));
   color: #0f1419; border: none; border-radius: 13px;
@@ -131,7 +137,7 @@ html, body {
   cursor: pointer; display: flex; align-items: center; gap: 7px;
   transition: opacity .2s, transform .15s;
   box-shadow: 0 4px 16px rgba(96,165,250,0.35);
-  flex-shrink: 0;
+  flex: 0 0 138px; flex-shrink: 0; justify-content: center;
 }
 .s-btn:hover { opacity: .9; transform: scale(.98); }
 
@@ -217,6 +223,105 @@ html, body {
   border: none;
   color: #0f1419;
   background: linear-gradient(135deg, var(--ocean), var(--deep));
+}
+
+.sp-input.sp-date {
+  border-radius: 14px;
+}
+
+.flatpickr-calendar {
+  border-radius: 18px !important;
+  border: 1px solid rgba(148,163,184,0.34) !important;
+  overflow: hidden !important;
+  background: rgba(15,23,42,0.98) !important;
+  box-shadow: 0 24px 48px rgba(2,6,23,0.5) !important;
+}
+
+.flatpickr-months {
+  padding: 8px 8px 2px;
+}
+
+.flatpickr-current-month {
+  color: #e2e8f0 !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-current-month .cur-month {
+  border-radius: 999px !important;
+  padding: 4px 10px !important;
+  background: rgba(96,165,250,0.18) !important;
+}
+
+.flatpickr-current-month .numInputWrapper,
+.flatpickr-current-month .cur-year {
+  display: none !important;
+}
+
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  padding-right: 0 !important;
+}
+
+.flatpickr-weekday {
+  color: #94a3b8 !important;
+  font-weight: 700 !important;
+}
+
+.flatpickr-day {
+  border-radius: 12px !important;
+  color: #e2e8f0 !important;
+}
+
+.flatpickr-day:hover {
+  background: rgba(96,165,250,0.2) !important;
+  border-color: rgba(96,165,250,0.3) !important;
+}
+
+.flatpickr-day.today {
+  border-color: rgba(96,165,250,0.62) !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: linear-gradient(135deg, #60a5fa, #06b6d4) !important;
+  border-color: transparent !important;
+  color: #0f1419 !important;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+  top: 8px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  background: rgba(30,58,137,0.38) !important;
+  color: #cbd5e1 !important;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.flatpickr-prev-month {
+  left: 10px !important;
+}
+
+.flatpickr-next-month {
+  right: 10px !important;
+}
+
+.flatpickr-prev-month svg,
+.flatpickr-next-month svg {
+  width: 15px !important;
+  height: 15px !important;
+  fill: currentColor !important;
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+  background: rgba(96,165,250,0.26) !important;
+  color: #e2e8f0 !important;
 }
 
 /* Stats */
@@ -447,15 +552,15 @@ html, body {
     <div class="search-wrap" id="searchWrap">
       <div class="search-row">
         <div class="sf" id="sf-destination">
-          <span class="sf-lbl">📍 Where to?</span>
+          <span class="sf-lbl" id="sfDestinationLabel">📍 Where to?</span>
           <span class="sf-val typing" id="typeEl">Santorini, Greece</span>
         </div>
-        <div class="sf" id="sf-dates" style="max-width:128px;">
-          <span class="sf-lbl">📅 Dates</span>
+        <div class="sf" id="sf-dates">
+          <span class="sf-lbl" id="sfDatesLabel">📅 Dates</span>
           <span class="sf-val" id="dateVal">Oct 14 - 21</span>
         </div>
-        <div class="sf" id="sf-guests" style="max-width:100px;">
-          <span class="sf-lbl">👥 Guests</span>
+        <div class="sf" id="sf-guests">
+          <span class="sf-lbl" id="sfGuestsLabel">👥 Guests</span>
           <span class="sf-val" id="guestVal">2 Adults</span>
         </div>
         <button class="s-btn">
@@ -482,12 +587,12 @@ html, body {
         <div class="sp-panel" id="panel-dates">
           <div class="sp-grid two">
             <div class="sp-grid">
-              <label class="sp-label" for="checkInInput">Check-in</label>
-              <input class="sp-input" id="checkInInput" type="date">
+              <label class="sp-label" id="checkInLabel" for="checkInInput">Check-in</label>
+              <input class="sp-input sp-date" id="checkInInput" type="text" inputmode="none" autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
             <div class="sp-grid">
-              <label class="sp-label" for="checkOutInput">Check-out</label>
-              <input class="sp-input" id="checkOutInput" type="date">
+              <label class="sp-label" id="checkOutLabel" for="checkOutInput">Check-out</label>
+              <input class="sp-input sp-date" id="checkOutInput" type="text" inputmode="none" autocomplete="off" placeholder="YYYY-MM-DD">
             </div>
           </div>
         </div>
@@ -656,6 +761,183 @@ let destinationPage = 1;
 let destinationQuery = '';
 let destinationTotalPages = 1;
 let heroVisible = true;
+let currentLanguage = 'en';
+const heroLocales = {
+  en: {
+    intl: 'en-US',
+    flatpickr: {
+      firstDayOfWeek: 0,
+      weekdays: {
+        shorthand: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        longhand: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      },
+      months: {
+        shorthand: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        longhand: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+      },
+    },
+    copy: {
+      pill: '50+ Destinations · Curated for You',
+      heroLine1: 'Discover',
+      heroLine2: 'The World',
+      heroLine3: 'Your story starts here.',
+      sub: 'Handpicked destinations, seamless booking, and journeys that transform. From hidden coastlines to ancient cities, we craft every detail.',
+      whereTo: 'Where to?',
+      dates: 'Dates',
+      guests: 'Guests',
+      search: 'Search',
+      choose: 'Choose',
+      destination: 'Destination',
+      cityOrCountry: 'City or country',
+      prev: 'Prev',
+      next: 'Next',
+      checkIn: 'Check-in',
+      checkOut: 'Check-out',
+      cancel: 'Cancel',
+      apply: 'Apply',
+      countries: 'Countries',
+      hotels: 'Hotels',
+      travelers: 'Travelers',
+      rating: 'Rating',
+      tags: ['Beach', 'Mountain', 'Culture', 'Eco Travel', 'Gastronomy', 'Romance', 'Adventure'],
+      perPerson: '/ person',
+      onlyLeft: 'Only 3 left',
+      reviews: 'reviews',
+      directFlight: 'Direct Flight',
+      nonstopEconomy: 'Non-stop · Economy',
+      available: 'Available',
+      fromPrice: 'from $342',
+      traveledTo: 'Traveled to Bali, 2024',
+      quote: '"Absolutely magical. TravelDreams made every detail perfect - from the villa to the hidden waterfalls."',
+      verified: 'Verified',
+      flashDeal: 'Flash Deal',
+      expiresIn: 'Expires in {{time}}',
+      wasPrice: 'was $1,680',
+      nightsLabel: 'Maldives · 5 nights',
+      bookingConfirmed: 'Booking Confirmed!',
+      onlineNow: 'travelers online now',
+      page: 'Page',
+      adultsOne: 'Adult',
+      adultsMany: 'Adults',
+    },
+  },
+  ro: {
+    intl: 'ro-RO',
+    flatpickr: {
+      firstDayOfWeek: 1,
+      weekdays: {
+        shorthand: ['Du', 'Lu', 'Ma', 'Mi', 'Jo', 'Vi', 'Sa'],
+        longhand: ['Duminică', 'Luni', 'Marți', 'Miercuri', 'Joi', 'Vineri', 'Sâmbătă'],
+      },
+      months: {
+        shorthand: ['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Noi', 'Dec'],
+        longhand: ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'],
+      },
+    },
+    copy: {
+      pill: '50+ Destinații · Alese pentru tine',
+      heroLine1: 'Descoperă',
+      heroLine2: 'Lumea',
+      heroLine3: 'Povestea ta începe aici.',
+      sub: 'Destinații alese cu grijă, rezervări fără griji și călătorii care te transformă. De la țărmuri ascunse la orașe vechi, pregătim fiecare detaliu.',
+      whereTo: 'Unde mergi?',
+      dates: 'Date',
+      guests: 'Oaspeți',
+      search: 'Caută',
+      choose: 'Alege',
+      destination: 'Destinație',
+      cityOrCountry: 'Oraș sau țară',
+      prev: 'Înapoi',
+      next: 'Înainte',
+      checkIn: 'Check-in',
+      checkOut: 'Check-out',
+      cancel: 'Anulează',
+      apply: 'Aplică',
+      countries: 'Țări',
+      hotels: 'Hoteluri',
+      travelers: 'Călători',
+      rating: 'Rating',
+      tags: ['Plajă', 'Munte', 'Cultură', 'Eco Travel', 'Gastronomie', 'Romanță', 'Aventură'],
+      perPerson: '/ persoana',
+      onlyLeft: 'Doar 3 rămase',
+      reviews: 'recenzii',
+      directFlight: 'Zbor direct',
+      nonstopEconomy: 'Fără escală · Economic',
+      available: 'Disponibil',
+      fromPrice: 'de la $342',
+      traveledTo: 'A călătorit în Bali, 2024',
+      quote: '"Absolut magic. TravelDreams a făcut totul perfect - de la vilă până la cascadele ascunse."',
+      verified: 'Verificat',
+      flashDeal: 'Oferta fulger',
+      expiresIn: 'Expiră în {{time}}',
+      wasPrice: 'a fost $1,680',
+      nightsLabel: 'Maldive · 5 nopti',
+      bookingConfirmed: 'Rezervare confirmată!',
+      onlineNow: 'călători online acum',
+      page: 'Pagina',
+      adultsOne: 'adult',
+      adultsMany: 'adulți',
+    },
+  },
+  ru: {
+    intl: 'ru-RU',
+    flatpickr: {
+      firstDayOfWeek: 1,
+      weekdays: {
+        shorthand: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+        longhand: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+      },
+      months: {
+        shorthand: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+        longhand: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+      },
+    },
+    copy: {
+      pill: '50+ Направлений · Подобрано для вас',
+      heroLine1: 'Открой',
+      heroLine2: 'Мир',
+      heroLine3: 'Твоя история начинается здесь.',
+      sub: 'Тщательно подобранные направления, удобное бронирование и путешествия, которые вдохновляют. От скрытых побережий до древних городов - мы продумываем каждую деталь.',
+      whereTo: 'Куда поедем?',
+      dates: 'Даты',
+      guests: 'Гости',
+      search: 'Поиск',
+      choose: 'Выберите',
+      destination: 'Направление',
+      cityOrCountry: 'Город или страна',
+      prev: 'Назад',
+      next: 'Далее',
+      checkIn: 'Заезд',
+      checkOut: 'Выезд',
+      cancel: 'Отмена',
+      apply: 'Применить',
+      countries: 'Страны',
+      hotels: 'Отели',
+      travelers: 'Путешественники',
+      rating: 'Рейтинг',
+      tags: ['Пляж', 'Горы', 'Культура', 'Эко отдых', 'Гастрономия', 'Романтика', 'Приключения'],
+      perPerson: '/ человек',
+      onlyLeft: 'Осталось 3 места',
+      reviews: 'отзывов',
+      directFlight: 'Прямой рейс',
+      nonstopEconomy: 'Без пересадок · Эконом',
+      available: 'Доступно',
+      fromPrice: 'от $342',
+      traveledTo: 'Путешествовала на Бали, 2024',
+      quote: '"Это было волшебно. TravelDreams продумал каждую деталь - от виллы до скрытых водопадов."',
+      verified: 'Проверено',
+      flashDeal: 'Горящее предложение',
+      expiresIn: 'Истекает через {{time}}',
+      wasPrice: 'было $1,680',
+      nightsLabel: 'Мальдивы · 5 ночей',
+      bookingConfirmed: 'Бронирование подтверждено!',
+      onlineNow: 'путешественников онлайн',
+      page: 'Страница',
+      adultsOne: 'взрослый',
+      adultsMany: 'взрослых',
+    },
+  },
+};
 const searchState = {
   destination: 'Santorini, Greece',
   checkIn: '2026-10-14',
@@ -670,11 +952,142 @@ function type(){const el=tel();if(!el || manualDestination || dests.length===0)r
 setTimeout(type,2000);
 
 // ── Hero search bridge (iframe -> app)
+function getHeroLocale(){
+  return heroLocales[currentLanguage] || heroLocales.en;
+}
+
+function formatGuestLabel(count){
+  const copy = getHeroLocale().copy;
+  return `${count} ${count === 1 ? copy.adultsOne : copy.adultsMany}`;
+}
+
 function formatShortDate(isoDate){
   if(!isoDate) return '';
   const d = new Date(`${isoDate}T00:00:00`);
   if(Number.isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(getHeroLocale().intl, { month: 'short', day: 'numeric' });
+}
+
+function updateToastContent(){
+  const title = document.querySelector('.toast-title');
+  const sub = document.querySelector('.toast-sub');
+  const copy = getHeroLocale().copy;
+  if (title) title.textContent = copy.bookingConfirmed;
+  if (sub) sub.textContent = `Santorini · ${formatShortDate(searchState.checkIn)} - ${formatShortDate(searchState.checkOut)} · ${formatGuestLabel(searchState.guests)}`;
+}
+
+function renderHeroLanguage(){
+  const copy = getHeroLocale().copy;
+  const pill = document.querySelector('.pill');
+  const headline = document.querySelector('.headline');
+  const sub = document.querySelector('.sub');
+  const button = document.querySelector('.s-btn');
+  const stats = document.querySelectorAll('.stats .s-lbl');
+  const tags = document.querySelectorAll('.tags .tag');
+  const flightCard = document.querySelector('.fc-b');
+  const reviewCard = document.querySelector('.fc-c');
+  const flashCard = document.querySelector('.fc-d');
+  const destinationCard = document.querySelector('.fc-a');
+  const live = document.querySelector('.live div:last-child');
+
+  if (pill) pill.innerHTML = `<span class="pill-dot"></span>${copy.pill}`;
+  if (headline) headline.innerHTML = `${copy.heroLine1}<br><em>${copy.heroLine2}</em>`;
+  document.querySelector('.hl2') && (document.querySelector('.hl2').textContent = copy.heroLine3);
+  if (sub) sub.textContent = copy.sub;
+
+  const destinationLabel = document.getElementById('sfDestinationLabel');
+  const datesLabel = document.getElementById('sfDatesLabel');
+  const guestsLabel = document.getElementById('sfGuestsLabel');
+  if (destinationLabel) destinationLabel.textContent = `📍 ${copy.whereTo}`;
+  if (datesLabel) datesLabel.textContent = `📅 ${copy.dates}`;
+  if (guestsLabel) guestsLabel.textContent = `👥 ${copy.guests}`;
+
+  if (button) {
+    button.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>${copy.search}`;
+  }
+
+  document.getElementById('spTitle') && (document.getElementById('spTitle').textContent = copy.choose);
+  const destinationPanelLabel = document.querySelector('label[for="destInput"]');
+  if (destinationPanelLabel) destinationPanelLabel.textContent = copy.destination;
+  const destInput = document.getElementById('destInput');
+  if (destInput) destInput.placeholder = copy.cityOrCountry;
+  document.getElementById('destPrev') && (document.getElementById('destPrev').textContent = copy.prev);
+  document.getElementById('destNext') && (document.getElementById('destNext').textContent = copy.next);
+  document.getElementById('checkInLabel') && (document.getElementById('checkInLabel').textContent = copy.checkIn);
+  document.getElementById('checkOutLabel') && (document.getElementById('checkOutLabel').textContent = copy.checkOut);
+  document.getElementById('spCancel') && (document.getElementById('spCancel').textContent = copy.cancel);
+  document.getElementById('spApply') && (document.getElementById('spApply').textContent = copy.apply);
+
+  if (stats.length >= 4) {
+    stats[0].textContent = copy.countries;
+    stats[1].textContent = copy.hotels;
+    stats[2].textContent = copy.travelers;
+    stats[3].textContent = copy.rating;
+  }
+
+  copy.tags.forEach((label, index) => {
+    const tag = tags[index];
+    if (!tag) return;
+    const emoji = tag.textContent.trim().split(' ')[0];
+    tag.textContent = `${emoji} ${label}`;
+  });
+
+  if (destinationCard) {
+    const perPerson = destinationCard.querySelector('.fc-price small');
+    const badge = destinationCard.querySelector('.fc-badge.hot');
+    const review = destinationCard.querySelector('.fc-review');
+    const loc = destinationCard.querySelector('.fc-loc');
+    if (loc) loc.textContent = 'GR Cyclades Islands';
+    if (perPerson) perPerson.textContent = copy.perPerson;
+    if (badge) badge.textContent = `🔥 ${copy.onlyLeft}`;
+    if (review) review.textContent = `4.9 (2,841 ${copy.reviews})`;
+  }
+
+  if (flightCard) {
+    const name = flightCard.querySelector('.fc-name');
+    const loc = flightCard.querySelector('.fc-loc');
+    const badge = flightCard.querySelector('.fc-badge.ok');
+    const price = flightCard.querySelector('.fc-val');
+    if (name) name.textContent = copy.directFlight;
+    if (loc) loc.textContent = copy.nonstopEconomy;
+    if (badge) badge.textContent = copy.available;
+    if (price) price.textContent = copy.fromPrice;
+  }
+
+  if (reviewCard) {
+    const loc = reviewCard.querySelector('.fc-loc');
+    const quote = reviewCard.querySelector('.fc-head + div');
+    const verified = reviewCard.querySelector('.fc-badge.new');
+    if (loc) loc.textContent = copy.traveledTo;
+    if (quote) quote.textContent = copy.quote;
+    if (verified) verified.textContent = copy.verified;
+  }
+
+  if (flashCard) {
+    const name = flashCard.querySelector('.fc-name');
+    const was = flashCard.querySelector('.fc-price small');
+    const nights = flashCard.querySelector('.minimap div:last-child');
+    if (name) name.textContent = copy.flashDeal;
+    if (was) was.textContent = copy.wasPrice;
+    if (nights) nights.textContent = copy.nightsLabel;
+  }
+
+  if (live) live.innerHTML = `<strong id="liveN">${document.getElementById('liveN')?.textContent || '1,384'}</strong> ${copy.onlineNow}`;
+
+  updateToastContent();
+  syncSearchFields();
+  syncDraftFields();
+  initDestinationList();
+
+  const locale = getHeroLocale().flatpickr;
+  if (checkInPicker) {
+    checkInPicker.set('locale', locale);
+    checkInPicker.redraw();
+  }
+  if (checkOutPicker) {
+    checkOutPicker.set('locale', locale);
+    checkOutPicker.redraw();
+  }
 }
 
 function syncSearchFields(){
@@ -683,7 +1096,7 @@ function syncSearchFields(){
   const guestEl = document.getElementById('guestVal');
   if (destinationEl) destinationEl.textContent = searchState.destination;
   if (dateEl) dateEl.textContent = `${formatShortDate(searchState.checkIn)} - ${formatShortDate(searchState.checkOut)}`;
-  if (guestEl) guestEl.textContent = `${searchState.guests} Adults`;
+  if (guestEl) guestEl.textContent = formatGuestLabel(searchState.guests);
 }
 
 const pop = document.getElementById('searchPop');
@@ -694,6 +1107,56 @@ const panels = {
   guests: document.getElementById('panel-guests'),
 };
 let activePanel = '';
+let checkInPicker = null;
+let checkOutPicker = null;
+
+function initDatePickers(){
+  const checkInInput = document.getElementById('checkInInput');
+  const checkOutInput = document.getElementById('checkOutInput');
+  if (!(checkInInput instanceof HTMLInputElement) || !(checkOutInput instanceof HTMLInputElement)) return;
+
+  if (typeof window.flatpickr !== 'function') {
+    checkInInput.type = 'date';
+    checkOutInput.type = 'date';
+    return;
+  }
+
+  checkInPicker = window.flatpickr(checkInInput, {
+    dateFormat: 'Y-m-d',
+    defaultDate: draftState.checkIn,
+    monthSelectorType: 'static',
+    disableMobile: true,
+    allowInput: true,
+    onChange: (_, value) => {
+      if (!value) return;
+      draftState.checkIn = value;
+      if (draftState.checkOut < draftState.checkIn) {
+        draftState.checkOut = draftState.checkIn;
+        checkOutPicker?.setDate(draftState.checkOut, false);
+      }
+      checkOutPicker?.set('minDate', draftState.checkIn);
+      syncDraftFields();
+    },
+  });
+
+  checkOutPicker = window.flatpickr(checkOutInput, {
+    dateFormat: 'Y-m-d',
+    defaultDate: draftState.checkOut,
+    minDate: draftState.checkIn,
+    monthSelectorType: 'static',
+    disableMobile: true,
+    allowInput: true,
+    onChange: (_, value) => {
+      if (!value) return;
+      draftState.checkOut = value;
+      if (draftState.checkOut < draftState.checkIn) {
+        draftState.checkOut = draftState.checkIn;
+        checkOutPicker?.setDate(draftState.checkOut, false);
+      }
+      syncDraftFields();
+    },
+  });
+}
 
 function syncDraftFields(){
   const destInput = document.getElementById('destInput');
@@ -703,7 +1166,12 @@ function syncDraftFields(){
   if (destInput) destInput.value = draftState.destination;
   if (checkInInput) checkInInput.value = draftState.checkIn;
   if (checkOutInput) checkOutInput.value = draftState.checkOut;
-  if (guestDraft) guestDraft.textContent = `${draftState.guests} Adults`;
+  if (guestDraft) guestDraft.textContent = formatGuestLabel(draftState.guests);
+  if (checkInPicker) checkInPicker.setDate(draftState.checkIn, false);
+  if (checkOutPicker) {
+    checkOutPicker.set('minDate', draftState.checkIn);
+    checkOutPicker.setDate(draftState.checkOut, false);
+  }
 }
 
 function openPanel(type){
@@ -718,16 +1186,25 @@ function openPanel(type){
     if (!panel) return;
     panel.classList.toggle('active', key === type);
   });
-  if (popTitle) popTitle.textContent = type === 'destination' ? 'Where to?' : type === 'dates' ? 'Dates' : 'Guests';
+  if (popTitle) {
+    const copy = getHeroLocale().copy;
+    popTitle.textContent = type === 'destination' ? copy.whereTo : type === 'dates' ? copy.dates : copy.guests;
+  }
   if (pop) pop.hidden = false;
   if (type === 'destination') {
     destinationQuery = draftState.destination;
     destinationPage = 1;
     initDestinationList();
   }
+  if (type === 'dates') {
+    checkOutPicker?.set('minDate', draftState.checkIn);
+    checkInPicker?.open();
+  }
 }
 
 function closePanel(){
+  checkInPicker?.close();
+  checkOutPicker?.close();
   if (pop) pop.hidden = true;
   activePanel = '';
 }
@@ -773,7 +1250,7 @@ function initDestinationList(){
     list.appendChild(chip);
   });
 
-  if (pageLabel) pageLabel.textContent = `Page ${destinationPage} / ${destinationTotalPages}`;
+  if (pageLabel) pageLabel.textContent = `${getHeroLocale().copy.page} ${destinationPage} / ${destinationTotalPages}`;
   if (prevBtn instanceof HTMLButtonElement) prevBtn.disabled = destinationPage <= 1;
   if (nextBtn instanceof HTMLButtonElement) nextBtn.disabled = destinationPage >= destinationTotalPages;
 }
@@ -788,6 +1265,8 @@ function postHeroSearch(){
     guests: searchState.guests,
   }, window.location.origin);
 }
+
+initDatePickers();
 
 document.getElementById('sf-destination')?.addEventListener('click', (event) => {
   event.stopPropagation();
@@ -854,6 +1333,7 @@ document.addEventListener('click', (event) => {
   if (!activePanel) return;
   const target = event.target;
   if (!(target instanceof Node)) return;
+  if (target instanceof Element && target.closest('.flatpickr-calendar')) return;
   const wrap = document.getElementById('searchWrap');
   if (wrap && !wrap.contains(target)) closePanel();
 });
@@ -865,6 +1345,12 @@ window.addEventListener('message', (event) => {
 
   if (payload.type === 'hero-visibility') {
     heroVisible = payload.visible !== false;
+    return;
+  }
+
+  if (payload.type === 'language' && typeof payload.language === 'string') {
+    currentLanguage = heroLocales[payload.language] ? payload.language : 'en';
+    renderHeroLanguage();
     return;
   }
 
@@ -883,17 +1369,32 @@ window.addEventListener('message', (event) => {
 });
 
 window.parent.postMessage({ source: 'travel-hero', type: 'request-destinations' }, window.location.origin);
+window.parent.postMessage({ source: 'travel-hero', type: 'request-language' }, window.location.origin);
 
 initDestinationList();
 
 syncSearchFields();
+renderHeroLanguage();
 
 // ── Tags
 document.querySelectorAll('.tag').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('.tag').forEach(x=>x.classList.remove('on'));t.classList.add('on');}));
 document.querySelectorAll('.nd').forEach((d,i)=>d.addEventListener('click',()=>{document.querySelectorAll('.nd').forEach((x,j)=>x.classList.toggle('on',j===i));}));
 
 // ── Countdown timer
-(function cd(){const loc=document.querySelector('.fc-d .fc-loc');if(!loc)return;let s=167;setInterval(()=>{s--;if(s<0)s=300;const m=Math.floor(s/60).toString().padStart(2,'0'),sec=(s%60).toString().padStart(2,'0');loc.textContent=`Expires in ${m}:${sec}`;},1000);})();
+(function cd(){
+  const loc=document.querySelector('.fc-d .fc-loc');
+  if(!loc)return;
+  let s=167;
+  const tick=()=>{
+    s--;
+    if(s<0)s=300;
+    const m=Math.floor(s/60).toString().padStart(2,'0');
+    const sec=(s%60).toString().padStart(2,'0');
+    loc.textContent=getHeroLocale().copy.expiresIn.replace('{{time}}', `${m}:${sec}`);
+  };
+  tick();
+  setInterval(tick,1000);
+})();
 
 // ══════════════════════════════════════════
 // BG CANVAS — Dark theme map
