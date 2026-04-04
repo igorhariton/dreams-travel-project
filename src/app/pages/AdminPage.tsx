@@ -13,7 +13,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { destinations as initialDestinations, hotels as initialHotels, rentals as initialRentals } from '../data/travelData';
+import type { Destination, Hotel, Rental } from '../data/travelData';
 import { useApp } from '../context/AppContext';
 import type { HostListing } from '../context/AppContext';
 
@@ -29,10 +29,6 @@ type AdminSection =
   | 'host-listings';
 
 type AddItemType = 'destination' | 'hotel' | 'rental';
-
-type Destination = (typeof initialDestinations)[number];
-type Hotel = (typeof initialHotels)[number];
-type Rental = (typeof initialRentals)[number];
 
 type AddFormState = {
   type: AddItemType;
@@ -560,11 +556,24 @@ export default function AdminPageV2() {
   const [query, setQuery] = useState('');
   const [continent, setContinent] = useState('all');
   const [sortOrder, setSortOrder] = useState('default');
-  const [destinations, setDestinations] = useState<Destination[]>(initialDestinations);
-  const [hotels, setHotels] = useState<Hotel[]>(initialHotels);
-  const [rentals, setRentals] = useState<Rental[]>(initialRentals);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const { language, setLanguage, hostListings, approveListing, rejectListing, theme, logout } = useApp();
+  const {
+    language,
+    setLanguage,
+    destinations,
+    setDestinations,
+    hotels,
+    setHotels,
+    rentals,
+    setRentals,
+    hostListings,
+    approveListing,
+    rejectListing,
+    theme,
+    logout,
+    currentUser,
+    isAuthLoading,
+  } = useApp();
   const navigate = useNavigate();
   const lang = language as Lang;
   const t = T[lang];
@@ -1637,6 +1646,51 @@ export default function AdminPageV2() {
     logout();
     navigate('/login');
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className={`admin-dashboard ${isDarkTheme ? 'admin-theme-dark bg-slate-950' : 'admin-theme-light bg-[#F1F5F9]'} min-h-screen px-4 pb-6 pt-24`}>
+        <div className="mx-auto max-w-xl">
+          <div className={isDarkTheme
+            ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
+            : 'travel-panel border border-[#CFE0F0] bg-white p-10 text-center shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+          >
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Loading admin session...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser || currentUser.role !== 'admin') {
+    return (
+      <div className={`admin-dashboard ${isDarkTheme ? 'admin-theme-dark bg-slate-950' : 'admin-theme-light bg-[#F1F5F9]'} min-h-screen px-4 pb-6 pt-24`}>
+        <div className="mx-auto max-w-xl">
+          <div className={isDarkTheme
+            ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
+            : 'travel-panel border border-[#CFE0F0] bg-white p-10 text-center shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+          >
+            <div className={`mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full ${isDarkTheme ? 'bg-slate-800 text-slate-300' : 'bg-[#EAF3FF] text-[#2563EB]'}`}>
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Admin access required</h2>
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Sign in with an admin account to open the TravelDreams control center.
+            </p>
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              >
+                Go to login
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`admin-dashboard ${isDarkTheme ? 'admin-theme-dark' : 'admin-theme-light'} min-h-screen px-4 pb-6 pt-16 md:px-6 md:pt-20 ${isDarkTheme ? 'bg-slate-950' : 'bg-[#F1F5F9]'}`}>
