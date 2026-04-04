@@ -33,7 +33,6 @@ import {
   type HostListingType,
   type ListingStatus,
 } from '../context/AppContext';
-import { destinations } from '../data/travelData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 type HostSection =
@@ -190,6 +189,7 @@ export default function HostDashboardPage() {
     role,
     currentUser,
     theme,
+    destinations,
     formatPrice,
     addHostListing,
     updateHostListing,
@@ -201,6 +201,7 @@ export default function HostDashboardPage() {
     translateDynamic,
     language,
     logout,
+    isAuthLoading,
   } = useApp();
   const navigate = useNavigate();
 
@@ -1153,22 +1154,120 @@ export default function HostDashboardPage() {
   }
 
   function renderMessages() {
+    const inboxItems = myListings
+      .filter((listing) => listing.status !== 'draft' || listing.reviewNote)
+      .slice()
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
+
     return (
-      <div className={isDarkTheme
-        ? 'travel-panel border border-slate-700 bg-slate-900/70 p-6 shadow-sm'
-        : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-6 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
-      >
-        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Messages & Support</h2>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Host support inbox is ready for integration. This section will include admin feedback threads and support messages.
-        </p>
-        <div className="travel-surface-secondary travel-summary-box mt-5 border p-4">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Next integration targets</p>
-          <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-600 dark:text-slate-300">
-            <li>Threaded admin comments for listing reviews</li>
-            <li>Real-time host support updates</li>
-            <li>Notifications for status changes (approved/rejected)</li>
-          </ul>
+      <div className="space-y-4">
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-6 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-6 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Messages & Support</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Review updates, admin notes, and listing status changes are collected here for your host account.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Pending updates</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{listingsByStatus.pending.length}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Listings currently awaiting admin review.</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Approved</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{listingsByStatus.approved.length}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Live inventory now visible on the public storefront.</p>
+            </div>
+            <div className="travel-surface travel-panel border p-4">
+              <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Needs revision</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{listingsByStatus.rejected.length}</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Listings that need edits before resubmission.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className={isDarkTheme
+          ? 'travel-panel border border-slate-700 bg-slate-900/70 p-6 shadow-sm'
+          : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-6 shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+        >
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Review inbox</h3>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                Latest admin decisions and status notes for your listings.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSection('pending-review')}
+                className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+              >
+                Pending review
+              </button>
+              <button
+                type="button"
+                onClick={() => setSection('rejected-listings')}
+                className="rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-100"
+              >
+                Fix rejected
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {inboxItems.map((listing) => (
+              <div key={listing.id} className="travel-surface travel-panel border p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{listing.name}</p>
+                      <StatusBadge status={listing.status} isDarkTheme={isDarkTheme} />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      {listing.id} · {toLabel(listing.listingType)} · Updated {formatDate(listing.updatedAt || listing.createdAt)}
+                    </p>
+                    <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                      {listing.reviewNote
+                        ? listing.reviewNote
+                        : listing.status === 'pending'
+                          ? 'Your listing is in review. We will notify you here as soon as an admin decision is recorded.'
+                          : listing.status === 'approved'
+                            ? 'Approved listings are now included in the public browsing experience.'
+                            : 'Update the listing details and resubmit it to continue the review workflow.'}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(listing.status === 'rejected' || listing.status === 'draft') && (
+                      <button
+                        type="button"
+                        onClick={() => openEditForm(listing)}
+                        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-transparent dark:text-slate-200 dark:hover:bg-slate-800"
+                      >
+                        Edit listing
+                      </button>
+                    )}
+                    {listing.status === 'pending' && (
+                      <button
+                        type="button"
+                        onClick={() => setSection('pending-review')}
+                        className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
+                      >
+                        View queue
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!inboxItems.length && (
+              <div className="travel-surface travel-panel border p-5 text-sm text-slate-500 dark:text-slate-400">
+                No review messages yet. Submit a listing for approval and admin updates will appear here.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1248,6 +1347,21 @@ export default function HostDashboardPage() {
     );
   }
 
+  if (isAuthLoading) {
+    return (
+      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
+        <div className="mx-auto max-w-xl px-4">
+          <div className={isDarkTheme
+            ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
+            : 'travel-panel border border-[#CFE0F0] bg-[#F8FBFF] p-10 text-center shadow-[0_10px_28px_rgba(14,116,144,0.08)]'}
+          >
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Loading host workspace...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (role !== 'host') {
     return (
       <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
@@ -1261,8 +1375,17 @@ export default function HostDashboardPage() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{translateDynamic('Access Restricted')}</h2>
             <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              {translateDynamic('Switch to Host role in the navbar to access the Host Dashboard.')}
+              {translateDynamic('Sign in with a host account to access the Host Dashboard and manage listings.')}
             </p>
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => navigate('/login')}
+                className="rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+              >
+                Go to login
+              </button>
+            </div>
           </div>
         </div>
       </div>
