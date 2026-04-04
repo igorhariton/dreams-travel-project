@@ -34,7 +34,7 @@ const BELOW_FOLD_SECTION_STYLE: React.CSSProperties = {
 };
 
 export default function HomePage() {
-  const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme } = useApp();
+  const { t, translateDynamic, addFavorite, isFavorite, removeFavorite, formatPrice, theme, language } = useApp();
   const navigate = useNavigate();
   const heroSectionRef = useRef<HTMLElement>(null);
   const heroFrameRef = useRef<HTMLIFrameElement>(null);
@@ -72,6 +72,18 @@ export default function HomePage() {
       window.location.origin
     );
   }, [allDestinationNames]);
+
+  const postLanguageToHero = useCallback((targetWindow: WindowProxy | null) => {
+    if (!targetWindow) return;
+    targetWindow.postMessage(
+      {
+        source: 'travel-app',
+        type: 'language',
+        language,
+      },
+      window.location.origin,
+    );
+  }, [language]);
 
   useEffect(() => {
     let timerId: number | null = null;
@@ -114,6 +126,11 @@ export default function HomePage() {
         return;
       }
 
+      if (payload.type === 'request-language') {
+        postLanguageToHero(event.source as WindowProxy | null);
+        return;
+      }
+
       if (payload.type !== 'search') return;
 
       const params = new URLSearchParams();
@@ -127,7 +144,7 @@ export default function HomePage() {
 
     window.addEventListener('message', onHeroMessage);
     return () => window.removeEventListener('message', onHeroMessage);
-  }, [navigate, postDestinationsToHero]);
+  }, [navigate, postDestinationsToHero, postLanguageToHero]);
 
   useEffect(() => {
     const heroEl = heroSectionRef.current;
@@ -156,6 +173,7 @@ export default function HomePage() {
 
   const handleHeroFrameLoad = useCallback(() => {
     postDestinationsToHero(heroFrameRef.current?.contentWindow ?? null);
+    postLanguageToHero(heroFrameRef.current?.contentWindow ?? null);
     heroFrameRef.current?.contentWindow?.postMessage(
       {
         source: 'travel-app',
@@ -164,7 +182,11 @@ export default function HomePage() {
       },
       window.location.origin,
     );
-  }, [postDestinationsToHero]);
+  }, [postDestinationsToHero, postLanguageToHero]);
+
+  useEffect(() => {
+    postLanguageToHero(heroFrameRef.current?.contentWindow ?? null);
+  }, [language, postLanguageToHero]);
 
   const openHotelDetails = (hotel: typeof hotels[0]) => {
     setActiveItem({
