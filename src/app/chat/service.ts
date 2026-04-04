@@ -1,4 +1,11 @@
-import { destinations, hotels, rentals } from '../data/travelData';
+import {
+  destinations as seedDestinations,
+  hotels as seedHotels,
+  rentals as seedRentals,
+  type Destination,
+  type Hotel,
+  type Rental,
+} from '../data/travelData';
 import { detectTravelIntent } from './intent';
 import type {
   AssistantAction,
@@ -19,6 +26,26 @@ const DEFAULT_ACTIONS_API_BASE = '/api/assistant';
 const DEFAULT_CONTEXT: AssistantContextState = {
   lastIntent: 'general',
 };
+
+let catalogDestinations: Destination[] = [...seedDestinations];
+let catalogHotels: Hotel[] = [...seedHotels];
+let catalogRentals: Rental[] = [...seedRentals];
+
+export function setAssistantCatalogData(data: {
+  destinations?: Destination[];
+  hotels?: Hotel[];
+  rentals?: Rental[];
+}) {
+  if (Array.isArray(data.destinations)) {
+    catalogDestinations = data.destinations;
+  }
+  if (Array.isArray(data.hotels)) {
+    catalogHotels = data.hotels;
+  }
+  if (Array.isArray(data.rentals)) {
+    catalogRentals = data.rentals;
+  }
+}
 
 const VISA_GUIDANCE: Record<string, string> = {
   maldives:
@@ -64,7 +91,7 @@ function normalizeText(input: string) {
 
 function findDestinationId(message: string, context: AssistantContextState) {
   const normalized = normalizeText(message);
-  const exact = destinations.find((destination) => {
+  const exact = catalogDestinations.find((destination) => {
     return normalized.includes(destination.name.toLowerCase()) || normalized.includes(destination.country.toLowerCase());
   });
   return exact?.id ?? context.lastDestinationId;
@@ -91,7 +118,7 @@ function extractGuests(message: string, currentGuests?: number) {
   return parsed;
 }
 
-function listingFromHotel(hotel: (typeof hotels)[number]): AssistantListing {
+function listingFromHotel(hotel: Hotel): AssistantListing {
   return {
     id: hotel.id,
     type: 'hotel',
@@ -106,7 +133,7 @@ function listingFromHotel(hotel: (typeof hotels)[number]): AssistantListing {
   };
 }
 
-function listingFromRental(rental: (typeof rentals)[number]): AssistantListing {
+function listingFromRental(rental: Rental): AssistantListing {
   return {
     id: rental.id,
     type: 'rental',
@@ -122,7 +149,7 @@ function listingFromRental(rental: (typeof rentals)[number]): AssistantListing {
 }
 
 function getTopHotels(destinationId?: string, budgetCap?: number) {
-  let pool = [...hotels];
+  let pool = [...catalogHotels];
   if (destinationId) {
     pool = pool.filter((item) => item.destinationId === destinationId);
   }
@@ -136,7 +163,7 @@ function getTopHotels(destinationId?: string, budgetCap?: number) {
 }
 
 function getTopRentals(destinationId?: string, budgetCap?: number) {
-  let pool = [...rentals];
+  let pool = [...catalogRentals];
   if (destinationId) {
     pool = pool.filter((item) => item.destinationId === destinationId);
   }
@@ -165,7 +192,7 @@ function getBestDestinationsByTheme(message: string) {
 
   const matchedTag = Object.entries(keywordToTag).find(([keyword]) => normalized.includes(keyword))?.[1];
 
-  let pool = [...destinations];
+  let pool = [...catalogDestinations];
   if (matchedTag) {
     pool = pool.filter((destination) => destination.tags.includes(matchedTag));
   }
@@ -177,7 +204,7 @@ function getBestDestinationsByTheme(message: string) {
 
 function getDestinationById(destinationId?: string) {
   if (!destinationId) return undefined;
-  return destinations.find((item) => item.id === destinationId);
+  return catalogDestinations.find((item) => item.id === destinationId);
 }
 
 function buildContext(
@@ -517,7 +544,7 @@ function buildLocalReply(payload: AssistantRequestPayload): AssistantReply {
   }
 
   if (inferredIntent === 'itinerary_suggestions') {
-    const itineraryDestination = destination || destinations[0];
+    const itineraryDestination = destination || catalogDestinations[0];
     const points = itineraryDestination.mustVisit.slice(0, 3);
     const itineraryText = [
       `Day 1: Arrival + ${points[0] || 'city walk'} and local dinner`,
@@ -658,8 +685,8 @@ export async function submitSupportRequest(sessionId: string, draft: SupportDraf
 
 export function getAllChatListings(): AssistantListing[] {
   return [
-    ...hotels.map(listingFromHotel),
-    ...rentals.map(listingFromRental),
+    ...catalogHotels.map(listingFromHotel),
+    ...catalogRentals.map(listingFromRental),
   ];
 }
 
