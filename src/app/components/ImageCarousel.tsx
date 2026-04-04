@@ -5,6 +5,7 @@ interface ImageCarouselProps {
   images: string[];
   className?: string;
   showIndicators?: boolean;
+  showCounter?: boolean;
   label?: string;
 }
 
@@ -28,6 +29,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   images,
   className = '',
   showIndicators = true,
+  showCounter = true,
   label,
 }: ImageCarouselProps) {
   const len = images.length;
@@ -189,9 +191,11 @@ export const ImageCarousel = memo(function ImageCarousel({
       )}
 
       {/* Counter */}
-      <div className="absolute top-3 right-3 bg-black/40 text-white text-xs px-2 py-1 rounded-full z-10 pointer-events-none">
-        {safeCurrent + 1} / {len}
-      </div>
+      {showCounter && hasMultiple && (
+        <div className="absolute top-3 right-3 bg-black/40 text-white text-xs px-2 py-1 rounded-full z-10 pointer-events-none">
+          {safeCurrent + 1} / {len}
+        </div>
+      )}
     </div>
   );
 });
