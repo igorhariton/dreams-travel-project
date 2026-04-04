@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
+import {
+  destinations as seedDestinations,
+  hotels as seedHotels,
+  rentals as seedRentals,
+  type Destination,
+  type Hotel,
+  type Rental,
+} from '../data/travelData';
 
 export type Language = 'en' | 'ro' | 'ru';
 export type UserRole = 'user' | 'host' | 'admin';
@@ -113,9 +121,40 @@ const MOCK_USERS: (User & { username: string; password: string })[] = [
   },
 ];
 
+const STORAGE_KEYS = {
+  theme: 'theme',
+  user: 'td_user',
+  users: 'td_mock_users_v1',
+  favorites: 'td_favorites_v1',
+  hostListings: 'td_host_listings_v1',
+  catalog: 'td_catalog_v1',
+} as const;
+
+type CatalogState = {
+  destinations: Destination[];
+  hotels: Hotel[];
+  rentals: Rental[];
+};
+
 const daysAgoIso = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
 
 const normalizeCredential = (value: string) => value.trim().toLowerCase();
+
+function loadStoredJson<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredJson<T>(key: string, value: T) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, JSON.stringify(value));
+}
 
 function sanitizeUsername(value: string) {
   return value
@@ -132,6 +171,26 @@ function isEmailTaken(users: (User & { username: string; password: string })[], 
 function isUsernameTaken(users: (User & { username: string; password: string })[], username: string) {
   const normalized = normalizeCredential(username);
   return users.some((user) => normalizeCredential(user.username) === normalized);
+}
+
+function makeSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function toTitleCase(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 function inferListingCategory(listingType: HostListingType): HostListingCategory {
@@ -160,6 +219,141 @@ function buildNextListingId(
     return Math.max(max, seq);
   }, 0);
   return `${idPrefix}${String(maxSeq + 1).padStart(3, '0')}`;
+}
+
+function resolveDestinationFromListing(listing: HostListing, catalogDestinations: Destination[]) {
+  const exactId = listing.destinationId?.trim();
+  if (exactId) {
+    const matchedById = catalogDestinations.find((destination) => destination.id === exactId);
+    if (matchedById) return matchedById;
+  }
+
+  const lookupTokens = [
+    listing.destinationId,
+    listing.location,
+    listing.address,
+    listing.name,
+  ]
+    .map((token) => makeSlug(String(token || '')))
+    .filter(Boolean);
+
+  return (
+    catalogDestinations.find((destination) => {
+      const destinationTokens = [
+        destination.id,
+        destination.name,
+        destination.country,
+        `${destination.name} ${destination.country}`,
+      ]
+        .map((token) => makeSlug(token))
+        .filter(Boolean);
+
+      return lookupTokens.some((token) =>
+        destinationTokens.some((destinationToken) =>
+          token === destinationToken ||
+          token.includes(destinationToken) ||
+          destinationToken.includes(token),
+        ));
+    }) || null
+  );
+}
+
+function buildSyntheticDestinationId(listing: HostListing) {
+  const preferred =
+    listing.destinationId && listing.destinationId !== 'custom-destination'
+      ? listing.destinationId
+      : listing.location || listing.address || listing.name || listing.id;
+  return makeSlug(preferred) || makeSlug(listing.id);
+}
+
+function buildSyntheticDestination(listing: HostListing): Destination {
+  const fallbackName = listing.location || listing.name || 'Host Destination';
+  const [city, countryGuess] = fallbackName.split(',').map((part) => part.trim()).filter(Boolean);
+  const images = (listing.images || []).filter(Boolean);
+  const tags = Array.from(
+    new Set(
+      [listing.type === 'hotel' ? 'Luxury' : 'Nature', ...(listing.featuredTags || []), ...(listing.amenities || [])].filter(Boolean),
+    ),
+  ).slice(0, 5);
+  const mustVisitSource = (listing.featuredTags || []).filter(Boolean);
+  const mustVisit = mustVisitSource.length > 0
+    ? mustVisitSource.slice(0, 5)
+    : [
+        `Stay at ${listing.name}`,
+        `Explore ${city || fallbackName}`,
+        'Local experiences',
+      ];
+
+  return {
+    id: buildSyntheticDestinationId(listing),
+    name: city || fallbackName,
+    country: countryGuess || 'Custom destination',
+    continent: 'Custom',
+    description: listing.description || `Host-curated stay in ${fallbackName}.`,
+    images: images.length > 0 ? images : ['/images/_site/hero-destinations.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(1, listing.bookingsCount || 8),
+    bestSeason: listing.availabilityNotes || 'Year-round',
+    tags: tags.length > 0 ? tags : ['Host Approved'],
+    culture: listing.description || `Discover local experiences around ${fallbackName}.`,
+    cuisine: `Explore local dining and signature flavors near ${fallbackName}.`,
+    mustVisit,
+    lat: Number.NaN,
+    lng: Number.NaN,
+  };
+}
+
+function mapListingToHotelType(listing: HostListing): Hotel['type'] {
+  const rawType = String(listing.hotelType || '').toLowerCase();
+  if (rawType === 'boutique' || rawType === 'budget' || rawType === 'resort' || rawType === 'luxury') return rawType;
+  if (listing.listingType === 'boutique_hotel') return 'boutique';
+  if (listing.listingType === 'resort') return 'resort';
+  return 'luxury';
+}
+
+function mapListingToRentalType(listing: HostListing): Rental['type'] {
+  const rawType = String(listing.rentalType || '').toLowerCase();
+  if (rawType === 'apartment' || rawType === 'villa' || rawType === 'traditional' || rawType === 'chalet') return rawType;
+  if (listing.listingType === 'apartment' || listing.listingType === 'villa' || listing.listingType === 'chalet') return listing.listingType;
+  if (listing.listingType === 'cabin') return 'chalet';
+  return 'traditional';
+}
+
+function buildHotelFromHostListing(listing: HostListing, destinationId: string): Hotel {
+  return {
+    id: listing.id,
+    name: listing.name,
+    destinationId,
+    location: listing.location,
+    images: listing.images.length > 0 ? listing.images : ['/images/_site/hero-hotels.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(4, listing.bookingsCount || 12),
+    pricePerNight: listing.pricePerNight,
+    description: listing.description,
+    amenities: listing.amenities,
+    type: mapListingToHotelType(listing),
+    stars: Math.max(1, Math.min(5, listing.stars || 4)),
+  };
+}
+
+function buildRentalFromHostListing(listing: HostListing, destinationId: string): Rental {
+  return {
+    id: listing.id,
+    name: listing.name,
+    destinationId,
+    location: listing.location,
+    images: listing.images.length > 0 ? listing.images : ['/images/_site/hero-rentals.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(3, listing.bookingsCount || 10),
+    pricePerNight: listing.pricePerNight,
+    description: listing.description,
+    amenities: listing.amenities,
+    type: mapListingToRentalType(listing),
+    bedrooms: Math.max(1, listing.bedrooms || 1),
+    bathrooms: Math.max(1, listing.bathrooms || 1),
+    maxGuests: Math.max(1, listing.maxGuests || 1),
+    host: listing.hostName,
+  };
 }
 
 const INITIAL_LISTINGS: HostListing[] = [
@@ -324,6 +518,15 @@ interface AppContextType {
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+  destinations: Destination[];
+  setDestinations: React.Dispatch<React.SetStateAction<Destination[]>>;
+  hotels: Hotel[];
+  setHotels: React.Dispatch<React.SetStateAction<Hotel[]>>;
+  rentals: Rental[];
+  setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
+  publicDestinations: Destination[];
+  publicHotels: Hotel[];
+  publicRentals: Rental[];
   t: (key: string) => string;
   translateDynamic: (text: string) => string;
   formatPrice: (price: number) => string;
@@ -754,25 +957,110 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>('user');
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
+      const stored = localStorage.getItem(STORAGE_KEYS.theme);
       if (stored === 'light' || stored === 'dark') return stored;
     }
     return 'light';
   });
-  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [favorites, setFavorites] = useState<FavoriteItem[]>(() => loadStoredJson(STORAGE_KEYS.favorites, []));
   const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({ en: {}, ro: {}, ru: {} });
   const pendingTranslations = useRef<Set<string>>(new Set());
 
   // ── New state ─────────────────────────────────────────────────────────────
+  const [catalog, setCatalog] = useState<CatalogState>(() => {
+    const fallback: CatalogState = {
+      destinations: seedDestinations,
+      hotels: seedHotels,
+      rentals: seedRentals,
+    };
+    const stored = loadStoredJson<Partial<CatalogState>>(STORAGE_KEYS.catalog, fallback);
+    return {
+      destinations: Array.isArray(stored?.destinations) && stored.destinations.length > 0 ? stored.destinations : fallback.destinations,
+      hotels: Array.isArray(stored?.hotels) ? stored.hotels : fallback.hotels,
+      rentals: Array.isArray(stored?.rentals) ? stored.rentals : fallback.rentals,
+    };
+  });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [hostListings, setHostListings] = useState<HostListing[]>(INITIAL_LISTINGS);
-  const [mockUsers, setMockUsers] = useState(MOCK_USERS);
+  const [hostListings, setHostListings] = useState<HostListing[]>(() => loadStoredJson(STORAGE_KEYS.hostListings, INITIAL_LISTINGS));
+  const [mockUsers, setMockUsers] = useState<(User & { username: string; password: string })[]>(() => loadStoredJson(STORAGE_KEYS.users, MOCK_USERS));
+
+  const destinations = catalog.destinations;
+  const hotels = catalog.hotels;
+  const rentals = catalog.rentals;
+
+  const setDestinations: React.Dispatch<React.SetStateAction<Destination[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      destinations: typeof nextValue === 'function' ? (nextValue as (current: Destination[]) => Destination[])(prev.destinations) : nextValue,
+    }));
+  };
+
+  const setHotels: React.Dispatch<React.SetStateAction<Hotel[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      hotels: typeof nextValue === 'function' ? (nextValue as (current: Hotel[]) => Hotel[])(prev.hotels) : nextValue,
+    }));
+  };
+
+  const setRentals: React.Dispatch<React.SetStateAction<Rental[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      rentals: typeof nextValue === 'function' ? (nextValue as (current: Rental[]) => Rental[])(prev.rentals) : nextValue,
+    }));
+  };
+
+  const approvedCatalog = useMemo(() => {
+    const approvedHostListings = hostListings.filter((listing) => listing.status === 'approved');
+    if (!approvedHostListings.length) {
+      return {
+        publicDestinations: destinations,
+        publicHotels: hotels,
+        publicRentals: rentals,
+      };
+    }
+
+    const destinationMap = new Map<string, Destination>();
+    destinations.forEach((destination) => {
+      destinationMap.set(destination.id, destination);
+    });
+
+    const syntheticDestinations: Destination[] = [];
+    const publicHotelsExtra: Hotel[] = [];
+    const publicRentalsExtra: Rental[] = [];
+
+    approvedHostListings.forEach((listing) => {
+      const linkedDestination = resolveDestinationFromListing(listing, [...destinations, ...syntheticDestinations]);
+      const destinationId = linkedDestination?.id || buildSyntheticDestinationId(listing);
+
+      if (!linkedDestination && !destinationMap.has(destinationId)) {
+        const syntheticDestination = buildSyntheticDestination(listing);
+        destinationMap.set(destinationId, syntheticDestination);
+        syntheticDestinations.push(syntheticDestination);
+      }
+
+      if (listing.type === 'hotel') {
+        publicHotelsExtra.push(buildHotelFromHostListing(listing, destinationId));
+      } else {
+        publicRentalsExtra.push(buildRentalFromHostListing(listing, destinationId));
+      }
+    });
+
+    return {
+      publicDestinations: [...destinations, ...syntheticDestinations],
+      publicHotels: [...hotels, ...publicHotelsExtra],
+      publicRentals: [...rentals, ...publicRentalsExtra],
+    };
+  }, [destinations, hotels, rentals, hostListings]);
+
+  const publicDestinations = approvedCatalog.publicDestinations;
+  const publicHotels = approvedCatalog.publicHotels;
+  const publicRentals = approvedCatalog.publicRentals;
 
   // Restore session from localStorage
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('td_user');
+      const saved = localStorage.getItem(STORAGE_KEYS.user);
       if (saved) {
         const user = JSON.parse(saved) as User;
         setCurrentUser(user);
@@ -781,6 +1069,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch {}
     setIsAuthLoading(false);
   }, []);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.favorites, favorites);
+  }, [favorites]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.users, mockUsers);
+  }, [mockUsers]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.hostListings, hostListings);
+  }, [hostListings]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.catalog, catalog);
+  }, [catalog]);
 
   // ── Theme (unchanged) ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -793,7 +1097,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     htmlElement.style.colorScheme = theme;
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => { setThemeState(newTheme); localStorage.setItem('theme', newTheme); };
+  const setTheme = (newTheme: Theme) => { setThemeState(newTheme); localStorage.setItem(STORAGE_KEYS.theme, newTheme); };
   const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
 
   // ── NEW: Auth ─────────────────────────────────────────────────────────────
@@ -813,14 +1117,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { password: _pw, ...user } = found;
     setCurrentUser(user);
     setRole(user.role);
-    localStorage.setItem('td_user', JSON.stringify(user));
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     return { success: true, role: user.role };
   }
 
   function logout() {
     setCurrentUser(null);
     setRole('user');
-    localStorage.removeItem('td_user');
+    localStorage.removeItem(STORAGE_KEYS.user);
   }
 
   async function register(data: RegisterData) {
@@ -853,7 +1157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { password: _pw, ...user } = newUser;
     setCurrentUser(user);
     setRole('host');
-    localStorage.setItem('td_user', JSON.stringify(user));
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     setIsAuthLoading(false);
     return { success: true };
   }
@@ -1094,6 +1398,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // Existing
       language, setLanguage, role, setRole, theme, setTheme, toggleTheme,
       favorites, addFavorite, removeFavorite, isFavorite,
+      destinations, setDestinations, hotels, setHotels, rentals, setRentals,
+      publicDestinations, publicHotels, publicRentals,
       t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
       // New
       currentUser, login, logout, register, isAuthLoading,
