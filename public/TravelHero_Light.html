@@ -654,6 +654,7 @@ const DEST_PAGE_SIZE = 8;
 let destinationPage = 1;
 let destinationQuery = '';
 let destinationTotalPages = 1;
+let heroVisible = true;
 const searchState = {
   destination: 'Santorini, Greece',
   checkIn: '2026-10-14',
@@ -859,7 +860,14 @@ document.addEventListener('click', (event) => {
 window.addEventListener('message', (event) => {
   if (event.origin !== window.location.origin) return;
   const payload = event.data;
-  if (!payload || payload.source !== 'travel-app' || payload.type !== 'destinations' || !Array.isArray(payload.destinations)) return;
+  if (!payload || payload.source !== 'travel-app') return;
+
+  if (payload.type === 'hero-visibility') {
+    heroVisible = payload.visible !== false;
+    return;
+  }
+
+  if (payload.type !== 'destinations' || !Array.isArray(payload.destinations)) return;
 
   const unique = Array.from(new Set(payload.destinations.filter((item) => typeof item === 'string' && item.trim())));
   if (unique.length === 0) return;
@@ -890,6 +898,12 @@ document.querySelectorAll('.nd').forEach((d,i)=>d.addEventListener('click',()=>{
 // BG CANVAS — World Map (D3 + TopoJSON real data)
 // ══════════════════════════════════════════
 const bgC = document.getElementById('bgC'), bgX = bgC.getContext('2d');
+const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HERO_PIXEL_RATIO = Math.min(window.devicePixelRatio || 1, 1.35);
+const BG_FRAME_MS = prefersReducedMotion ? (1000 / 10) : (1000 / 18);
+const GLOBE_FRAME_MS = prefersReducedMotion ? (1000 / 14) : (1000 / 24);
+let lastBgFrame = 0;
+let lastGlobeFrame = 0;
 let BW, BH;
 function rbg(){ BW = bgC.width = window.innerWidth; BH = bgC.height = window.innerHeight; }
 rbg(); window.addEventListener('resize', rbg);
@@ -1011,7 +1025,17 @@ function drawGeoPath(feature) {
   }
 }
 
-function drawBg(){
+function drawBg(ts){
+  if (document.hidden || !heroVisible) {
+    requestAnimationFrame(drawBg);
+    return;
+  }
+  if (ts - lastBgFrame < BG_FRAME_MS) {
+    requestAnimationFrame(drawBg);
+    return;
+  }
+  lastBgFrame = ts;
+
   bgX.clearRect(0,0,BW,BH);
   bgT += .005;
 
@@ -1074,7 +1098,6 @@ function drawBg(){
   drawScaleBar(BW*.80, BH*.92);
 
   // ── 7. Flight routes
-  updateNodePositions();
   for(const pl of planes){
     if(!pl.active) continue;
     pl.t += pl.speed;
@@ -1238,7 +1261,7 @@ let GW,GH,GR,GCX,GCY;
 function rg(){
   const p=document.getElementById('rp');
   const sz=Math.min(p.clientWidth,p.clientHeight)*.68;
-  gCv.width=gCv.height=sz*window.devicePixelRatio;
+  gCv.width=gCv.height=Math.max(320, Math.floor(sz * HERO_PIXEL_RATIO));
   gCv.style.width=gCv.style.height=sz+'px';
   GW=GH=gCv.width;GR=GW*.45;GCX=GCY=GW/2;
 }
@@ -1276,16 +1299,26 @@ function proj(p){const f=GR*3.5,z=p.z+f,s=f/z;return{x:GCX+p.x*s,y:GCY+p.y*s,z:p
 // Land dots
 const land=[];
 function seedLand(la0,la1,lo0,lo1,n,j=12){for(let i=0;i<n;i++)land.push({lat:la0+(la1-la0)*Math.random()+(Math.random()-.5)*j,lon:lo0+(lo1-lo0)*Math.random()+(Math.random()-.5)*j});}
-seedLand(36,70,-10,40,90,7);   // Europe
-seedLand(25,70,-130,-60,110,9);// N America
-seedLand(-55,12,-80,-35,75,8); // S America
-seedLand(-35,37,-18,50,100,9); // Africa
-seedLand(0,70,40,145,200,10);  // Asia
-seedLand(-45,-10,115,153,55,6);// Australia
-seedLand(60,72,20,50,20,4);    // Scandinavia
-seedLand(30,45,130,145,25,3);  // Japan
+seedLand(36,70,-10,40,62,7);   // Europe
+seedLand(25,70,-130,-60,78,9); // N America
+seedLand(-55,12,-80,-35,52,8); // S America
+seedLand(-35,37,-18,50,70,9);  // Africa
+seedLand(0,70,40,145,135,10);  // Asia
+seedLand(-45,-10,115,153,40,6);// Australia
+seedLand(60,72,20,50,14,4);    // Scandinavia
+seedLand(30,45,130,145,18,3);  // Japan
 
-function drawGlobe(){
+function drawGlobe(ts){
+  if (document.hidden || !heroVisible) {
+    requestAnimationFrame(drawGlobe);
+    return;
+  }
+  if (ts - lastGlobeFrame < GLOBE_FRAME_MS) {
+    requestAnimationFrame(drawGlobe);
+    return;
+  }
+  lastGlobeFrame = ts;
+
   gX.clearRect(0,0,GW,GH);
 
   // Globe base — light ocean blue
@@ -1346,7 +1379,7 @@ function drawGlobe(){
     gX.strokeStyle=c1.col;gX.lineWidth=1.5;
     gX.shadowColor=c1.col;gX.shadowBlur=8;
     gX.globalAlpha=.65;
-    const steps=80,drawSteps=Math.floor(steps*a.p);
+    const steps=56,drawSteps=Math.floor(steps*a.p);
     gX.beginPath();let pen=false;
     for(let s=0;s<=drawSteps;s++){
       const t=s/steps;
