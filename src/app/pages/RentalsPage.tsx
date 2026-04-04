@@ -50,6 +50,8 @@ export default function RentalsPage() {
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(18);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const typeCounts = useMemo(() => ({
     all: rentals.length,
@@ -72,6 +74,30 @@ export default function RentalsPage() {
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
   }, [deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
+
+  const pageSize = 18;
+  const visibleRentals = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hasMore = visibleCount < filtered.length;
+
+  useEffect(() => {
+    setVisibleCount(pageSize);
+  }, [pageSize, deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVisibleCount((count) => Math.min(count + pageSize, filtered.length));
+      },
+      { rootMargin: '600px' },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore, pageSize, filtered.length]);
 
   const handleFavorite = useCallback((e: React.MouseEvent, rental: typeof rentals[0]) => {
     e.stopPropagation();
@@ -120,7 +146,14 @@ export default function RentalsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="relative h-64 overflow-hidden">
-        <img src="/images/_site/hero-rentals.jpg" alt="Rentals" className="w-full h-full object-cover" loading="eager" />
+        <img
+          src="/images/_site/hero-rentals.jpg"
+          alt="Rentals"
+          className="w-full h-full object-cover"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/80 to-emerald-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white mb-2">{t('section.rentals')}</h1>
@@ -211,14 +244,16 @@ export default function RentalsPage() {
 
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <p className="text-sm text-gray-500 mb-6">{filtered.length} {translateDynamic('rentals available')}</p>
+        <p className="text-sm text-gray-500 mb-6">
+          {visibleRentals.length} / {filtered.length} {translateDynamic('rentals available')}
+        </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
-          {filtered.map(rental => (
+          {visibleRentals.map(rental => (
             <LazyCard key={rental.id} minHeight={420}>
               <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 h-full flex flex-col">
                 <div className="relative h-56 overflow-hidden shrink-0">
-                  <ImageCarousel images={rental.images} className="h-56" />
+                  <ImageCarousel images={rental.images} className="h-56" showIndicators={false} showCounter={false} />
                   <div className="absolute top-3 left-3">
                     <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full ${typeConfig[rental.type].color}`}>
                       {typeConfig[rental.type].icon} {translateDynamic(typeConfig[rental.type].label)}
@@ -280,6 +315,14 @@ export default function RentalsPage() {
             </LazyCard>
           ))}
         </div>
+
+        {hasMore && (
+          <div ref={loadMoreRef} className="mt-8 flex justify-center">
+            <div className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-500">
+              {translateDynamic('Loading more rentals...')}
+            </div>
+          </div>
+        )}
       </div>
 
       <ListingDetailsModal
