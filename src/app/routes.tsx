@@ -19,14 +19,19 @@ const RegisterPage = lazy(() => import('../pages/RegisterPage'));
 function prefetchAllPages() {
   const connection = (navigator as Navigator & {
     connection?: { saveData?: boolean; effectiveType?: string };
+    deviceMemory?: number;
   }).connection;
-  const shouldPrefetch = !connection?.saveData && !['slow-2g', '2g'].includes(connection?.effectiveType || '');
+  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 4;
+  const cpuThreads = navigator.hardwareConcurrency || 4;
+  const shouldPrefetch =
+    !connection?.saveData &&
+    !['slow-2g', '2g', '3g'].includes(connection?.effectiveType || '') &&
+    deviceMemory >= 4 &&
+    cpuThreads >= 4;
   if (!shouldPrefetch) return;
 
   const pages = [
     () => import('../pages/DestinationsPage'),
-    () => import('../pages/HotelsPage'),
-    () => import('../pages/RentalsPage'),
   ];
 
   if ('requestIdleCallback' in window) {
@@ -36,9 +41,9 @@ function prefetchAllPages() {
       pages[i++]();
       requestIdleCallback(loadNext);
     };
-    setTimeout(() => requestIdleCallback(loadNext), 2500);
+    setTimeout(() => requestIdleCallback(loadNext), 4000);
   } else {
-    pages.forEach((load, i) => setTimeout(load, 2500 + i * 500));
+    pages.forEach((load, i) => setTimeout(load, 4000 + i * 900));
   }
 }
 
