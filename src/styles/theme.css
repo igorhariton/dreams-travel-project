@@ -202,6 +202,18 @@ html.dark {
   scrollbar-gutter: stable;
 }
 
+.quick-prompts-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scrollbar-gutter: auto;
+}
+
+.quick-prompts-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .app-modal-scroll::-webkit-scrollbar,
 .booking-modal-scroll::-webkit-scrollbar,
 .chat-scroll::-webkit-scrollbar {
