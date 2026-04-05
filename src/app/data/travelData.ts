@@ -204,7 +204,7 @@ export const destinations: Destination[] = [
   {
     id: 'dubai',
     name: 'Dubai',
-    country: 'UAE',
+    country: 'United Arab Emirates',
     continent: 'Middle East',
     description: 'A dazzling city of superlatives - the tallest buildings, the largest malls, and luxurious experiences unlike anywhere else on earth.',
     images: [
