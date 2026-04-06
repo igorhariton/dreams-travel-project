@@ -106,7 +106,7 @@ export default function DestinationsPage() {
                 placeholder={t('common.search')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400"
+                className="bg-transparent outline-none text-sm text-gray-700 dark:text-slate-200 w-full placeholder-gray-400 dark:placeholder-slate-400"
               />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
@@ -140,12 +140,12 @@ export default function DestinationsPage() {
               </SelectContent>
             </Select>
             <button onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>
               <Filter size={16} /> {t('common.filter')}
             </button>
-            <div className="ml-auto flex rounded-xl border border-gray-200 overflow-hidden bg-white">
-              <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>⊞</button>
-              <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>☰</button>
+            <div className="ml-auto flex rounded-xl border border-gray-200 dark:border-slate-600 overflow-hidden bg-white dark:bg-slate-800">
+              <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>⊞</button>
+              <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>☰</button>
             </div>
           </div>
 
@@ -183,7 +183,7 @@ export default function DestinationsPage() {
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
                       <button onClick={e => handleFavorite(e, dest)}
-                        className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
+                        className="w-9 h-9 bg-white/90 dark:bg-slate-800/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                         {isFavorite(dest.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
@@ -279,12 +279,12 @@ export default function DestinationsPage() {
               onClick={() => setSelectedDest(null)}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="relative h-72">
                 <ImageCarousel images={selectedDest.images} className="h-72" />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
                 <button onClick={() => setSelectedDest(null)}
-                  className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
+                  className="absolute top-4 right-4 w-9 h-9 bg-white/90 dark:bg-slate-800/90 dark:hover:bg-slate-700 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
                   <X size={18} />
                 </button>
                 <div className="absolute bottom-5 left-5 text-white pointer-events-none">
@@ -302,7 +302,7 @@ export default function DestinationsPage() {
               <div className="flex border-b border-gray-100 px-6">
                 {(['overview', 'culture', 'cuisine', 'mustvisit'] as const).map(tab => (
                   <button key={tab} onClick={() => setActiveTab(tab)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400' : 'border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'}`}>
                     {tab === 'mustvisit' ? t('section.must_visit') : translateDynamic(tab.charAt(0).toUpperCase() + tab.slice(1))}
                   </button>
                 ))}
@@ -311,16 +311,16 @@ export default function DestinationsPage() {
               <div className="p-6">
                 {activeTab === 'overview' && (
                   <div>
-                    <p className="text-gray-600 leading-relaxed mb-5">{translateDynamic(selectedDest.description)}</p>
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-5">{translateDynamic(selectedDest.description)}</p>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Best Season')}</div>
-                        <div className="font-medium text-gray-900">{translateDynamic(selectedDest.bestSeason)}</div>
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{translateDynamic('Best Season')}</div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{translateDynamic(selectedDest.bestSeason)}</div>
                       </div>
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Tags')}</div>
+                      <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4">
+                        <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{translateDynamic('Tags')}</div>
                         <div className="flex flex-wrap gap-1">
-                          {selectedDest.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
+                          {selectedDest.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
                         </div>
                       </div>
                     </div>
@@ -328,24 +328,24 @@ export default function DestinationsPage() {
                 )}
                 {activeTab === 'culture' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-3">🎭 {translateDynamic('Culture & Heritage')}</h3>
-                    <p className="text-gray-600 leading-relaxed">{translateDynamic(selectedDest.culture)}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3">🎭 {translateDynamic('Culture & Heritage')}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{translateDynamic(selectedDest.culture)}</p>
                   </div>
                 )}
                 {activeTab === 'cuisine' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-3">🍜 {t('section.cuisine')}</h3>
-                    <p className="text-gray-600 leading-relaxed">{translateDynamic(selectedDest.cuisine)}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3">🍜 {t('section.cuisine')}</h3>
+                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{translateDynamic(selectedDest.cuisine)}</p>
                   </div>
                 )}
                 {activeTab === 'mustvisit' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 mb-4">📍 {t('section.must_visit')}</h3>
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">📍 {t('section.must_visit')}</h3>
                     <div className="space-y-2">
                       {selectedDest.mustVisit.map((place, i) => (
-                        <div key={place} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div key={place} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
                           <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
-                          <span className="font-medium text-gray-800">{translateDynamic(place)}</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">{translateDynamic(place)}</span>
                         </div>
                       ))}
                     </div>
@@ -356,7 +356,7 @@ export default function DestinationsPage() {
               <div className="px-6 pb-6 flex gap-3">
                 <button
                   onClick={() => { if (isFavorite(selectedDest.id)) removeFavorite(selectedDest.id); else addFavorite({ id: selectedDest.id, type: 'destination', name: selectedDest.name, image: selectedDest.images[0], rating: selectedDest.rating, location: selectedDest.country }); }}
-                  className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
+                  className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30' : 'border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>
                   {isFavorite(selectedDest.id) ? `❤️ ${translateDynamic('In Favorites')}` : `🤍 ${translateDynamic('Add to Favorites')}`}
                 </button>
                 <button

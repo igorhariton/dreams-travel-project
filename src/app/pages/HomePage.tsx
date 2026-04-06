@@ -327,7 +327,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
                     {dest.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{translateDynamic(tag)}</span>
+                      <span key={tag} className="bg-white/90 dark:bg-slate-800/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700 dark:text-slate-200">{translateDynamic(tag)}</span>
                     ))}
                   </div>
                   <button
@@ -342,9 +342,9 @@ export default function HomePage() {
                         });
                       }
                     }}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-slate-800/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                   >
-                    <span className={isFavorite(dest.id) ? 'text-red-500' : 'text-gray-400'}>
+                    <span className={isFavorite(dest.id) ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-slate-400'}>
                       {isFavorite(dest.id) ? '❤️' : '🤍'}
                     </span>
                   </button>
@@ -470,9 +470,9 @@ export default function HomePage() {
                       if (isFavorite(hotel.id)) removeFavorite(hotel.id);
                       else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location });
                     }}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-slate-800/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                   >
-                    <span className={isFavorite(hotel.id) ? 'text-red-500' : 'text-gray-400'}>{isFavorite(hotel.id) ? '❤️' : '🤍'}</span>
+                    <span className={isFavorite(hotel.id) ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-slate-400'}>{isFavorite(hotel.id) ? '❤️' : '🤍'}</span>
                   </button>
                 </div>
                 <div className="p-5">
