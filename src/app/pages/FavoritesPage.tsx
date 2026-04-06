@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel, Home as HomeIcon, Globe2 } from 'lucide-react';
+import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel as HotelIcon, Home as HomeIcon, Globe2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -9,7 +9,7 @@ import { ListingDetailsModal, type ListingDetailsItem } from '../components/List
 
 const typeConfig = {
   destination: { icon: <Globe2 size={14} />, color: 'bg-blue-100 text-blue-700', labelKey: 'favorites.type.destination' },
-  hotel: { icon: <Hotel size={14} />, color: 'bg-purple-100 text-purple-700', labelKey: 'favorites.type.hotel' },
+  hotel: { icon: <HotelIcon size={14} />, color: 'bg-purple-100 text-purple-700', labelKey: 'favorites.type.hotel' },
   rental: { icon: <HomeIcon size={14} />, color: 'bg-emerald-100 text-emerald-700', labelKey: 'favorites.type.rental' },
 };
 
