@@ -280,7 +280,7 @@ export default function RentalsPage() {
                       {typeConfig[rental.type].icon} {translateDynamic(typeConfig[rental.type].label)}
                     </span>
                   </div>
-                  <button type="button" onClick={e => handleFavorite(e, rental)}
+                  <button onClick={e => handleFavorite(e, rental)}
                     className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                     {isFavorite(rental.id) ? '❤️' : '🤍'}
                   </button>

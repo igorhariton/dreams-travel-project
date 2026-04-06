@@ -305,7 +305,7 @@ export default function HotelsPage() {
                         {translateDynamic(hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1))}
                       </span>
                     </div>
-                    <button type="button" onClick={e => handleFavoriteHotel(e, hotel)}
+                    <button onClick={e => handleFavoriteHotel(e, hotel)}
                       className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                       {isFavorite(hotel.id) ? '❤️' : '🤍'}
                     </button>

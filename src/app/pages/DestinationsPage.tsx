@@ -226,13 +226,13 @@ export default function DestinationsPage() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <button type="button" onClick={() => setShowFilters(!showFilters)}
+            <button onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <Filter size={16} /> {t('common.filter')}
             </button>
             <div className="ml-auto flex rounded-xl border border-gray-200 overflow-hidden bg-white">
-              <button type="button" onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>⊞</button>
-              <button type="button" onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>☰</button>
+              <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>⊞</button>
+              <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>☰</button>
             </div>
           </div>
 
@@ -269,7 +269,7 @@ export default function DestinationsPage() {
                     <ImageCarousel images={dest.images} className="h-60" />
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
-                      <button type="button" onClick={e => handleFavorite(e, dest)}
+                      <button onClick={e => handleFavorite(e, dest)}
                         className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                         {isFavorite(dest.id) ? '❤️' : '🤍'}
                       </button>
@@ -371,7 +371,7 @@ export default function DestinationsPage() {
               <div className="relative h-72">
                 <ImageCarousel images={selectedDest.images} className="h-72" />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
-                <button type="button" onClick={() => setSelectedDest(null)}
+                <button onClick={() => setSelectedDest(null)}
                   className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
                   <X size={18} />
                 </button>
@@ -389,7 +389,7 @@ export default function DestinationsPage() {
 
               <div className="flex border-b border-gray-100 px-6">
                 {(['overview', 'culture', 'cuisine', 'mustvisit'] as const).map(tab => (
-                  <button type="button" key={tab} onClick={() => setActiveTab(tab)}
+                  <button key={tab} onClick={() => setActiveTab(tab)}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     {tab === 'mustvisit' ? t('section.must_visit') : translateDynamic(tab.charAt(0).toUpperCase() + tab.slice(1))}
                   </button>
@@ -398,7 +398,21 @@ export default function DestinationsPage() {
 
               <div className="p-6">
                 {activeTab === 'overview' && (
-                  selectedDestinationOverview
+                  <div>
+                    <p className="text-gray-600 leading-relaxed mb-5">{translateDynamic(selectedDest.description)}</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Best Season')}</div>
+                        <div className="font-medium text-gray-900">{translateDynamic(selectedDest.bestSeason)}</div>
+                      </div>
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Tags')}</div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedDest.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 {activeTab === 'culture' && (
                   <div>
