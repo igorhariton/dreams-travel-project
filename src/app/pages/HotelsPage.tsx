@@ -133,12 +133,6 @@ export default function HotelsPage() {
     setActiveItem(null);
   }, []);
 
-  const openHotelMap = useCallback((e: React.MouseEvent, hotel: Hotel) => {
-    e.stopPropagation();
-    const query = encodeURIComponent(`${hotel.name}, ${hotel.location}`);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank', 'noopener,noreferrer');
-  }, []);
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -267,14 +261,7 @@ export default function HotelsPage() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-bold text-gray-900 text-base">{hotel.name}</h3>
-                        <button
-                          type="button"
-                          onClick={(e) => openHotelMap(e, hotel)}
-                          className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 mt-0.5"
-                        >
-                          <MapPin size={10} />
-                          {hotel.location}
-                        </button>
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5"><MapPin size={10} />{hotel.location}</p>
                       </div>
                       <div className="text-right shrink-0 ml-2">
                         <div className="text-xl font-black text-gray-900">{formatPrice(hotel.pricePerNight)}</div>
@@ -319,14 +306,7 @@ export default function HotelsPage() {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="font-bold text-gray-900 text-base">{hotel.name}</h3>
-                          <button
-                            type="button"
-                            onClick={(e) => openHotelMap(e, hotel)}
-                            className="text-xs text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 mt-0.5"
-                          >
-                            <MapPin size={10} />
-                            {hotel.location}
-                          </button>
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5"><MapPin size={10} />{hotel.location}</p>
                         </div>
                         <div className="text-right">
                           <div className="text-xl font-black text-gray-900">{formatPrice(hotel.pricePerNight)}</div>
