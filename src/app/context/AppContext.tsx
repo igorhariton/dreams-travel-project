@@ -156,6 +156,45 @@ function writeStoredJson<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function isFavoriteType(value: unknown): value is FavoriteItem['type'] {
+  return value === 'destination' || value === 'hotel' || value === 'rental';
+}
+
+function sanitizeFavoriteItem(value: unknown): FavoriteItem | null {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<FavoriteItem>;
+  if (typeof candidate.id !== 'string' || !candidate.id.trim()) return null;
+  if (typeof candidate.name !== 'string' || !candidate.name.trim()) return null;
+  if (typeof candidate.image !== 'string' || !candidate.image.trim()) return null;
+  if (typeof candidate.location !== 'string') return null;
+  if (!isFavoriteType(candidate.type)) return null;
+
+  return {
+    id: candidate.id,
+    type: candidate.type,
+    name: candidate.name,
+    image: candidate.image,
+    location: candidate.location,
+    price: typeof candidate.price === 'number' && Number.isFinite(candidate.price) ? candidate.price : undefined,
+    rating: typeof candidate.rating === 'number' && Number.isFinite(candidate.rating) ? candidate.rating : undefined,
+  };
+}
+
+function sanitizeFavoritesList(value: unknown): FavoriteItem[] {
+  if (!Array.isArray(value)) return [];
+  const cleaned: FavoriteItem[] = [];
+  const ids = new Set<string>();
+
+  for (const entry of value) {
+    const favorite = sanitizeFavoriteItem(entry);
+    if (!favorite || ids.has(favorite.id)) continue;
+    ids.add(favorite.id);
+    cleaned.push(favorite);
+  }
+
+  return cleaned;
+}
+
 function sanitizeUsername(value: string) {
   return value
     .trim()
@@ -962,7 +1001,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return 'light';
   });
-  const [favorites, setFavorites] = useState<FavoriteItem[]>(() => loadStoredJson(STORAGE_KEYS.favorites, []));
+  const [favorites, setFavorites] = useState<FavoriteItem[]>(() =>
+    sanitizeFavoritesList(loadStoredJson<unknown>(STORAGE_KEYS.favorites, [])),
+  );
   const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({ en: {}, ro: {}, ru: {} });
   const pendingTranslations = useRef<Set<string>>(new Set());
 
@@ -1389,7 +1430,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return `${p}${s}`;
   };
 
-  const addFavorite = (item: FavoriteItem) => setFavorites(prev => prev.find(f => f.id === item.id) ? prev : [...prev, item]);
+  const addFavorite = (item: FavoriteItem) => {
+    const safeItem = sanitizeFavoriteItem(item);
+    if (!safeItem) return;
+    setFavorites((prev) => (prev.find((f) => f.id === safeItem.id) ? prev : [...prev, safeItem]));
+  };
   const removeFavorite = (id: string) => setFavorites(prev => prev.filter(f => f.id !== id));
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
