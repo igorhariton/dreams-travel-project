@@ -82,7 +82,6 @@ export function Navbar() {
     }));
 
   const currentLang = languages.find(l => l.code === language)!;
-  const accountLabel = currentUser?.name?.split(' ')[0] || currentUser?.username || null;
 
   const isActive = (to: string) => {
     if (to === '/') return location.pathname === '/';
@@ -189,24 +188,6 @@ export function Navbar() {
 
           {/* Right controls */}
           <div className="hidden lg:flex items-center gap-2">
-            {currentUser && (
-              <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${
-                scrolled
-                  ? theme === 'dark'
-                    ? 'bg-slate-800 text-slate-200'
-                    : 'bg-slate-100 text-slate-700'
-                  : darkNav
-                    ? 'bg-white/10 text-white'
-                    : lightHomeTop
-                      ? 'bg-white/70 text-slate-700'
-                      : theme === 'dark'
-                        ? 'bg-slate-800 text-slate-200'
-                        : 'bg-slate-100 text-slate-700'
-              }`}>
-                <User size={14} />
-                <span>{accountLabel}</span>
-              </div>
-            )}
             {/* Language switcher */}
             <div className="relative">
               <button
