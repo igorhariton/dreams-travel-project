@@ -493,7 +493,7 @@ export default function HostDashboardPage() {
                         className="h-full w-full object-cover"
                         loading="lazy"
                         decoding="async"
-                        fetchPriority="low"
+                      fetchpriority="low"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
@@ -1507,7 +1507,7 @@ export default function HostDashboardPage() {
                         className="h-full w-full object-cover"
                         loading="eager"
                         decoding="async"
-                        fetchPriority="high"
+                fetchpriority="high"
                       />
                     ) : null}
                   </div>

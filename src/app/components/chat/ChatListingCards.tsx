@@ -31,7 +31,7 @@ export function ChatListingCards({ listings, formatPrice, onAction }: ChatListin
             className="h-full w-full object-cover"
             loading="lazy"
             decoding="async"
-            fetchPriority="low"
+              fetchpriority="low"
           />
             <span
               className={`travel-badge absolute left-2 top-2 px-2 py-1 text-[11px] font-semibold text-white ${

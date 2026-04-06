@@ -6,6 +6,29 @@ import { useApp } from '../context/AppContext';
 import type { Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { TravelLayersMap, isValidCoordinatePair } from '../components/map/TripMap';
+import type { TravelMapLocation } from '../types/travel';
+
+const MALDIVES_MAIN_POINT = { lat: 4.1755, lng: 73.5093 };
+
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function resolveDestinationCenter(destination: Destination) {
+  const isMaldives = slugify(destination.id) === 'maldives' || slugify(destination.name) === 'maldives';
+  if (isMaldives) return MALDIVES_MAIN_POINT;
+  if (isValidCoordinatePair(destination.lat, destination.lng)) {
+    return { lat: destination.lat, lng: destination.lng };
+  }
+  return { lat: 20, lng: 0 };
+}
 
 // Renders only when visible in viewport
 function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; minHeight?: number }) {
@@ -31,7 +54,14 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 }
 
 export default function DestinationsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, publicDestinations } = useApp();
+  const {
+    t,
+    translateDynamic,
+    addFavorite,
+    removeFavorite,
+    isFavorite,
+    publicDestinations,
+  } = useApp();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
@@ -66,6 +96,63 @@ export default function DestinationsPage() {
     return [...filtered].sort((a, b) => b.reviews - a.reviews);
   }, [publicDestinations, deferredSearch, activeContinent, activeTags, sortBy]);
 
+  const selectedDestinationMapLocations = useMemo<TravelMapLocation[]>(() => {
+    if (!selectedDest) return [];
+    const destinationCenter = resolveDestinationCenter(selectedDest);
+    return [
+      {
+        id: `destination:${selectedDest.id}`,
+        type: 'destination',
+        name: selectedDest.name,
+        country: selectedDest.country,
+        lat: destinationCenter.lat,
+        lng: destinationCenter.lng,
+        rating: selectedDest.rating,
+        description: selectedDest.description,
+        imageUrl: selectedDest.images[0],
+        tags: selectedDest.tags.slice(0, 4),
+      },
+    ];
+  }, [selectedDest]);
+
+  const selectedDestinationMapId = selectedDest ? `destination:${selectedDest.id}` : null;
+
+  const destinationMapCard = (
+    <div className="mt-5 rounded-xl border border-gray-200 bg-white p-3">
+      <div className="overflow-hidden rounded-lg border border-gray-200">
+        <TravelLayersMap
+          locations={selectedDestinationMapLocations}
+          sizeInvalidateKey={selectedDestinationMapId || selectedDest?.name || 'destination-map'}
+          height={340}
+          singleLocationMode
+          singleLocationZoom={11}
+          forceTheme="light"
+          showExploreCta={false}
+          showHeatmap={false}
+        />
+      </div>
+    </div>
+  );
+
+  const selectedDestinationOverview = (
+    <div>
+      <p className="text-gray-600 leading-relaxed mb-5">{selectedDest ? translateDynamic(selectedDest.description) : ''}</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Best Season')}</div>
+          <div className="font-medium text-gray-900">{selectedDest ? translateDynamic(selectedDest.bestSeason) : ''}</div>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-4">
+          <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Tags')}</div>
+          <div className="flex flex-wrap gap-1">
+            {selectedDest?.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
+          </div>
+        </div>
+      </div>
+      {destinationMapCard}
+    </div>
+  );
+
   const toggleTag = useCallback((tag: string) => {
     setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   }, []);
@@ -86,7 +173,7 @@ export default function DestinationsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchPriority="high"
+              fetchpriority="high"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(2,6,23,0.72) 0%, rgba(2,6,23,0.5) 100%)' }} />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
@@ -111,7 +198,7 @@ export default function DestinationsPage() {
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
               {continents.map(c => (
-                <button key={c} onClick={() => setActiveContinent(c)}
+                <button type="button" key={c} onClick={() => setActiveContinent(c)}
                   className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeContinent === c ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
                   {translateDynamic(c)}
                 </button>
@@ -139,27 +226,27 @@ export default function DestinationsPage() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <button onClick={() => setShowFilters(!showFilters)}
+            <button type="button" onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <Filter size={16} /> {t('common.filter')}
             </button>
             <div className="ml-auto flex rounded-xl border border-gray-200 overflow-hidden bg-white">
-              <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>⊞</button>
-              <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>☰</button>
+              <button type="button" onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>⊞</button>
+              <button type="button" onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm font-medium transition-colors ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}>☰</button>
             </div>
           </div>
 
           {showFilters && (
             <div className="flex gap-2 mt-3 flex-wrap animate-in fade-in duration-300">
               {tags.map(tag => (
-                <button key={tag} onClick={() => toggleTag(tag)}
+                <button type="button" key={tag} onClick={() => toggleTag(tag)}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${activeTags.includes(tag) ? 'bg-cyan-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-cyan-50 hover:text-cyan-600'}`}>
                   {translateDynamic(tag)}
                   {activeTags.includes(tag) && <X size={10} className="inline ml-1" />}
                 </button>
               ))}
               {activeTags.length > 0 && (
-                <button onClick={() => setActiveTags([])} className="text-xs text-red-500 hover:underline ml-1">{translateDynamic('Clear all')}</button>
+                <button type="button" onClick={() => setActiveTags([])} className="text-xs text-red-500 hover:underline ml-1">{translateDynamic('Clear all')}</button>
               )}
             </div>
           )}
@@ -182,7 +269,7 @@ export default function DestinationsPage() {
                     <ImageCarousel images={dest.images} className="h-60" />
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
-                      <button onClick={e => handleFavorite(e, dest)}
+                      <button type="button" onClick={e => handleFavorite(e, dest)}
                         className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                         {isFavorite(dest.id) ? '❤️' : '🤍'}
                       </button>
@@ -218,6 +305,7 @@ export default function DestinationsPage() {
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedDest(dest);
@@ -261,7 +349,7 @@ export default function DestinationsPage() {
                       </div>
                     </div>
                   </div>
-                  <button onClick={e => handleFavorite(e, dest)} className="p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                  <button type="button" onClick={e => handleFavorite(e, dest)} className="p-3 rounded-lg hover:bg-gray-100 transition-colors">
                     <span className="text-xl">{isFavorite(dest.id) ? '❤️' : '🤍'}</span>
                   </button>
                 </div>
@@ -283,7 +371,7 @@ export default function DestinationsPage() {
               <div className="relative h-72">
                 <ImageCarousel images={selectedDest.images} className="h-72" />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
-                <button onClick={() => setSelectedDest(null)}
+                <button type="button" onClick={() => setSelectedDest(null)}
                   className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
                   <X size={18} />
                 </button>
@@ -301,7 +389,7 @@ export default function DestinationsPage() {
 
               <div className="flex border-b border-gray-100 px-6">
                 {(['overview', 'culture', 'cuisine', 'mustvisit'] as const).map(tab => (
-                  <button key={tab} onClick={() => setActiveTab(tab)}
+                  <button type="button" key={tab} onClick={() => setActiveTab(tab)}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors capitalize ${activeTab === tab ? 'border-cyan-500 text-cyan-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                     {tab === 'mustvisit' ? t('section.must_visit') : translateDynamic(tab.charAt(0).toUpperCase() + tab.slice(1))}
                   </button>
@@ -310,21 +398,7 @@ export default function DestinationsPage() {
 
               <div className="p-6">
                 {activeTab === 'overview' && (
-                  <div>
-                    <p className="text-gray-600 leading-relaxed mb-5">{translateDynamic(selectedDest.description)}</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Best Season')}</div>
-                        <div className="font-medium text-gray-900">{translateDynamic(selectedDest.bestSeason)}</div>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Tags')}</div>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedDest.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  selectedDestinationOverview
                 )}
                 {activeTab === 'culture' && (
                   <div>
@@ -355,6 +429,7 @@ export default function DestinationsPage() {
 
               <div className="px-6 pb-6 flex gap-3">
                 <button
+                  type="button"
                   onClick={() => { if (isFavorite(selectedDest.id)) removeFavorite(selectedDest.id); else addFavorite({ id: selectedDest.id, type: 'destination', name: selectedDest.name, image: selectedDest.images[0], rating: selectedDest.rating, location: selectedDest.country }); }}
                   className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
                   {isFavorite(selectedDest.id) ? `❤️ ${translateDynamic('In Favorites')}` : `🤍 ${translateDynamic('Add to Favorites')}`}

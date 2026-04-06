@@ -30,6 +30,8 @@ export interface Hotel {
   amenities: string[];
   type: 'luxury' | 'boutique' | 'budget' | 'resort';
   stars: number;
+  lat?: number;
+  lng?: number;
 }
 
 export interface Rental {
@@ -48,6 +50,8 @@ export interface Rental {
   bathrooms: number;
   maxGuests: number;
   host: string;
+  lat?: number;
+  lng?: number;
 }
 
 export const destinations: Destination[] = [
@@ -168,8 +172,8 @@ export const destinations: Destination[] = [
     culture: 'Islamic Maldivian culture with traditional bodu beru drumming, handcrafted lacquerware, and dhoni boat building.',
     cuisine: 'Mas huni (tuna with coconut), garudhiya fish soup, fresh lobster, and tropical fruit juices.',
     mustVisit: ['Male Atoll', 'Biyadhoo Island', 'Banana Reef Dive Site', 'Hulhumale Beach', 'Maafushi Local Island'],
-    lat: 3.2028,
-    lng: 73.2207,
+    lat: 4.1755,
+    lng: 73.5093,
   },
   {
     id: 'tokyo',
@@ -1947,6 +1951,8 @@ const rawHotels: Hotel[] = [
     amenities: ['Private Pool', 'Spa', 'Diving Center', 'Restaurant', 'Butler', 'Water Sports', 'Wifi'],
     type: 'luxury',
     stars: 5,
+    lat: 4.2208617,
+    lng: 73.5425254,
   },
 {
     id: 'h5',
@@ -2097,7 +2103,7 @@ stars: 5,
 {
   id :'h14',
   name: 'dusitD2 Feydhoo Maldives - All Inclusive Resort',
-  destinationId:'6F6M+8JQ, Malé 27188',
+  destinationId:'maldives',
   location: 'Feydhoo Island, Maldives',
   images:[
     '/images/hotels/h14/1.jpg',
@@ -2109,11 +2115,13 @@ stars: 5,
 amenities: ['Beachfront', 'All-Inclusive', 'Spa', 'Restaurant', 'Bar', 'Concierge', 'Airport Transfer', 'WiFi'],
 type: 'luxury',
 stars: 5,
+lat: -0.6826027,
+lng: 73.1350769,
 },
 {
   id :'h15',
   name :'Joy Island Maldives All Inclusive Resort',
-  destinationId: '6F6M+8JQ, Malé 27188',
+  destinationId: 'maldives',
   location: 'Feydhoo Island, Maldives',
   images:[
     '/images/hotels/h15/1.jpg',
@@ -2125,6 +2133,8 @@ stars: 5,
 amenities: ['Beachfront', 'All-Inclusive', 'Spa', 'Restaurant', 'Bar', 'Concierge', 'Airport Transfer', 'WiFi'],
 type: 'luxury',
 stars: 5,
+lat: -0.6841,
+lng: 73.1374,
 },
 {
   id :'h16',
@@ -4097,6 +4107,54 @@ stars: 4,
   stars:4,
 },
 {
+  id:'h139',
+  name:'Mandarin Oriental Taipei',
+  destinationId:'Taipei',
+  location:'Taipei, Taiwan',
+  images:[
+    '/images/hotels/h139/1.jpg',
+  ],
+  rating:4.9,
+  reviews:1430,
+  pricePerNight:340,
+  description:'Flagship luxury property in Taipei with refined rooms, renowned dining, and premium wellness facilities.',
+  amenities:['Spa','Pool','Restaurant','City Views','WiFi'],
+  type:'luxury',
+  stars:5,
+},
+{
+  id:'h140',
+  name:'W Taipei',
+  destinationId:'Taipei',
+  location:'Taipei, Taiwan',
+  images:[
+    '/images/hotels/h140/1.jpg',
+  ],
+  rating:4.7,
+  reviews:980,
+  pricePerNight:290,
+  description:'Contemporary hotel with skyline views, rooftop vibe, and a central location near shopping districts.',
+  amenities:['Rooftop Pool','Restaurant','City Views','WiFi'],
+  type:'boutique',
+  stars:5,
+},
+{
+  id:'h141',
+  name:'Hotel Indigo Taipei North',
+  destinationId:'Taipei',
+  location:'Taipei, Taiwan',
+  images:[
+    '/images/hotels/h141/1.jpg',
+  ],
+  rating:4.6,
+  reviews:540,
+  pricePerNight:190,
+  description:'Stylish design-forward stay offering comfortable rooms and convenient access to key city attractions.',
+  amenities:['Restaurant','City Views','WiFi'],
+  type:'budget',
+  stars:4,
+},
+{
   id:'h142',
   name:'Burj Al Arab',
   destinationId:'Dubai',
@@ -4287,6 +4345,54 @@ stars: 4,
   amenities:['Beachfront','Pool','Spa','Restaurant','WiFi'],
   type:'budget',
   stars:4,
+},
+{
+  id:'h154',
+  name:'The Nile Ritz-Carlton Cairo',
+  destinationId:'Cairo',
+  location:'Cairo, Egypt',
+  images:[
+    '/images/hotels/h154/1.jpg',
+  ],
+  rating:4.8,
+  reviews:1320,
+  pricePerNight:310,
+  description:'Luxury Nile-front hotel with elegant interiors, multiple dining options, and iconic city views.',
+  amenities:['Pool','Spa','Restaurant','River Views','WiFi'],
+  type:'luxury',
+  stars:5,
+},
+{
+  id:'h155',
+  name:'Sofitel Cairo Nile El Gezirah',
+  destinationId:'Cairo',
+  location:'Cairo, Egypt',
+  images:[
+    '/images/hotels/h155/1.jpg',
+  ],
+  rating:4.7,
+  reviews:890,
+  pricePerNight:240,
+  description:'Popular upscale hotel on the Nile with panoramic terraces and easy access to central Cairo.',
+  amenities:['Pool','Restaurant','River Views','WiFi'],
+  type:'boutique',
+  stars:5,
+},
+{
+  id:'h156',
+  name:'Four Seasons Hotel Cairo at Nile Plaza',
+  destinationId:'Cairo',
+  location:'Cairo, Egypt',
+  images:[
+    '/images/hotels/h156/1.jpg',
+  ],
+  rating:4.9,
+  reviews:940,
+  pricePerNight:360,
+  description:'Ultra-luxury Nile-side hotel with spacious rooms, refined dining, and premium service in Garden City.',
+  amenities:['Pool','Spa','Restaurant','River Views','WiFi'],
+  type:'luxury',
+  stars:5,
 },
 {
   id:'h157',
@@ -4664,12 +4770,14 @@ export const rentals: Rental[] = [
     reviews: 94,
     pricePerNight: 620,
     description: 'Private beach villa on its own pristine stretch of white sand with direct ocean access, chef service, and personal snorkeling equipment.',
-    amenities: ['Private Beach', 'Chef', 'Pool', 'Water Sports', 'WiFi', 'Butler Service'],
-    type: 'villa',
-    bedrooms: 2,
-    bathrooms: 2,
-    maxGuests: 4,
-    host: 'Ibrahim & Aisha',
+  amenities: ['Private Beach', 'Chef', 'Pool', 'Water Sports', 'WiFi', 'Butler Service'],
+  type: 'villa',
+  bedrooms: 2,
+  bathrooms: 2,
+  maxGuests: 4,
+  host: 'Ibrahim & Aisha',
+  lat: 3.9411571,
+  lng: 73.489928,
   },
   {
   id: 'r7',

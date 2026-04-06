@@ -1,10 +1,29 @@
 export type TravelCategory = 'hotel' | 'rental' | 'activity' | 'restaurant' | 'stop';
 export type TravelDayMode = 'full-day' | 'food' | 'attractions' | 'mixed';
+export type TravelLayerType = 'destination' | 'hotel' | 'rental';
+
+export type TravelMapLocation = {
+  id: string;
+  type: TravelLayerType;
+  name: string;
+  lat: number;
+  lng: number;
+  price?: number;
+  rating?: number;
+  description?: string;
+  capacity?: number;
+  country?: string;
+  imageUrl?: string;
+  tags?: string[];
+  isApproximate?: boolean;
+};
 
 export type TravelPlace = {
   id: string;
   name: string;
   address?: string;
+  description?: string;
+  imageUrl?: string;
   lat: number;
   lng: number;
   category: TravelCategory;
@@ -13,6 +32,8 @@ export type TravelPlace = {
   tripId?: string;
   dayId?: string | null;
   price?: number;
+  rating?: number;
+  reviews?: number;
   isFavorite?: boolean;
 };
 

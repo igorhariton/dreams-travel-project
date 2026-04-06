@@ -16,6 +16,8 @@ const amenityIcons: Record<string, React.ReactNode> = {
   'Spa': <span>💆</span>,
 };
 
+const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
+
 // Renders children only when visible in viewport
 function LazyCard({ children, minHeight = 320 }: { children: React.ReactNode; minHeight?: number }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -44,7 +46,7 @@ export default function HotelsPage() {
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [destFilter, setDestFilter] = useState('all');
-  const [maxPrice, setMaxPrice] = useState(1000);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [minStars, setMinStars] = useState(0);
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc' | 'price_desc'>('rating');
   const [showFilters, setShowFilters] = useState(false);
@@ -54,28 +56,66 @@ export default function HotelsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [visibleCount, setVisibleCount] = useState(18);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const sliderMaxPrice = useMemo(
+    () => Math.max(1000, ...publicHotels.map((hotel) => Number(hotel.pricePerNight) || 0)),
+    [publicHotels],
+  );
+  const effectiveMaxPrice = maxPrice ?? sliderMaxPrice;
+
+  const destinationAliasToId = useMemo(() => {
+    const map = new Map<string, string>();
+    publicDestinations.forEach((destination) => {
+      map.set(normalizeText(destination.id), destination.id);
+      map.set(normalizeText(destination.name), destination.id);
+      map.set(normalizeText(destination.country), destination.id);
+    });
+    return map;
+  }, [publicDestinations]);
+
+  const resolveHotelDestinationId = useCallback(
+    (hotel: Hotel) => {
+      const fromId = destinationAliasToId.get(normalizeText(hotel.destinationId));
+      if (fromId) return fromId;
+
+      const normalizedLocation = normalizeText(hotel.location);
+      const fromLocation = publicDestinations.find((destination) => {
+        const destinationName = normalizeText(destination.name);
+        const destinationCountry = normalizeText(destination.country);
+        return (
+          (destinationName && normalizedLocation.includes(destinationName)) ||
+          (destinationCountry && normalizedLocation.includes(destinationCountry))
+        );
+      });
+      return fromLocation?.id || null;
+    },
+    [destinationAliasToId, publicDestinations],
+  );
 
   const filtered = useMemo(() => {
     const f = publicHotels.filter(h => {
-      const normalizedSearch = deferredSearch.toLowerCase();
+      const normalizedSearch = normalizeText(deferredSearch);
       const matchSearch = h.name.toLowerCase().includes(normalizedSearch) || h.location.toLowerCase().includes(normalizedSearch);
-      const matchDest = destFilter === 'all' || h.destinationId === destFilter;
-      const matchPrice = h.pricePerNight <= maxPrice;
+      const matchDest = destFilter === 'all' || resolveHotelDestinationId(h) === destFilter;
+      const matchPrice = h.pricePerNight <= effectiveMaxPrice;
       const matchStars = h.stars >= minStars;
       return matchSearch && matchDest && matchPrice && matchStars;
     });
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [publicHotels, deferredSearch, destFilter, maxPrice, minStars, sortBy]);
+  }, [publicHotels, deferredSearch, destFilter, effectiveMaxPrice, minStars, sortBy, resolveHotelDestinationId]);
 
   const pageSize = viewMode === 'grid' ? 18 : 12;
   const visibleHotels = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = visibleCount < filtered.length;
+  const destinationById = useMemo(
+    () => new Map(publicDestinations.map((destination) => [destination.id, destination])),
+    [publicDestinations],
+  );
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [pageSize, deferredSearch, destFilter, maxPrice, minStars, sortBy]);
+  }, [pageSize, deferredSearch, destFilter, effectiveMaxPrice, minStars, sortBy]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -100,6 +140,8 @@ export default function HotelsPage() {
   }, [isFavorite, addFavorite, removeFavorite]);
 
   const openHotelDetails = useCallback((hotel: Hotel) => {
+    const resolvedDestinationId = resolveHotelDestinationId(hotel) || hotel.destinationId;
+    const destination = destinationById.get(resolvedDestinationId);
     setActiveItem({
       id: hotel.id,
       kind: 'hotel',
@@ -113,10 +155,12 @@ export default function HotelsPage() {
       amenities: hotel.amenities,
       typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
       stars: hotel.stars,
+      lat: destination?.lat,
+      lng: destination?.lng,
     });
     setIsBookingOpen(false);
     setIsDetailsOpen(true);
-  }, []);
+  }, [destinationById, resolveHotelDestinationId]);
 
   const closeDetails = useCallback(() => {
     setIsDetailsOpen(false);
@@ -143,7 +187,7 @@ export default function HotelsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchPriority="high"
+          fetchpriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-blue-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
@@ -202,27 +246,36 @@ export default function HotelsPage() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <button onClick={() => setShowFilters(!showFilters)}
+            <button type="button" onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <SlidersHorizontal size={15} /> {t('common.filter')}
             </button>
             <div className="flex rounded-xl border border-gray-200 overflow-hidden">
-              <button onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>⊞</button>
-              <button onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>☰</button>
+              <button type="button" onClick={() => setViewMode('grid')} className={`px-3 py-2 text-sm ${viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>⊞</button>
+              <button type="button" onClick={() => setViewMode('list')} className={`px-3 py-2 text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>☰</button>
             </div>
           </div>
 
           {showFilters && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl grid grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">{translateDynamic('Max Price')}: {formatPrice(maxPrice)}/{t('common.per_night')}</label>
-                <input type="range" min={50} max={1000} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-blue-600" />
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  {translateDynamic('Max Price')}: {formatPrice(effectiveMaxPrice)}/{t('common.per_night')}
+                </label>
+                <input
+                  type="range"
+                  min={50}
+                  max={sliderMaxPrice}
+                  value={effectiveMaxPrice}
+                  onChange={e => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-blue-600"
+                />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">{translateDynamic('Min Stars')}</label>
                 <div className="flex gap-2">
                   {[0, 3, 4, 5].map(s => (
-                    <button key={s} onClick={() => setMinStars(s)}
+                    <button type="button" key={s} onClick={() => setMinStars(s)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${minStars === s ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
                       {s === 0 ? translateDynamic('Any') : `${s}★`}
                     </button>
@@ -252,7 +305,7 @@ export default function HotelsPage() {
                         {translateDynamic(hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1))}
                       </span>
                     </div>
-                    <button onClick={e => handleFavoriteHotel(e, hotel)}
+                    <button type="button" onClick={e => handleFavoriteHotel(e, hotel)}
                       className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                       {isFavorite(hotel.id) ? '❤️' : '🤍'}
                     </button>
@@ -284,6 +337,7 @@ export default function HotelsPage() {
                       ))}
                     </div>
                     <button
+                      type="button"
                       onClick={() => openHotelDetails(hotel)}
                       className="mt-auto w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                       {t('common.view_details')}
@@ -328,11 +382,12 @@ export default function HotelsPage() {
                       </div>
                     </div>
                     <div className="flex gap-3 mt-4">
-                      <button onClick={e => handleFavoriteHotel(e, hotel)}
+                      <button type="button" onClick={e => handleFavoriteHotel(e, hotel)}
                         className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${isFavorite(hotel.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
                         {isFavorite(hotel.id) ? `❤️ ${translateDynamic('Saved')}` : `🤍 ${t('common.save')}`}
                       </button>
                       <button
+                        type="button"
                         onClick={() => openHotelDetails(hotel)}
                         className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                         {t('common.view_details')}
@@ -359,6 +414,7 @@ export default function HotelsPage() {
         item={activeItem}
         onClose={closeDetails}
         onReserve={startBooking}
+        forceTheme="light"
       />
       <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>

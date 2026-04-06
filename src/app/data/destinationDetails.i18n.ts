@@ -544,6 +544,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "culture": "",
       "cuisine": ""
     },
+    "h139": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h140": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h141": {
+      "culture": "",
+      "cuisine": ""
+    },
     "h142": {
       "culture": "",
       "cuisine": ""
@@ -589,6 +601,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": ""
     },
     "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h154": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h155": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h156": {
       "culture": "",
       "cuisine": ""
     },
@@ -1198,6 +1222,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "culture": "",
       "cuisine": ""
     },
+    "h139": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h140": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h141": {
+      "culture": "",
+      "cuisine": ""
+    },
     "h142": {
       "culture": "",
       "cuisine": ""
@@ -1243,6 +1279,18 @@ export const destinationDetailsI18n: Record<'ro' | 'ru', Record<string, { cultur
       "cuisine": ""
     },
     "h153": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h154": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h155": {
+      "culture": "",
+      "cuisine": ""
+    },
+    "h156": {
       "culture": "",
       "cuisine": ""
     },

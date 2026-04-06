@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel, Home as HomeIcon, Globe2 } from 'lucide-react';
+import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel as HotelIcon, Home as HomeIcon, Globe2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { BookingModal } from '../components/BookingModal';
-import type { Hotel, Rental } from '../data/travelData';
+import type { Hotel as HotelItem, Rental as RentalItem } from '../data/travelData';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 
 const typeConfig = {
   destination: { icon: <Globe2 size={14} />, color: 'bg-blue-100 text-blue-700', labelKey: 'favorites.type.destination' },
-  hotel: { icon: <Hotel size={14} />, color: 'bg-purple-100 text-purple-700', labelKey: 'favorites.type.hotel' },
+  hotel: { icon: <HotelIcon size={14} />, color: 'bg-purple-100 text-purple-700', labelKey: 'favorites.type.hotel' },
   rental: { icon: <HomeIcon size={14} />, color: 'bg-emerald-100 text-emerald-700', labelKey: 'favorites.type.rental' },
 };
 
 export default function FavoritesPage() {
-  const { t, translateDynamic, favorites, removeFavorite, formatPrice, publicHotels, publicRentals } = useApp();
+  const { t, translateDynamic, favorites, removeFavorite, formatPrice, publicHotels, publicRentals, publicDestinations } = useApp();
   const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   const filtered = filter === 'all' ? favorites : favorites.filter(f => f.type === filter);
+  const destinationById = new Map(publicDestinations.map((destination) => [destination.id, destination]));
 
   const openSavedListing = (id: string, type: 'hotel' | 'rental') => {
     if (type === 'hotel') {
-      const hotel = publicHotels.find((entry: Hotel) => entry.id === id);
+      const hotel = publicHotels.find((entry: HotelItem) => entry.id === id);
       if (!hotel) return;
+      const destination = destinationById.get(hotel.destinationId);
       setActiveItem({
         id: hotel.id,
         kind: 'hotel',
@@ -39,10 +41,13 @@ export default function FavoritesPage() {
         amenities: hotel.amenities,
         typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
         stars: hotel.stars,
+        lat: destination?.lat,
+        lng: destination?.lng,
       });
     } else {
-      const rental = publicRentals.find((entry: Rental) => entry.id === id);
+      const rental = publicRentals.find((entry: RentalItem) => entry.id === id);
       if (!rental) return;
+      const destination = destinationById.get(rental.destinationId);
       setActiveItem({
         id: rental.id,
         kind: 'rental',
@@ -59,6 +64,8 @@ export default function FavoritesPage() {
         bedrooms: rental.bedrooms,
         bathrooms: rental.bathrooms,
         maxGuests: rental.maxGuests,
+        lat: destination?.lat,
+        lng: destination?.lng,
       });
     }
 

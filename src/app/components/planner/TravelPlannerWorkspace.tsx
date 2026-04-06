@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, CalendarRange, PiggyBank, Sparkles } from 'lucide-react';
+import { CalendarDays, CalendarRange, Maximize2, Minimize2, PiggyBank, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { useApp } from '../../context/AppContext';
 import { useTravelPlanner } from '../../hooks/useTravelPlanner';
@@ -15,6 +15,7 @@ import { DayCard } from '../days/DayCard';
 import { QuickActions } from '../sidebar/QuickActions';
 import { StayFavorites } from '../sidebar/StayFavorites';
 import type { TravelCategory, TravelDayMode } from '../../types/travel';
+import { hasValidCoordinates } from '../../utils/travelFilters';
 
 const suggestModes: TravelDayMode[] = ['full-day', 'food', 'attractions', 'mixed'];
 
@@ -100,6 +101,57 @@ export default function TravelPlannerWorkspace() {
   const { formatPrice, theme, t, translateDynamic } = useApp();
   const isDark = theme === 'dark';
   const planner = useTravelPlanner();
+  const [isMapFullscreen, setIsMapFullscreen] = React.useState(false);
+  const mapSectionRef = React.useRef<HTMLElement | null>(null);
+  const visibleMapPlaces = React.useMemo(
+    () => planner.filteredPlaces.filter(hasValidCoordinates),
+    [planner.filteredPlaces],
+  );
+  const totalMapPlaces = React.useMemo(
+    () => planner.allPlaces.filter(hasValidCoordinates),
+    [planner.allPlaces],
+  );
+  const visibleCategoryCounts = React.useMemo<Record<TravelCategory, number>>(() => {
+    const counts: Record<TravelCategory, number> = {
+      hotel: 0,
+      rental: 0,
+      activity: 0,
+      restaurant: 0,
+      stop: 0,
+    };
+
+    for (const place of visibleMapPlaces) {
+      counts[place.category] += 1;
+    }
+
+    return counts;
+  }, [visibleMapPlaces]);
+
+  React.useEffect(() => {
+    const categoryTotal = Object.values(visibleCategoryCounts).reduce((sum, count) => sum + count, 0);
+    if (categoryTotal !== visibleMapPlaces.length) {
+      console.warn('[planner-map] category counts mismatch', {
+        visiblePlaces: visibleMapPlaces.length,
+        categoryTotal,
+        visibleCategoryCounts,
+      });
+    }
+  }, [visibleCategoryCounts, visibleMapPlaces.length]);
+
+  React.useEffect(() => {
+    if (!isMapFullscreen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMapFullscreen]);
+
+  const toggleMapFullscreen = () => {
+    setIsMapFullscreen((prev) => !prev);
+  };
 
   const activeDayId = planner.activeDay?.id || '';
   const activeTripOptions = planner.filterOptions.trips
@@ -283,13 +335,24 @@ export default function TravelPlannerWorkspace() {
 
           <main className="space-y-4 xl:col-span-8">
             <section
-              className={`rounded-2xl border p-4 shadow-sm xl:sticky xl:top-20 xl:z-10 ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+              ref={mapSectionRef}
+              className={`rounded-2xl border p-4 shadow-sm ${
+                isDark ? 'bg-slate-800' : 'bg-white'
+              } ${isMapFullscreen ? 'fixed inset-4 z-[80] overflow-auto shadow-[0_30px_80px_rgba(15,23,42,0.28)]' : 'xl:sticky xl:top-20 xl:z-10'}`}
               style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
             >
-              <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.map_preview')}</h2>
-              <p className={`mb-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
-                {t('planner.map_sync_hint')}
-              </p>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.map_preview')}</h2>
+                  <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {t('planner.map_sync_hint')}
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={toggleMapFullscreen} className="shrink-0">
+                  {isMapFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  {isMapFullscreen ? 'Exit full screen' : 'Full screen'}
+                </Button>
+              </div>
               <MapFilters
                 filters={planner.filters}
                 options={planner.filterOptions}
@@ -300,14 +363,20 @@ export default function TravelPlannerWorkspace() {
               />
               <div className="mt-3">
                 <TripMap
-                  places={planner.filteredPlaces}
+                  places={visibleMapPlaces}
                   selectedPlaceId={planner.selectedPlaceId}
                   focusedPlaceId={planner.mapController.focusedPlaceId}
                   focusNonce={planner.mapController.focusNonce}
                   onPlaceSelect={planner.selectPlaceFromMap}
+                  sizeInvalidateKey={isMapFullscreen}
+                  height={isMapFullscreen ? 'calc(100vh - 18rem)' : 330}
                 />
               </div>
-              <MapLegend showing={planner.filteredPlaces.length} total={planner.allPlaces.length} />
+              <MapLegend
+                showing={visibleMapPlaces.length}
+                total={totalMapPlaces.length}
+                categoryCounts={visibleCategoryCounts}
+              />
             </section>
 
             <section className="space-y-3">

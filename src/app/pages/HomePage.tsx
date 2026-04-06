@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map, Shield, Clock } from 'lucide-react';
+import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map as MapIcon, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import type { Hotel as HotelItem } from '../data/travelData';
@@ -50,6 +50,10 @@ export default function HomePage() {
 
   const featuredDestinations = useMemo(() => publicDestinations.slice(0, 4), [publicDestinations]);
   const featuredHotels = useMemo(() => publicHotels.slice(0, 3), [publicHotels]);
+  const destinationById = useMemo(
+    () => new Map(publicDestinations.map((destination) => [destination.id, destination])),
+    [publicDestinations],
+  );
   const heroSrc = useMemo(() => (theme === 'dark' ? '/TravelHero_Dark.html' : '/TravelHero_Light.html'), [theme]);
   const heroOverlayStyle = useMemo<React.CSSProperties>(
     () => ({
@@ -73,7 +77,7 @@ export default function HomePage() {
       : '0.0';
 
     return [
-      { value: `${new Set(publicDestinations.map((item) => item.country)).size}+`, label: 'Countries', icon: <Map size={20} /> },
+      { value: `${new Set(publicDestinations.map((item) => item.country)).size}+`, label: 'Countries', icon: <MapIcon size={20} /> },
       { value: `${publicHotels.length}+`, label: 'Hotels', icon: <Hotel size={20} /> },
       { value: `${Math.max(1, Math.round(avgRatingSource.reduce((sum, item) => sum + item.reviews, 0) / 120)).toLocaleString()}K+`, label: 'Happy Travelers', icon: <Users size={20} /> },
       { value: `${avgRating}★`, label: 'Average Rating', icon: <Star size={20} /> },
@@ -208,6 +212,7 @@ export default function HomePage() {
   }, [language, postLanguageToHero]);
 
   const openHotelDetails = (hotel: HotelItem) => {
+    const destination = destinationById.get(hotel.destinationId);
     setActiveItem({
       id: hotel.id,
       kind: 'hotel',
@@ -221,6 +226,8 @@ export default function HomePage() {
       amenities: hotel.amenities,
       typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
       stars: hotel.stars,
+      lat: destination?.lat,
+      lng: destination?.lng,
     });
     setIsBookingOpen(false);
     setIsDetailsOpen(true);
@@ -420,7 +427,7 @@ export default function HomePage() {
                     alt={item.name}
                     loading="lazy"
                     decoding="async"
-                    fetchPriority="low"
+                fetchpriority="low"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -565,7 +572,7 @@ export default function HomePage() {
       {/* CTA Banner */}
       <section className="relative py-20 overflow-hidden" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="absolute inset-0">
-          <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
+              <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchpriority="low" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-cyan-900/80" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
@@ -576,7 +583,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/planner" className="inline-flex items-center gap-2 bg-white text-blue-700 px-8 py-3.5 rounded-xl font-bold hover:bg-blue-50 transition-all shadow-lg">
-                <Map size={18} /> {t('nav.planner')}
+                <MapIcon size={18} /> {t('nav.planner')}
               </Link>
               <Link to="/destinations" className="inline-flex items-center gap-2 border-2 border-white/40 text-white px-8 py-3.5 rounded-xl font-bold hover:bg-white/10 transition-all">
                 {t('hero.explore')} <ArrowRight size={18} />

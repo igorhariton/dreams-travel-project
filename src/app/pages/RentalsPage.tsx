@@ -39,11 +39,11 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 }
 
 export default function RentalsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicRentals } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicRentals, publicDestinations } = useApp();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [maxPrice, setMaxPrice] = useState(700);
+  const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [minGuests, setMinGuests] = useState(1);
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc' | 'price_desc'>('rating');
   const [showFilters, setShowFilters] = useState(false);
@@ -52,6 +52,11 @@ export default function RentalsPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(18);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const sliderMaxPrice = useMemo(
+    () => Math.max(700, ...publicRentals.map((rental) => Number(rental.pricePerNight) || 0)),
+    [publicRentals],
+  );
+  const effectiveMaxPrice = maxPrice ?? sliderMaxPrice;
 
   const typeCounts = useMemo(() => ({
     all: publicRentals.length,
@@ -66,22 +71,26 @@ export default function RentalsPage() {
       const normalizedSearch = deferredSearch.toLowerCase();
       const matchSearch = r.name.toLowerCase().includes(normalizedSearch) || r.location.toLowerCase().includes(normalizedSearch);
       const matchType = typeFilter === 'all' || r.type === typeFilter;
-      const matchPrice = r.pricePerNight <= maxPrice;
+      const matchPrice = r.pricePerNight <= effectiveMaxPrice;
       const matchGuests = r.maxGuests >= minGuests;
       return matchSearch && matchType && matchPrice && matchGuests;
     });
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [publicRentals, deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
+  }, [publicRentals, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
 
   const pageSize = 18;
   const visibleRentals = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const hasMore = visibleCount < filtered.length;
+  const destinationById = useMemo(
+    () => new Map(publicDestinations.map((destination) => [destination.id, destination])),
+    [publicDestinations],
+  );
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [pageSize, deferredSearch, typeFilter, maxPrice, minGuests, sortBy]);
+  }, [pageSize, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
 
   useEffect(() => {
     const node = loadMoreRef.current;
@@ -106,6 +115,7 @@ export default function RentalsPage() {
   }, [isFavorite, addFavorite, removeFavorite]);
 
   const openRentalDetails = useCallback((rental: Rental) => {
+    const destination = destinationById.get(rental.destinationId);
     setActiveItem({
       id: rental.id,
       kind: 'rental',
@@ -122,10 +132,12 @@ export default function RentalsPage() {
       bedrooms: rental.bedrooms,
       bathrooms: rental.bathrooms,
       maxGuests: rental.maxGuests,
+      lat: destination?.lat,
+      lng: destination?.lng,
     });
     setIsBookingOpen(false);
     setIsDetailsOpen(true);
-  }, []);
+  }, [destinationById]);
 
   const closeDetails = useCallback(() => {
     setIsDetailsOpen(false);
@@ -152,7 +164,7 @@ export default function RentalsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchPriority="high"
+          fetchpriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/80 to-emerald-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
@@ -172,7 +184,7 @@ export default function RentalsPage() {
               { value: 'traditional', label: 'Traditional', icon: '🌿', count: typeCounts.traditional },
               { value: 'chalet', label: 'Chalets', icon: '⛰️', count: typeCounts.chalet },
             ] as const).map(type => (
-              <button key={type.value} onClick={() => setTypeFilter(type.value)}
+              <button type="button" key={type.value} onClick={() => setTypeFilter(type.value)}
                 className={`shrink-0 flex items-center gap-3 px-5 py-3 rounded-xl border-2 transition-all ${typeFilter === type.value ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200 hover:border-gray-300'}`}>
                 <span className="text-xl">{type.icon}</span>
                 <div className="text-left">
@@ -214,7 +226,7 @@ export default function RentalsPage() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <button onClick={() => setShowFilters(!showFilters)}
+            <button type="button" onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${showFilters ? 'bg-emerald-600 text-white border-emerald-600' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
               <SlidersHorizontal size={15} /> {translateDynamic('Filters')}
             </button>
@@ -223,14 +235,23 @@ export default function RentalsPage() {
           {showFilters && (
             <div className="mt-4 p-4 bg-gray-50 rounded-xl grid grid-cols-2 gap-6">
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-2 block">{translateDynamic('Max Price')}: {formatPrice(maxPrice)}/{t('common.per_night')}</label>
-                <input type="range" min={50} max={700} value={maxPrice} onChange={e => setMaxPrice(Number(e.target.value))} className="w-full accent-emerald-600" />
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  {translateDynamic('Max Price')}: {formatPrice(effectiveMaxPrice)}/{t('common.per_night')}
+                </label>
+                <input
+                  type="range"
+                  min={50}
+                  max={sliderMaxPrice}
+                  value={effectiveMaxPrice}
+                  onChange={e => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-emerald-600"
+                />
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">{translateDynamic('Min. Guests Capacity')}</label>
                 <div className="flex gap-2">
                   {[1, 2, 4, 6, 8].map(g => (
-                    <button key={g} onClick={() => setMinGuests(g)}
+                    <button type="button" key={g} onClick={() => setMinGuests(g)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${minGuests === g ? 'bg-emerald-600 text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
                       {g}+
                     </button>
@@ -259,7 +280,7 @@ export default function RentalsPage() {
                       {typeConfig[rental.type].icon} {translateDynamic(typeConfig[rental.type].label)}
                     </span>
                   </div>
-                  <button onClick={e => handleFavorite(e, rental)}
+                  <button type="button" onClick={e => handleFavorite(e, rental)}
                     className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                     {isFavorite(rental.id) ? '❤️' : '🤍'}
                   </button>
@@ -306,6 +327,7 @@ export default function RentalsPage() {
                   </div>
 
                   <button
+                    type="button"
                     onClick={() => openRentalDetails(rental)}
                     className="mt-auto w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                     {t('common.view_details')}
@@ -330,6 +352,7 @@ export default function RentalsPage() {
         item={activeItem}
         onClose={closeDetails}
         onReserve={startBooking}
+        forceTheme="light"
       />
       <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>

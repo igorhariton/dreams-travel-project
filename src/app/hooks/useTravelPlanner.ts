@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Destination, Hotel, Rental } from '../data/travelData';
 import { useMapController } from './useMapController';
@@ -35,6 +35,46 @@ const addDays = (isoDate: string, days: number) => {
 
 const toTitle = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 const cleanWords = (value: string) => value.split(',').map((entry) => entry.trim()).filter(Boolean);
+const normalizeLookup = (value?: string) =>
+  (value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+const compactLookup = (value: string) => value.replace(/\s+/g, '');
+const splitAliases = (value: string) =>
+  value
+    .replace(/\s*&\s*/g, '|')
+    .replace(/\s*\/\s*/g, '|')
+    .replace(/\s*-\s*/g, '|')
+    .replace(/\s*,\s*/g, '|')
+    .replace(/\s+and\s+/gi, '|')
+    .split('|')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+const hasValidLatLng = (lat?: number, lng?: number) =>
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  (lat as number) >= -90 &&
+  (lat as number) <= 90 &&
+  (lng as number) >= -180 &&
+  (lng as number) <= 180;
+
+const uniquePlacesById = (places: TravelPlace[]) => {
+  const seen = new Set<string>();
+  return places.filter((place) => {
+    if (seen.has(place.id)) return false;
+    seen.add(place.id);
+    return true;
+  });
+};
+
+const relabelTripDays = (days: TravelDay[]) =>
+  days.map((day, index) => ({
+    ...day,
+    title: `Day ${index + 1}`,
+  }));
 
 let uid = 0;
 const makeId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(uid += 1).toString(36)}`;
@@ -79,49 +119,175 @@ const buildTripsFromTravelData = (
   hotels: Hotel[],
   rentals: Rental[],
 ): TravelTrip[] => {
+  const aliasOwner = new Map<string, string | null>();
+  const destinationAliases = new Map<string, string[]>();
+  const countryDestinationIndex = new Map<string, string[]>();
+
+  const registerAlias = (destinationId: string, alias: string) => {
+    const normalizedAlias = normalizeLookup(alias);
+    if (normalizedAlias.length < 3) return;
+
+    const compactAlias = compactLookup(normalizedAlias);
+    const currentOwner = aliasOwner.get(normalizedAlias);
+    if (currentOwner === undefined) aliasOwner.set(normalizedAlias, destinationId);
+    else if (currentOwner !== destinationId) aliasOwner.set(normalizedAlias, null);
+
+    const currentCompactOwner = aliasOwner.get(compactAlias);
+    if (currentCompactOwner === undefined) aliasOwner.set(compactAlias, destinationId);
+    else if (currentCompactOwner !== destinationId) aliasOwner.set(compactAlias, null);
+  };
+
+  destinations.forEach((destination) => {
+    const rawAliases = new Set<string>([
+      destination.id,
+      destination.id.replace(/[_-]+/g, ' '),
+      destination.name,
+      destination.country,
+      ...splitAliases(destination.name),
+      ...splitAliases(destination.id.replace(/[_-]+/g, ' ')),
+    ]);
+
+    const nameWords = destination.name
+      .replace(/[^a-z0-9\s]/gi, ' ')
+      .split(/\s+/)
+      .map((word) => word.trim())
+      .filter((word) => word.length >= 3);
+    if (nameWords.length >= 2) rawAliases.add(`${nameWords[0]} ${nameWords[1]}`);
+    if (nameWords.length >= 3) rawAliases.add(`${nameWords[0]} ${nameWords[1]} ${nameWords[2]}`);
+
+    const normalizedAliases = Array.from(
+      new Set(
+        Array.from(rawAliases)
+          .map((alias) => normalizeLookup(alias))
+          .filter((alias) => alias.length >= 3),
+      ),
+    );
+    destinationAliases.set(destination.id, normalizedAliases);
+    normalizedAliases.forEach((alias) => registerAlias(destination.id, alias));
+
+    const countryKey = normalizeLookup(destination.country);
+    if (countryKey) {
+      const existing = countryDestinationIndex.get(countryKey) || [];
+      countryDestinationIndex.set(countryKey, [...existing, destination.id]);
+    }
+  });
+
+  const resolveListingDestinationId = (rawDestinationId?: string, rawLocation?: string) => {
+    const candidates = [normalizeLookup(rawDestinationId), normalizeLookup(rawLocation)].filter(
+      (candidate) => candidate.length > 0,
+    );
+    if (!candidates.length) return null;
+
+    for (const candidate of candidates) {
+      const exact = aliasOwner.get(candidate);
+      if (exact) return exact;
+      const compactExact = aliasOwner.get(compactLookup(candidate));
+      if (compactExact) return compactExact;
+    }
+
+    let bestMatch: { destinationId: string; score: number } | null = null;
+    for (const [destinationId, aliases] of destinationAliases.entries()) {
+      let score = 0;
+      for (const candidate of candidates) {
+        for (const alias of aliases) {
+          if (alias.length < 4) continue;
+          if (candidate.includes(alias)) {
+            score = Math.max(score, alias.length);
+          }
+        }
+      }
+      if (score > (bestMatch?.score || 0)) {
+        bestMatch = { destinationId, score };
+      }
+    }
+    if (bestMatch && bestMatch.score >= 4) return bestMatch.destinationId;
+
+    for (const candidate of candidates) {
+      for (const [countryKey, destinationIds] of countryDestinationIndex.entries()) {
+        if (!countryKey || destinationIds.length !== 1) continue;
+        if (candidate.includes(countryKey)) {
+          return destinationIds[0];
+        }
+      }
+    }
+
+    return null;
+  };
+
+  const hotelsByDestinationId = new Map<string, Hotel[]>();
+  hotels.forEach((hotel) => {
+    const resolvedDestinationId = resolveListingDestinationId(hotel.destinationId, hotel.location);
+    if (!resolvedDestinationId) return;
+    const scopedHotels = hotelsByDestinationId.get(resolvedDestinationId) || [];
+    hotelsByDestinationId.set(resolvedDestinationId, [...scopedHotels, hotel]);
+  });
+
+  const rentalsByDestinationId = new Map<string, Rental[]>();
+  rentals.forEach((rental) => {
+    const resolvedDestinationId = resolveListingDestinationId(rental.destinationId, rental.location);
+    if (!resolvedDestinationId) return;
+    const scopedRentals = rentalsByDestinationId.get(resolvedDestinationId) || [];
+    rentalsByDestinationId.set(resolvedDestinationId, [...scopedRentals, rental]);
+  });
+
   const baseStart = todayIso();
 
   return destinations.map((destination, index) => {
     const tripId = `trip-${destination.id}`;
     const city = destination.name;
     const country = destination.country;
+    const destinationHeroImage = destination.images[0];
 
-    const hotelPlaces: TravelPlace[] = hotels
-      .filter((hotel) => hotel.destinationId === destination.id)
-      .map((hotel) => ({
+    const hotelPlaces: TravelPlace[] = (hotelsByDestinationId.get(destination.id) || []).map((hotel) => {
+      const lat = hasValidLatLng(hotel.lat, hotel.lng) ? (hotel.lat as number) : destination.lat;
+      const lng = hasValidLatLng(hotel.lat, hotel.lng) ? (hotel.lng as number) : destination.lng;
+      return {
         id: `place-hotel-${hotel.id}`,
         name: hotel.name,
         address: hotel.location,
-        lat: destination.lat,
-        lng: destination.lng,
+        description: hotel.description,
+        imageUrl: hotel.images[0] || destinationHeroImage,
+        lat,
+        lng,
         category: 'hotel',
         city,
         country,
         tripId,
         price: hotel.pricePerNight,
+        rating: hotel.rating,
+        reviews: hotel.reviews,
         isFavorite: false,
-      }));
+      };
+    });
 
-    const rentalPlaces: TravelPlace[] = rentals
-      .filter((rental) => rental.destinationId === destination.id)
-      .map((rental) => ({
+    const rentalPlaces: TravelPlace[] = (rentalsByDestinationId.get(destination.id) || []).map((rental) => {
+      const lat = hasValidLatLng(rental.lat, rental.lng) ? (rental.lat as number) : destination.lat;
+      const lng = hasValidLatLng(rental.lat, rental.lng) ? (rental.lng as number) : destination.lng;
+      return {
         id: `place-rental-${rental.id}`,
         name: rental.name,
         address: rental.location,
-        lat: destination.lat,
-        lng: destination.lng,
+        description: rental.description,
+        imageUrl: rental.images[0] || destinationHeroImage,
+        lat,
+        lng,
         category: 'rental',
         city,
         country,
         tripId,
         price: rental.pricePerNight,
+        rating: rental.rating,
+        reviews: rental.reviews,
         isFavorite: false,
-      }));
+      };
+    });
 
     const activityPlaces: TravelPlace[] = destination.mustVisit.map((name, nameIndex) => ({
       id: `place-activity-${destination.id}-${nameIndex}`,
       name,
       address: `${name}, ${city}, ${country}`,
+      description: `Explore ${name} in ${city}.`,
+      imageUrl: destinationHeroImage,
       lat: destination.lat,
       lng: destination.lng,
       category: 'activity',
@@ -138,6 +304,8 @@ const buildTripsFromTravelData = (
         id: `place-restaurant-${destination.id}-${dishIndex}`,
         name: `${toTitle(dish)} spot`,
         address: `${city}, ${country}`,
+        description: `Popular ${dish.toLowerCase()} cuisine stop in ${city}.`,
+        imageUrl: destinationHeroImage,
         lat: destination.lat,
         lng: destination.lng,
         category: 'restaurant',
@@ -153,6 +321,8 @@ const buildTripsFromTravelData = (
         id: `place-stop-${destination.id}-center`,
         name: `${city} city center`,
         address: `${city}, ${country}`,
+        description: `Central stop in ${city}.`,
+        imageUrl: destinationHeroImage,
         lat: destination.lat,
         lng: destination.lng,
         category: 'stop',
@@ -166,6 +336,8 @@ const buildTripsFromTravelData = (
         id: `place-stop-${destination.id}-oldtown`,
         name: `${city} old town`,
         address: `${city}, ${country}`,
+        description: `Historic old town area in ${city}.`,
+        imageUrl: destinationHeroImage,
         lat: destination.lat,
         lng: destination.lng,
         category: 'stop',
@@ -214,9 +386,6 @@ export const useTravelPlanner = () => {
   const [activeDayId, setActiveDayId] = useState(defaultDay?.id || '');
   const [filters, setFilters] = useState<TravelFilters>({
     ...DEFAULT_FILTERS,
-    tripId: defaultTrip?.id || 'all',
-    country: defaultTrip?.country || 'all',
-    city: defaultTrip?.destination || 'all',
   });
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [activeSuggestMode, setActiveSuggestMode] = useState<TravelDayMode>('full-day');
@@ -234,13 +403,14 @@ export const useTravelPlanner = () => {
     const index = new Map<string, string>();
     trips.forEach((trip) => {
       trip.places.forEach((place) => {
-        index.set(place.id, trip.id);
+        if (!index.has(place.id)) index.set(place.id, trip.id);
       });
     });
     return index;
   }, [trips]);
-  const filteredPlaces = useMemo(() => applyTravelFilters(allPlaces, filters), [allPlaces, filters]);
-  const filterOptions = useMemo(() => buildTravelFilterOptions(trips, allPlaces, filters), [trips, allPlaces, filters]);
+  const dedupedAllPlaces = useMemo(() => uniquePlacesById(allPlaces), [allPlaces]);
+  const filteredPlaces = useMemo(() => applyTravelFilters(dedupedAllPlaces, filters), [dedupedAllPlaces, filters]);
+  const filterOptions = useMemo(() => buildTravelFilterOptions(trips, dedupedAllPlaces, filters), [trips, dedupedAllPlaces, filters]);
   const budget = useMemo(() => (activeTrip ? calculateTripBudget(activeTrip) : null), [activeTrip]);
 
   const updateTrip = useCallback(
@@ -279,39 +449,49 @@ export const useTravelPlanner = () => {
   const setTripFilter = useCallback(
     (tripId: string) => {
       const scopedTrip = tripId === 'all' ? null : trips.find((trip) => trip.id === tripId) || null;
-      setFilters((prev) => ({
-        ...prev,
-        tripId,
-        country: scopedTrip?.country || 'all',
-        city: scopedTrip?.destination || 'all',
-      }));
+      startTransition(() => {
+        setFilters((prev) => ({
+          ...prev,
+          tripId,
+          country: scopedTrip?.country || 'all',
+          city: scopedTrip?.destination || 'all',
+        }));
 
-      if (!scopedTrip) return;
-      setActiveTripId(scopedTrip.id);
-      setActiveDayId(scopedTrip.days[0]?.id || '');
+        if (!scopedTrip) return;
+        setActiveTripId(scopedTrip.id);
+        setActiveDayId(scopedTrip.days[0]?.id || '');
+      });
     },
     [trips],
   );
 
   const setCountryFilter = useCallback((country: string) => {
-    setFilters((prev) => ({ ...prev, country, city: 'all' }));
+    startTransition(() => {
+      setFilters((prev) => ({ ...prev, country, city: 'all' }));
+    });
   }, []);
 
   const setCityFilter = useCallback((city: string) => {
-    setFilters((prev) => ({ ...prev, city }));
+    startTransition(() => {
+      setFilters((prev) => ({ ...prev, city }));
+    });
   }, []);
 
   const setCategoryFilter = useCallback((category: TravelFilters['category']) => {
-    setFilters((prev) => ({ ...prev, category }));
+    startTransition(() => {
+      setFilters((prev) => ({ ...prev, category }));
+    });
   }, []);
 
   const selectDay = useCallback(
     (dayId: string) => {
       const tripId = findTripIdByDayId(dayId);
-      if (tripId && tripId !== activeTripId) {
-        setActiveTripId(tripId);
-      }
-      setActiveDayId(dayId);
+      startTransition(() => {
+        if (tripId && tripId !== activeTripId) {
+          setActiveTripId(tripId);
+        }
+        setActiveDayId(dayId);
+      });
     },
     [activeTripId, findTripIdByDayId],
   );
@@ -323,9 +503,11 @@ export const useTravelPlanner = () => {
       const tripId = placeTripIndex.get(placeId) || activeTripId;
       const scopedTrip = trips.find((trip) => trip.id === tripId);
       if (!scopedTrip) return;
-      if (tripId && tripId !== activeTripId) setActiveTripId(tripId);
       const dayWithPlace = scopedTrip.days.find((day) => day.places.some((place) => place.id === placeId));
-      if (dayWithPlace) setActiveDayId(dayWithPlace.id);
+      startTransition(() => {
+        if (tripId && tripId !== activeTripId) setActiveTripId(tripId);
+        if (dayWithPlace) setActiveDayId(dayWithPlace.id);
+      });
     },
     [activeTripId, mapController, placeTripIndex, trips],
   );
@@ -333,21 +515,16 @@ export const useTravelPlanner = () => {
   const selectPlaceFromMap = useCallback(
     (placeId: string) => {
       setSelectedPlaceId(placeId);
-      const tripId = placeTripIndex.get(placeId) || activeTripId;
-      const scopedTrip = trips.find((trip) => trip.id === tripId);
-      if (!scopedTrip) return;
-      if (tripId && tripId !== activeTripId) setActiveTripId(tripId);
-      const dayWithPlace = scopedTrip.days.find((day) => day.places.some((place) => place.id === placeId));
-      if (dayWithPlace) setActiveDayId(dayWithPlace.id);
+      mapController.focusPlace(placeId);
     },
-    [activeTripId, placeTripIndex, trips],
+    [mapController],
   );
 
   const addDay = useCallback(() => {
     if (!activeTrip) return;
     const newDayId = makeId('day');
     const previousDay = activeTrip.days[activeTrip.days.length - 1];
-    const nextDate = addDays(previousDay?.date || activeTrip.startDate || todayIso(), 1);
+    const nextDate = previousDay ? addDays(previousDay.date, 1) : activeTrip.startDate || todayIso();
 
     updateActiveTrip((trip) => ({
       ...trip,
@@ -364,19 +541,42 @@ export const useTravelPlanner = () => {
         },
       ],
     }));
-    setActiveDayId(newDayId);
+    startTransition(() => {
+      setActiveDayId(newDayId);
+    });
   }, [activeTrip, updateActiveTrip]);
 
   const clearDay = useCallback(
     (dayId: string) => {
       const tripId = findTripIdByDayId(dayId);
       if (!tripId) return;
-      updateTrip(tripId, (trip) => ({
-        ...trip,
-        days: trip.days.map((day) => (day.id === dayId ? { ...day, places: [] } : day)),
-      }));
+      updateTrip(tripId, (trip) => {
+        const remainingDays = trip.days.filter((day) => day.id !== dayId);
+        if (!remainingDays.length) {
+          return {
+            ...trip,
+            days: [],
+            endDate: trip.startDate || trip.endDate,
+          };
+        }
+
+        const normalizedDays = relabelTripDays(remainingDays);
+        return {
+          ...trip,
+          days: normalizedDays,
+          endDate: normalizedDays[normalizedDays.length - 1]?.date || trip.endDate,
+        };
+      });
+
+      if (activeDayId === dayId) {
+        const trip = trips.find((entry) => entry.id === tripId);
+        const remainingDays = trip?.days.filter((day) => day.id !== dayId) || [];
+        startTransition(() => {
+          setActiveDayId(remainingDays[0]?.id || '');
+        });
+      }
     },
-    [findTripIdByDayId, updateTrip],
+    [activeDayId, findTripIdByDayId, trips, updateTrip],
   );
 
   const duplicateDay = useCallback(
@@ -403,8 +603,10 @@ export const useTravelPlanner = () => {
         return { ...trip, days: nextDays, endDate: nextDays[nextDays.length - 1]?.date || trip.endDate };
       });
 
-      if (tripId !== activeTripId) setActiveTripId(tripId);
-      setActiveDayId(duplicatedId);
+      startTransition(() => {
+        if (tripId !== activeTripId) setActiveTripId(tripId);
+        setActiveDayId(duplicatedId);
+      });
     },
     [activeTripId, findTripIdByDayId, trips, updateTrip],
   );
@@ -440,8 +642,10 @@ export const useTravelPlanner = () => {
         }),
       }));
 
-      if (tripId !== activeTripId) setActiveTripId(tripId);
-      setActiveDayId(dayId);
+      startTransition(() => {
+        if (tripId !== activeTripId) setActiveTripId(tripId);
+        setActiveDayId(dayId);
+      });
       setSelectedPlaceId(placeId);
       mapController.focusPlace(placeId);
     },
@@ -557,13 +761,11 @@ export const useTravelPlanner = () => {
     return new Set(activeDay.places.map((place) => place.id));
   }, [activeDay]);
 
-  const visibleSidebarPlaces = useMemo(() => {
-    return filteredPlaces;
-  }, [filteredPlaces]);
+  const visibleSidebarPlaces = useMemo(() => uniquePlacesById(filteredPlaces), [filteredPlaces]);
 
   const favorites = useMemo(
-    () => applyTravelFilters(allPlaces.filter((place) => place.isFavorite), filters),
-    [allPlaces, filters],
+    () => applyTravelFilters(dedupedAllPlaces.filter((place) => place.isFavorite), filters),
+    [dedupedAllPlaces, filters],
   );
 
   return {
@@ -576,7 +778,7 @@ export const useTravelPlanner = () => {
     activeSuggestMode,
     filters,
     filterOptions,
-    allPlaces,
+    allPlaces: dedupedAllPlaces,
     filteredPlaces,
     visibleSidebarPlaces,
     favorites,

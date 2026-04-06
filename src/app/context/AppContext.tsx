@@ -156,6 +156,78 @@ function writeStoredJson<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function mergeCatalogById<T extends { id: string }>(seedItems: T[], storedItems: unknown): T[] {
+  const map = new Map<string, T>();
+  seedItems.forEach((item) => map.set(item.id, item));
+
+  if (Array.isArray(storedItems)) {
+    storedItems.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const candidate = item as Partial<T> & { id?: unknown };
+      if (typeof candidate.id !== 'string' || !candidate.id.trim()) return;
+      map.set(candidate.id, candidate as T);
+    });
+  }
+
+  return Array.from(map.values());
+}
+
+function normalizeDuplicateNumberedIds<T extends { id: string }>(items: T[], prefix: string): T[] {
+  const usedNumbers = new Set<number>();
+
+  const allocateMissingNumber = () => {
+    let cursor = 1;
+    while (usedNumbers.has(cursor)) cursor += 1;
+    usedNumbers.add(cursor);
+    return cursor;
+  };
+
+  return items.map((item) => {
+    const match = item.id.match(new RegExp(`^${prefix}(\\d+)$`));
+    if (!match) return item;
+
+    const currentNumber = Number(match[1]);
+    if (!Number.isFinite(currentNumber)) return item;
+
+    if (!usedNumbers.has(currentNumber)) {
+      usedNumbers.add(currentNumber);
+      return item;
+    }
+
+    const replacement = allocateMissingNumber();
+    return {
+      ...item,
+      id: `${prefix}${replacement}`,
+    };
+  });
+}
+
+function mergeRentalsCatalog(seedItems: Rental[], storedItems: unknown): Rental[] {
+  const merged = [...seedItems];
+  const existingIds = new Set(seedItems.map((item) => item.id));
+
+  if (Array.isArray(storedItems)) {
+    storedItems.forEach((item) => {
+      if (!item || typeof item !== 'object') return;
+      const candidate = item as Partial<Rental> & { id?: unknown };
+      if (typeof candidate.id !== 'string' || !candidate.id.trim()) return;
+      if (existingIds.has(candidate.id)) return;
+      existingIds.add(candidate.id);
+      merged.push(candidate as Rental);
+    });
+  }
+
+  return normalizeDuplicateNumberedIds(merged, 'r');
+}
+
+function haveSameOrderedIds<T extends { id: string }>(left: T[], right: T[]) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index].id !== right[index].id) return false;
+  }
+  return true;
+}
+
 function sanitizeUsername(value: string) {
   return value
     .trim()
@@ -975,9 +1047,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     const stored = loadStoredJson<Partial<CatalogState>>(STORAGE_KEYS.catalog, fallback);
     return {
-      destinations: Array.isArray(stored?.destinations) && stored.destinations.length > 0 ? stored.destinations : fallback.destinations,
-      hotels: Array.isArray(stored?.hotels) ? stored.hotels : fallback.hotels,
-      rentals: Array.isArray(stored?.rentals) ? stored.rentals : fallback.rentals,
+      destinations: mergeCatalogById(fallback.destinations, stored?.destinations),
+      hotels: mergeCatalogById(fallback.hotels, stored?.hotels),
+      rentals: mergeRentalsCatalog(fallback.rentals, stored?.rentals),
     };
   });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -1068,6 +1140,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
     } catch {}
     setIsAuthLoading(false);
+  }, []);
+
+  // Keep catalog synchronized with latest seed data even when stale local state exists.
+  useEffect(() => {
+    setCatalog((prev) => {
+      const nextDestinations = mergeCatalogById(seedDestinations, prev.destinations);
+      const nextHotels = mergeCatalogById(seedHotels, prev.hotels);
+      const nextRentals = mergeRentalsCatalog(seedRentals, prev.rentals);
+
+      const isUnchanged =
+        haveSameOrderedIds(nextDestinations, prev.destinations) &&
+        haveSameOrderedIds(nextHotels, prev.hotels) &&
+        haveSameOrderedIds(nextRentals, prev.rentals);
+
+      if (isUnchanged) return prev;
+
+      return {
+        destinations: nextDestinations,
+        hotels: nextHotels,
+        rentals: nextRentals,
+      };
+    });
   }, []);
 
   useEffect(() => {
