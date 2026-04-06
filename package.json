@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "npm run i18n:sync && vite build",
-    "dev": "vite",
+    "dev": "node scripts/kill-ports.js && vite",
+    "kill-ports": "node scripts/kill-ports.js",
     "i18n:sync": "node scripts/sync-content-i18n.mjs"
   },
   "dependencies": {
