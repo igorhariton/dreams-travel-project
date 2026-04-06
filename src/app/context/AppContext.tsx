@@ -156,6 +156,92 @@ function writeStoredJson<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function sanitizeFavoriteItem(item: unknown): FavoriteItem | null {
+  if (!item || typeof item !== 'object') return null;
+
+  const candidate = item as Partial<FavoriteItem>;
+  const validType = candidate.type === 'destination' || candidate.type === 'hotel' || candidate.type === 'rental';
+
+  if (
+    typeof candidate.id !== 'string' ||
+    !validType ||
+    typeof candidate.name !== 'string' ||
+    typeof candidate.image !== 'string' ||
+    typeof candidate.location !== 'string'
+  ) {
+    return null;
+  }
+
+  const sanitized: FavoriteItem = {
+    id: candidate.id.trim(),
+    type: candidate.type,
+    name: candidate.name.trim(),
+    image: candidate.image.trim(),
+    location: candidate.location.trim(),
+  };
+
+  if (typeof candidate.price === 'number' && Number.isFinite(candidate.price)) {
+    sanitized.price = candidate.price;
+  }
+
+  if (typeof candidate.rating === 'number' && Number.isFinite(candidate.rating)) {
+    sanitized.rating = candidate.rating;
+  }
+
+  return sanitized.id && sanitized.name && sanitized.image && sanitized.location ? sanitized : null;
+}
+
+function sanitizeFavoritesList(value: unknown): FavoriteItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const favorites: FavoriteItem[] = [];
+
+  for (const entry of value) {
+    const sanitized = sanitizeFavoriteItem(entry);
+    if (!sanitized) continue;
+    if (seen.has(sanitized.id)) continue;
+    seen.add(sanitized.id);
+    favorites.push(sanitized);
+  }
+
+  return favorites;
+}
+
+function mergeCatalogById<T extends { id: string }>(seedItems: T[], storedItems: unknown): T[] {
+  const storedMap = new Map<string, T>();
+
+  if (Array.isArray(storedItems)) {
+    for (const entry of storedItems) {
+      if (!entry || typeof entry !== 'object') continue;
+      const candidate = entry as T;
+      if (typeof candidate.id !== 'string') continue;
+      storedMap.set(candidate.id, candidate);
+    }
+  }
+
+  const merged = seedItems.map((seedItem) => {
+    const storedItem = storedMap.get(seedItem.id);
+    return storedItem ? { ...seedItem, ...storedItem } : seedItem;
+  });
+
+  for (const [id, storedItem] of storedMap.entries()) {
+    if (!seedItems.some((seedItem) => seedItem.id === id)) {
+      merged.push(storedItem);
+    }
+  }
+
+  return merged;
+}
+
+function mergeRentalsCatalog(seedItems: Rental[], storedItems: unknown): Rental[] {
+  return mergeCatalogById(seedItems, storedItems);
+}
+
+function haveSameOrderedIds<T extends { id: string }>(left: T[], right: T[]) {
+  return left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
+}
+
 function sanitizeUsername(value: string) {
   return value
     .trim()

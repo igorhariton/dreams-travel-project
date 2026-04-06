@@ -93,7 +93,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/',
-    Component: AppLayout,
+    element: <AppLayout />,
     children: [
       {
         index: true,
