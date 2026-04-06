@@ -193,7 +193,7 @@ export default function DestinationsPage() {
                 placeholder={t('common.search')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-sm text-gray-700 dark:text-slate-200 w-full placeholder-gray-400 dark:placeholder-slate-400"
+                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400"
               />
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-hide">
@@ -367,7 +367,7 @@ export default function DestinationsPage() {
               onClick={() => setSelectedDest(null)}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="relative h-72">
                 <ImageCarousel images={selectedDest.images} className="h-72" />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
@@ -416,24 +416,24 @@ export default function DestinationsPage() {
                 )}
                 {activeTab === 'culture' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3">🎭 {translateDynamic('Culture & Heritage')}</h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{translateDynamic(selectedDest.culture)}</p>
+                    <h3 className="font-bold text-gray-900 mb-3">🎭 {translateDynamic('Culture & Heritage')}</h3>
+                    <p className="text-gray-600 leading-relaxed">{translateDynamic(selectedDest.culture)}</p>
                   </div>
                 )}
                 {activeTab === 'cuisine' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3">🍜 {t('section.cuisine')}</h3>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{translateDynamic(selectedDest.cuisine)}</p>
+                    <h3 className="font-bold text-gray-900 mb-3">🍜 {t('section.cuisine')}</h3>
+                    <p className="text-gray-600 leading-relaxed">{translateDynamic(selectedDest.cuisine)}</p>
                   </div>
                 )}
                 {activeTab === 'mustvisit' && (
                   <div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4">📍 {t('section.must_visit')}</h3>
+                    <h3 className="font-bold text-gray-900 mb-4">📍 {t('section.must_visit')}</h3>
                     <div className="space-y-2">
                       {selectedDest.mustVisit.map((place, i) => (
-                        <div key={place} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                        <div key={place} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
                           <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
-                          <span className="font-medium text-gray-800 dark:text-gray-200">{translateDynamic(place)}</span>
+                          <span className="font-medium text-gray-800">{translateDynamic(place)}</span>
                         </div>
                       ))}
                     </div>
@@ -445,7 +445,7 @@ export default function DestinationsPage() {
                 <button
                   type="button"
                   onClick={() => { if (isFavorite(selectedDest.id)) removeFavorite(selectedDest.id); else addFavorite({ id: selectedDest.id, type: 'destination', name: selectedDest.name, image: selectedDest.images[0], rating: selectedDest.rating, location: selectedDest.country }); }}
-                  className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30' : 'border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700'}`}>
+                  className={`flex-1 py-3 rounded-xl font-semibold border-2 transition-all text-sm ${isFavorite(selectedDest.id) ? 'border-red-200 text-red-500 bg-red-50' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}>
                   {isFavorite(selectedDest.id) ? `❤️ ${translateDynamic('In Favorites')}` : `🤍 ${translateDynamic('Add to Favorites')}`}
                 </button>
                 <button

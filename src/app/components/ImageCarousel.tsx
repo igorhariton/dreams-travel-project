@@ -16,11 +16,11 @@ const NavButton = memo(({ direction, onClick }: {
   <button
     onClick={onClick}
     aria-label={direction === 'prev' ? 'Previous image' : 'Next image'}
-    className={`absolute ${direction === 'prev' ? 'left-2' : 'right-2'} top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 dark:bg-slate-800/90 dark:hover:bg-slate-700 rounded-full shadow-md flex items-center justify-center hover:bg-white transition-colors z-10`}
+    className={`absolute ${direction === 'prev' ? 'left-2' : 'right-2'} top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full shadow-md flex items-center justify-center hover:bg-white transition-colors z-10`}
   >
     {direction === 'prev'
-      ? <ChevronLeft size={16} className="text-gray-700 dark:text-slate-200" />
-      : <ChevronRight size={16} className="text-gray-700 dark:text-slate-200" />}
+      ? <ChevronLeft size={16} className="text-gray-700" />
+      : <ChevronRight size={16} className="text-gray-700" />}
   </button>
 ));
 NavButton.displayName = 'NavButton';
@@ -182,8 +182,8 @@ export const ImageCarousel = memo(function ImageCarousel({
               aria-label={`Slide ${i + 1}`}
               className={`transition-all duration-300 rounded-full ${
                 i === safeCurrent
-                  ? 'w-5 h-2 bg-white dark:bg-slate-200'
-                  : 'w-2 h-2 bg-white/50 dark:bg-slate-500/50 hover:bg-white/80 dark:hover:bg-slate-400/80'
+                  ? 'w-5 h-2 bg-white'
+                  : 'w-2 h-2 bg-white/50 hover:bg-white/80'
               }`}
             />
           ))}
