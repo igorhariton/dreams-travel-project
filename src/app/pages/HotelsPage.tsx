@@ -203,7 +203,7 @@ export default function HotelsPage() {
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 flex-1">
               <Search size={15} className="text-gray-400" />
               <input type="text" placeholder={translateDynamic('Search hotels...')} value={search} onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
+                className="bg-transparent outline-none text-sm text-gray-700 dark:text-slate-200 w-full placeholder-gray-400 dark:placeholder-slate-400" />
             </div>
             <Select value={destFilter} onValueChange={setDestFilter}>
               <SelectTrigger className="h-[46px] w-full sm:w-[220px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
@@ -305,7 +305,7 @@ export default function HotelsPage() {
                         {translateDynamic(hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1))}
                       </span>
                     </div>
-                    <button type="button" onClick={e => handleFavoriteHotel(e, hotel)}
+                    <button onClick={e => handleFavoriteHotel(e, hotel)}
                       className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                       {isFavorite(hotel.id) ? '❤️' : '🤍'}
                     </button>

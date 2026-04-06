@@ -205,7 +205,7 @@ export default function RentalsPage() {
               <Search size={15} className="text-gray-400" />
               <input type="text" placeholder={translateDynamic('Search rentals...')} value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
+                className="bg-transparent outline-none text-sm text-gray-700 dark:text-slate-200 w-full placeholder-gray-400 dark:placeholder-slate-400" />
             </div>
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'price_asc' | 'price_desc')}>
               <SelectTrigger className="h-[46px] w-full sm:w-[220px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
@@ -280,7 +280,7 @@ export default function RentalsPage() {
                       {typeConfig[rental.type].icon} {translateDynamic(typeConfig[rental.type].label)}
                     </span>
                   </div>
-                  <button type="button" onClick={e => handleFavorite(e, rental)}
+                  <button onClick={e => handleFavorite(e, rental)}
                     className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
                     {isFavorite(rental.id) ? '❤️' : '🤍'}
                   </button>

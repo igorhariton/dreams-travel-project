@@ -18,7 +18,7 @@ export function Footer() {
               </div>
               <span className="text-white font-bold text-lg">Travel<span className="text-cyan-400">Dreams</span></span>
             </div>
-            <p className="text-sm text-gray-400 leading-relaxed mb-5">
+            <p className="text-sm text-gray-400 dark:text-slate-400 leading-relaxed mb-5">
               {translateDynamic('Your ultimate travel companion for discovering breathtaking destinations, booking luxury stays, and crafting unforgettable journeys.')}
             </p>
             <div className="flex gap-3">
@@ -85,7 +85,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+        <div className="border-t border-white/10 mt-12 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500 dark:text-slate-400">
           <p>© 2026 TravelDreams. {translateDynamic('All rights reserved.')}</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-gray-300 transition-colors">{translateDynamic('Privacy Policy')}</a>

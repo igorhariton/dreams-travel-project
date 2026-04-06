@@ -166,7 +166,7 @@ export default function FavoritesPage() {
                       </div>
                       <button
                         onClick={() => removeFavorite(item.id)}
-                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all shadow group"
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 dark:bg-slate-800/90 dark:hover:bg-red-950/50 rounded-full flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all shadow group"
                       >
                         <Trash2 size={14} className="text-rose-500" />
                       </button>
@@ -225,9 +225,9 @@ export default function FavoritesPage() {
         )}
 
         {favorites.length > 0 && (
-          <div className="mt-12 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
-            <h3 className="font-bold text-gray-900 mb-2">{t('favorites.cta_title')}</h3>
-            <p className="text-sm text-gray-600 mb-4">{t('favorites.cta_subtitle')}</p>
+          <div className="mt-12 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-800 border border-rose-100 dark:border-slate-700 rounded-2xl p-6 text-center">
+            <h3 className="font-bold text-gray-900 dark:text-slate-100 mb-2">{t('favorites.cta_title')}</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-300 mb-4">{t('favorites.cta_subtitle')}</p>
             <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
               {t('favorites.open_planner')} <ArrowRight size={16} />
             </Link>
