@@ -1053,6 +1053,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({ en: {}, ro: {}, ru: {} });
   const pendingTranslations = useRef<Set<string>>(new Set());
+  const translationQueue = useRef<Map<Language, Set<string>>>(new Map());
+  const translationFlushTimer = useRef<number | null>(null);
 
   // ── New state ─────────────────────────────────────────────────────────────
   const [catalog, setCatalog] = useState<CatalogState>(() => {
@@ -1195,6 +1197,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     writeStoredJson(STORAGE_KEYS.catalog, catalog);
   }, [catalog]);
+
+  useEffect(() => () => {
+    if (translationFlushTimer.current !== null) {
+      window.clearTimeout(translationFlushTimer.current);
+    }
+  }, []);
 
   // ── Theme (unchanged) ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -1466,18 +1474,88 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return translated || text;
   };
 
+  const flushQueuedTranslations = async () => {
+    const queuedEntries = Array.from(translationQueue.current.entries()).map(([target, texts]) => [
+      target,
+      Array.from(texts),
+    ] as const);
+    translationQueue.current.clear();
+
+    if (!queuedEntries.length) return;
+
+    const mergedByLanguage: Partial<Record<Language, Record<string, string>>> = {};
+
+    await Promise.all(
+      queuedEntries.map(async ([target, texts]) => {
+        const translatedEntries = await Promise.all(
+          texts.map(async (text) => {
+            try {
+              return [text, await translateWithGoogle(text, target)] as const;
+            } catch {
+              return [text, text] as const;
+            }
+          }),
+        );
+
+        if (!translatedEntries.length) return;
+        mergedByLanguage[target] = Object.fromEntries(translatedEntries);
+      }),
+    );
+
+    if (!Object.keys(mergedByLanguage).length) return;
+
+    setDynamicTranslations((prev) => {
+      let hasChanges = false;
+      const next = { ...prev };
+
+      (Object.keys(mergedByLanguage) as Language[]).forEach((target) => {
+        const updates = mergedByLanguage[target];
+        if (!updates) return;
+
+        const currentEntries = prev[target];
+        const changedEntries = Object.entries(updates).filter(([text, translated]) => currentEntries[text] !== translated);
+        if (!changedEntries.length) return;
+
+        hasChanges = true;
+        next[target] = {
+          ...currentEntries,
+          ...Object.fromEntries(changedEntries),
+        };
+      });
+
+      return hasChanges ? next : prev;
+    });
+
+    queuedEntries.forEach(([target, texts]) => {
+      texts.forEach((text) => pendingTranslations.current.delete(`${target}::${text}`));
+    });
+  };
+
+  const scheduleTranslation = (text: string, target: Language) => {
+    if (target === 'en') return;
+
+    const cacheKey = `${target}::${text}`;
+    if (pendingTranslations.current.has(cacheKey)) return;
+
+    pendingTranslations.current.add(cacheKey);
+
+    const queuedTexts = translationQueue.current.get(target) || new Set<string>();
+    queuedTexts.add(text);
+    translationQueue.current.set(target, queuedTexts);
+
+    if (translationFlushTimer.current !== null || typeof window === 'undefined') return;
+
+    translationFlushTimer.current = window.setTimeout(() => {
+      translationFlushTimer.current = null;
+      void flushQueuedTranslations();
+    }, 120);
+  };
+
   const translateDynamic = (text: string): string => {
     if (language === 'en' || !shouldTranslate(text)) return text;
     const cached = dynamicTranslations[language][text];
     if (cached) return cached;
-    const cacheKey = `${language}::${text}`;
-    if (!pendingTranslations.current.has(cacheKey)) {
-      pendingTranslations.current.add(cacheKey);
-      void translateWithGoogle(text, language)
-        .then(translated => setDynamicTranslations(prev => ({ ...prev, [language]: { ...prev[language], [text]: translated } })))
-        .catch(() => {})
-        .finally(() => pendingTranslations.current.delete(cacheKey));
-    }
+    scheduleTranslation(text, language);
     return text;
   };
 
