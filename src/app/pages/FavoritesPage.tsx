@@ -23,7 +23,9 @@ export default function FavoritesPage() {
   const filtered = filter === 'all' ? favorites : favorites.filter(f => f.type === filter);
   const destinationById = new Map(publicDestinations.map((destination) => [destination.id, destination]));
 
-  const openSavedListing = (id: string, type: 'hotel' | 'rental') => {
+  const openSavedListing = (id: string, type: 'destination' | 'hotel' | 'rental') => {
+    if (type === 'destination') return;
+
     if (type === 'hotel') {
       const hotel = publicHotels.find((entry: HotelItem) => entry.id === id);
       if (!hotel) return;
