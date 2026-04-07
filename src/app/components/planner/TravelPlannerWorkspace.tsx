@@ -10,12 +10,14 @@ import { Calendar } from '../ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { MapFilters } from '../map/MapFilters';
 import { MapLegend } from '../map/MapLegend';
-import { TripMap } from '../map/TripMap';
 import { DayCard } from '../days/DayCard';
 import { QuickActions } from '../sidebar/QuickActions';
 import { StayFavorites } from '../sidebar/StayFavorites';
 import type { TravelCategory, TravelDayMode } from '../../types/travel';
-import { hasValidCoordinates } from '../../utils/travelFilters';
+
+const LazyTripMap = React.lazy(async () => ({
+  default: (await import('../map/TripMap')).TripMap,
+}));
 
 const suggestModes: TravelDayMode[] = ['full-day', 'food', 'attractions', 'mixed'];
 
@@ -103,14 +105,8 @@ export default function TravelPlannerWorkspace() {
   const planner = useTravelPlanner();
   const [isMapFullscreen, setIsMapFullscreen] = React.useState(false);
   const mapSectionRef = React.useRef<HTMLElement | null>(null);
-  const visibleMapPlaces = React.useMemo(
-    () => planner.filteredPlaces.filter(hasValidCoordinates),
-    [planner.filteredPlaces],
-  );
-  const totalMapPlaces = React.useMemo(
-    () => planner.allPlaces.filter(hasValidCoordinates),
-    [planner.allPlaces],
-  );
+  const visibleMapPlaces = planner.filteredPlaces;
+  const totalMapPlaces = planner.validAllPlaces;
   const visibleCategoryCounts = React.useMemo<Record<TravelCategory, number>>(() => {
     const counts: Record<TravelCategory, number> = {
       hotel: 0,
@@ -154,6 +150,40 @@ export default function TravelPlannerWorkspace() {
   };
 
   const activeDayId = planner.activeDay?.id || '';
+  const handleQuickAdd = React.useCallback(
+    (placeId: string) => {
+      if (!activeDayId) return;
+      planner.addPlaceToDay(activeDayId, placeId);
+    },
+    [activeDayId, planner.addPlaceToDay],
+  );
+  const handleAddActivity = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addActivity(activeDayId);
+  }, [activeDayId, planner.addActivity]);
+  const handleAddRestaurant = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addRestaurant(activeDayId);
+  }, [activeDayId, planner.addRestaurant]);
+  const handleAddAttraction = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addAttraction(activeDayId);
+  }, [activeDayId, planner.addAttraction]);
+  const handleClearActiveDay = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.clearDay(activeDayId);
+  }, [activeDayId, planner.clearDay]);
+  const handleDuplicateActiveDay = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.duplicateDay(activeDayId);
+  }, [activeDayId, planner.duplicateDay]);
+  const handleSuggestActiveDay = React.useCallback(
+    (mode: TravelDayMode) => {
+      if (!activeDayId) return;
+      planner.suggestDay(activeDayId, mode);
+    },
+    [activeDayId, planner.suggestDay],
+  );
   const activeTripOptions = planner.filterOptions.trips
     .filter((trip) => trip.value !== 'all')
     .map((trip) => ({ ...trip, label: translateDynamic(trip.label) }));
@@ -316,19 +346,19 @@ export default function TravelPlannerWorkspace() {
               selectedPlaceId={planner.selectedPlaceId}
               dayPlaceIds={planner.dayPlaceIds}
               onSelectPlace={planner.selectPlaceFromList}
-              onQuickAdd={(placeId) => activeDayId && planner.addPlaceToDay(activeDayId, placeId)}
+              onQuickAdd={handleQuickAdd}
               onToggleFavorite={planner.toggleFavorite}
               onCategoryFilter={planner.setCategoryFilter}
             />
 
             <QuickActions
               onAddDay={planner.addDay}
-              onAddActivity={() => activeDayId && planner.addActivity(activeDayId)}
-              onSuggestDay={(mode) => activeDayId && planner.suggestDay(activeDayId, mode)}
-              onClearDay={() => activeDayId && planner.clearDay(activeDayId)}
-              onDuplicateDay={() => activeDayId && planner.duplicateDay(activeDayId)}
-              onAddRestaurant={() => activeDayId && planner.addRestaurant(activeDayId)}
-              onAddAttraction={() => activeDayId && planner.addAttraction(activeDayId)}
+              onAddActivity={handleAddActivity}
+              onSuggestDay={handleSuggestActiveDay}
+              onClearDay={handleClearActiveDay}
+              onDuplicateDay={handleDuplicateActiveDay}
+              onAddRestaurant={handleAddRestaurant}
+              onAddAttraction={handleAddAttraction}
               onSuggestItinerary={planner.suggestItinerary}
             />
           </aside>
@@ -362,15 +392,28 @@ export default function TravelPlannerWorkspace() {
                 onCategoryChange={planner.setCategoryFilter}
               />
               <div className="mt-3">
-                <TripMap
-                  places={visibleMapPlaces}
-                  selectedPlaceId={planner.selectedPlaceId}
-                  focusedPlaceId={planner.mapController.focusedPlaceId}
-                  focusNonce={planner.mapController.focusNonce}
-                  onPlaceSelect={planner.selectPlaceFromMap}
-                  sizeInvalidateKey={isMapFullscreen}
-                  height={isMapFullscreen ? 'calc(100vh - 18rem)' : 330}
-                />
+                <React.Suspense
+                  fallback={
+                    <div
+                      className={`grid place-items-center rounded-2xl border border-dashed text-sm ${
+                        isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-500'
+                      }`}
+                      style={{ borderColor: isDark ? '#475569' : '#D9E3F0', minHeight: isMapFullscreen ? 'calc(100vh - 18rem)' : 330 }}
+                    >
+                      {t('planner.loading_map_locations')}
+                    </div>
+                  }
+                >
+                  <LazyTripMap
+                    places={visibleMapPlaces}
+                    selectedPlaceId={planner.selectedPlaceId}
+                    focusedPlaceId={planner.mapController.focusedPlaceId}
+                    focusNonce={planner.mapController.focusNonce}
+                    onPlaceSelect={planner.selectPlaceFromMap}
+                    sizeInvalidateKey={isMapFullscreen}
+                    height={isMapFullscreen ? 'calc(100vh - 18rem)' : 330}
+                  />
+                </React.Suspense>
               </div>
               <MapLegend
                 showing={visibleMapPlaces.length}
