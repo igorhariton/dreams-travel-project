@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { Destination, Hotel, Rental } from '../data/travelData';
 import { useMapController } from './useMapController';
@@ -11,7 +11,7 @@ import type {
   TravelTrip,
 } from '../types/travel';
 import { calculateDayCost, calculateTripBudget } from '../utils/travelBudget';
-import { applyTravelFilters, buildTravelFilterOptions } from '../utils/travelFilters';
+import { applyTravelFilters, buildTravelFilterOptions, hasValidCoordinates } from '../utils/travelFilters';
 import { suggestPlacesForDay } from '../utils/travelSuggestions';
 
 const DEFAULT_FILTERS: TravelFilters = {
@@ -372,6 +372,14 @@ const buildTripsFromTravelData = (
 
 type UpdateTrip = (trip: TravelTrip) => TravelTrip;
 
+type PlaceCatalogCache = {
+  tripIds: string[];
+  placeRefs: TravelPlace[][];
+  allPlaces: TravelPlace[];
+  dedupedAllPlaces: TravelPlace[];
+  placeTripIndex: Map<string, string>;
+};
+
 export const useTravelPlanner = () => {
   const { publicDestinations, publicHotels, publicRentals } = useApp();
   const seededTrips = useMemo(
@@ -389,6 +397,7 @@ export const useTravelPlanner = () => {
   });
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [activeSuggestMode, setActiveSuggestMode] = useState<TravelDayMode>('full-day');
+  const placeCatalogCache = useRef<PlaceCatalogCache | null>(null);
 
   const mapController = useMapController();
 
@@ -398,19 +407,60 @@ export const useTravelPlanner = () => {
     [activeDayId, activeTrip],
   );
 
-  const allPlaces = useMemo(() => trips.flatMap((trip) => trip.places), [trips]);
-  const placeTripIndex = useMemo(() => {
-    const index = new Map<string, string>();
+  const placeCatalog = useMemo(() => {
+    const tripIds = trips.map((trip) => trip.id);
+    const placeRefs = trips.map((trip) => trip.places);
+    const cached = placeCatalogCache.current;
+    const canReuse =
+      cached &&
+      cached.tripIds.length === tripIds.length &&
+      cached.placeRefs.length === placeRefs.length &&
+      tripIds.every((tripId, index) => tripId === cached.tripIds[index] && placeRefs[index] === cached.placeRefs[index]);
+
+    if (canReuse) return cached;
+
+    const nextAllPlaces = trips.flatMap((trip) => trip.places);
+    const nextPlaceTripIndex = new Map<string, string>();
+
     trips.forEach((trip) => {
       trip.places.forEach((place) => {
-        if (!index.has(place.id)) index.set(place.id, trip.id);
+        if (!nextPlaceTripIndex.has(place.id)) nextPlaceTripIndex.set(place.id, trip.id);
+      });
+    });
+
+    const nextCatalog: PlaceCatalogCache = {
+      tripIds,
+      placeRefs,
+      allPlaces: nextAllPlaces,
+      dedupedAllPlaces: uniquePlacesById(nextAllPlaces),
+      placeTripIndex: nextPlaceTripIndex,
+    };
+
+    placeCatalogCache.current = nextCatalog;
+    return nextCatalog;
+  }, [trips]);
+  const allPlaces = placeCatalog.allPlaces;
+  const placeTripIndex = placeCatalog.placeTripIndex;
+  const dedupedAllPlaces = placeCatalog.dedupedAllPlaces;
+  const validAllPlaces = useMemo(() => dedupedAllPlaces.filter(hasValidCoordinates), [dedupedAllPlaces]);
+  const placeById = useMemo(() => {
+    const index = new Map<string, TravelPlace>();
+    validAllPlaces.forEach((place) => {
+      if (!index.has(place.id)) index.set(place.id, place);
+    });
+    return index;
+  }, [validAllPlaces]);
+  const dayTripIndex = useMemo(() => {
+    const index = new Map<string, string>();
+    trips.forEach((trip) => {
+      trip.days.forEach((day) => {
+        if (!index.has(day.id)) index.set(day.id, trip.id);
       });
     });
     return index;
   }, [trips]);
-  const dedupedAllPlaces = useMemo(() => uniquePlacesById(allPlaces), [allPlaces]);
-  const filteredPlaces = useMemo(() => applyTravelFilters(dedupedAllPlaces, filters), [dedupedAllPlaces, filters]);
-  const filterOptions = useMemo(() => buildTravelFilterOptions(trips, dedupedAllPlaces, filters), [trips, dedupedAllPlaces, filters]);
+  const filteredPlaces = useMemo(() => applyTravelFilters(validAllPlaces, filters), [validAllPlaces, filters]);
+  const filterOptions = useMemo(() => buildTravelFilterOptions(trips, validAllPlaces, filters), [trips, validAllPlaces, filters]);
   const budget = useMemo(() => (activeTrip ? calculateTripBudget(activeTrip) : null), [activeTrip]);
 
   const updateTrip = useCallback(
@@ -429,8 +479,8 @@ export const useTravelPlanner = () => {
   );
 
   const findTripIdByDayId = useCallback(
-    (dayId: string) => trips.find((trip) => trip.days.some((day) => day.id === dayId))?.id || null,
-    [trips],
+    (dayId: string) => dayTripIndex.get(dayId) || null,
+    [dayTripIndex],
   );
 
   useEffect(() => {
@@ -449,37 +499,52 @@ export const useTravelPlanner = () => {
   const setTripFilter = useCallback(
     (tripId: string) => {
       const scopedTrip = tripId === 'all' ? null : trips.find((trip) => trip.id === tripId) || null;
+      const nextCountry = scopedTrip?.country || 'all';
+      const nextCity = scopedTrip?.destination || 'all';
       startTransition(() => {
-        setFilters((prev) => ({
-          ...prev,
-          tripId,
-          country: scopedTrip?.country || 'all',
-          city: scopedTrip?.destination || 'all',
-        }));
+        setFilters((prev) => {
+          if (prev.tripId === tripId && prev.country === nextCountry && prev.city === nextCity) return prev;
+          return {
+            ...prev,
+            tripId,
+            country: nextCountry,
+            city: nextCity,
+          };
+        });
 
         if (!scopedTrip) return;
-        setActiveTripId(scopedTrip.id);
-        setActiveDayId(scopedTrip.days[0]?.id || '');
+        if (scopedTrip.id !== activeTripId) setActiveTripId(scopedTrip.id);
+        const nextDayId = scopedTrip.days[0]?.id || '';
+        if (nextDayId !== activeDayId) setActiveDayId(nextDayId);
       });
     },
-    [trips],
+    [activeDayId, activeTripId, trips],
   );
 
   const setCountryFilter = useCallback((country: string) => {
     startTransition(() => {
-      setFilters((prev) => ({ ...prev, country, city: 'all' }));
+      setFilters((prev) => {
+        if (prev.country === country && prev.city === 'all') return prev;
+        return { ...prev, country, city: 'all' };
+      });
     });
   }, []);
 
   const setCityFilter = useCallback((city: string) => {
     startTransition(() => {
-      setFilters((prev) => ({ ...prev, city }));
+      setFilters((prev) => {
+        if (prev.city === city) return prev;
+        return { ...prev, city };
+      });
     });
   }, []);
 
   const setCategoryFilter = useCallback((category: TravelFilters['category']) => {
     startTransition(() => {
-      setFilters((prev) => ({ ...prev, category }));
+      setFilters((prev) => {
+        if (prev.category === category) return prev;
+        return { ...prev, category };
+      });
     });
   }, []);
 
@@ -630,7 +695,7 @@ export const useTravelPlanner = () => {
       if (!tripId) return;
       const scopedTrip = trips.find((trip) => trip.id === tripId);
       if (!scopedTrip) return;
-      const source = allPlaces.find((place) => place.id === placeId);
+      const source = placeById.get(placeId);
       if (!source) return;
 
       updateTrip(tripId, (trip) => ({
@@ -649,7 +714,7 @@ export const useTravelPlanner = () => {
       setSelectedPlaceId(placeId);
       mapController.focusPlace(placeId);
     },
-    [activeTripId, allPlaces, findTripIdByDayId, mapController, trips, updateTrip],
+    [activeTripId, findTripIdByDayId, mapController, placeById, trips, updateTrip],
   );
 
   const removePlaceFromDay = useCallback(
@@ -779,6 +844,7 @@ export const useTravelPlanner = () => {
     filters,
     filterOptions,
     allPlaces: dedupedAllPlaces,
+    validAllPlaces,
     filteredPlaces,
     visibleSidebarPlaces,
     favorites,
