@@ -164,7 +164,7 @@ export default function RentalsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchpriority="high"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/80 to-emerald-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
