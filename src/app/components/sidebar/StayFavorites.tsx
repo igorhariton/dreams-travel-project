@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { Heart, MapPin, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../common/Button';
@@ -17,8 +17,95 @@ type StayFavoritesProps = {
 };
 
 const categoryTabs: Array<'all' | TravelCategory> = ['all', 'hotel', 'rental', 'activity', 'restaurant', 'stop'];
+const INITIAL_VISIBLE_ITEMS = 160;
+const VISIBLE_ITEMS_STEP = 120;
 
-export function StayFavorites({
+type StayFavoriteRowProps = {
+  place: TravelPlace;
+  selected: boolean;
+  added: boolean;
+  onSelectPlace: (placeId: string) => void;
+  onQuickAdd: (placeId: string) => void;
+  onToggleFavorite: (placeId: string) => void;
+};
+
+const StayFavoriteRow = React.memo(function StayFavoriteRow({
+  place,
+  selected,
+  added,
+  onSelectPlace,
+  onQuickAdd,
+  onToggleFavorite,
+}: StayFavoriteRowProps) {
+  const { theme, t, translateDynamic } = useApp();
+  const isDark = theme === 'dark';
+
+  return (
+    <div
+      className={`rounded-xl border p-2 transition ${selected ? 'shadow-sm ring-1' : ''}`}
+      style={
+        selected
+          ? { borderColor: TRAVEL_COLORS.blue, boxShadow: '0 0 0 1px #2563EB inset' }
+          : { borderColor: isDark ? '#475569' : '#D9E3F0' }
+      }
+    >
+      <button
+        onClick={() => onSelectPlace(place.id)}
+        className="w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(place.name)}</div>
+            <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <MapPin size={11} />
+              {translateDynamic(place.city || place.country || place.address || t('planner.unknown'))}
+            </div>
+          </div>
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+            style={{ backgroundColor: TRAVEL_COLORS.category[place.category] }}
+          >
+            {t(`planner.category.${place.category}`)}
+          </span>
+        </div>
+      </button>
+      <div className="mt-2 flex items-center justify-between">
+        <button
+          onClick={() => onToggleFavorite(place.id)}
+          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold ${
+            place.isFavorite
+              ? isDark
+                ? 'bg-rose-950/40 text-rose-300'
+                : 'bg-rose-50 text-rose-600'
+              : isDark
+                ? 'bg-slate-800 text-slate-300'
+                : 'bg-white text-slate-600'
+          }`}
+          style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+        >
+          <Heart size={12} fill={place.isFavorite ? 'currentColor' : 'none'} />
+          {t('planner.favorite')}
+        </button>
+        {added ? (
+          <span
+            className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+              isDark ? 'bg-emerald-950/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
+            }`}
+          >
+            {t('planner.added')}
+          </span>
+        ) : (
+          <Button size="sm" variant="secondary" onClick={() => onQuickAdd(place.id)}>
+            <Plus size={12} />
+            {t('planner.add')}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+export const StayFavorites = React.memo(function StayFavorites({
   places,
   favorites,
   selectedPlaceId,
@@ -31,10 +118,30 @@ export function StayFavorites({
   const { theme, t, translateDynamic } = useApp();
   const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState<'all' | TravelCategory>('all');
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_ITEMS);
 
   const listed = useMemo(
     () => (activeTab === 'all' ? places : places.filter((place) => place.category === activeTab)),
     [activeTab, places],
+  );
+  const deferredListed = useDeferredValue(listed);
+  const visibleListed = useMemo(
+    () => deferredListed.slice(0, visibleCount),
+    [deferredListed, visibleCount],
+  );
+  const canLoadMore = visibleCount < deferredListed.length;
+  const remainingItems = Math.max(0, deferredListed.length - visibleCount);
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + VISIBLE_ITEMS_STEP, deferredListed.length));
+  }, [deferredListed.length]);
+  const handleListScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      if (!canLoadMore) return;
+      const target = event.currentTarget;
+      const remainingScroll = target.scrollHeight - target.scrollTop - target.clientHeight;
+      if (remainingScroll <= 96) loadMore();
+    },
+    [canLoadMore, loadMore],
   );
 
   return (
@@ -58,7 +165,9 @@ export function StayFavorites({
           <button
             key={tab}
             onClick={() => {
+              if (activeTab === tab) return;
               setActiveTab(tab);
+              setVisibleCount(INITIAL_VISIBLE_ITEMS);
               onCategoryFilter(tab);
             }}
             className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold transition ${
@@ -106,79 +215,29 @@ export function StayFavorites({
         )}
       </div>
 
-      <div className="max-h-[420px] space-y-1.5 overflow-auto pr-1">
-        {listed.map((place) => {
-          const selected = selectedPlaceId === place.id;
-          const added = dayPlaceIds.has(place.id);
-
-          return (
-            <div
-              key={place.id}
-              className={`rounded-xl border p-2 transition ${
-                selected ? 'shadow-sm ring-1' : ''
-              }`}
-              style={
-                selected
-                  ? { borderColor: TRAVEL_COLORS.blue, boxShadow: '0 0 0 1px #2563EB inset' }
-                  : { borderColor: isDark ? '#475569' : '#D9E3F0' }
-              }
-            >
-              <button
-                onClick={() => onSelectPlace(place.id)}
-                className="w-full text-left"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(place.name)}</div>
-                    <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      <MapPin size={11} />
-                      {translateDynamic(place.city || place.country || place.address || t('planner.unknown'))}
-                    </div>
-                  </div>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                    style={{ backgroundColor: TRAVEL_COLORS.category[place.category] }}
-                  >
-                    {t(`planner.category.${place.category}`)}
-                  </span>
-                </div>
-              </button>
-              <div className="mt-2 flex items-center justify-between">
-                <button
-                  onClick={() => onToggleFavorite(place.id)}
-                  className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-[11px] font-semibold ${
-                    place.isFavorite
-                      ? isDark
-                        ? 'bg-rose-950/40 text-rose-300'
-                        : 'bg-rose-50 text-rose-600'
-                      : isDark
-                        ? 'bg-slate-800 text-slate-300'
-                        : 'bg-white text-slate-600'
-                  }`}
-                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
-                >
-                  <Heart size={12} fill={place.isFavorite ? 'currentColor' : 'none'} />
-                  {t('planner.favorite')}
-                </button>
-                {added ? (
-                  <span
-                    className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
-                      isDark ? 'bg-emerald-950/40 text-emerald-300' : 'bg-emerald-50 text-emerald-600'
-                    }`}
-                  >
-                    {t('planner.added')}
-                  </span>
-                ) : (
-                  <Button size="sm" variant="secondary" onClick={() => onQuickAdd(place.id)}>
-                    <Plus size={12} />
-                    {t('planner.add')}
-                  </Button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div className="max-h-[420px] space-y-1.5 overflow-auto pr-1" onScroll={handleListScroll}>
+        {visibleListed.map((place) => (
+          <StayFavoriteRow
+            key={place.id}
+            place={place}
+            selected={selectedPlaceId === place.id}
+            added={dayPlaceIds.has(place.id)}
+            onSelectPlace={onSelectPlace}
+            onQuickAdd={onQuickAdd}
+            onToggleFavorite={onToggleFavorite}
+          />
+        ))}
+        {canLoadMore ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            className="w-full"
+            onClick={loadMore}
+          >
+            {translateDynamic(`Load more (${remainingItems})`)}
+          </Button>
+        ) : null}
       </div>
     </div>
   );
-}
+});

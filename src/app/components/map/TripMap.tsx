@@ -154,6 +154,11 @@ const spreadOverlappingTripPlaces = (places: TravelPlace[]) => {
 };
 
 const markerIconCache = new Map<string, L.DivIcon>();
+const TRIP_MAP_CLUSTER_ICON = L.divIcon({
+  html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:linear-gradient(135deg,${TRAVEL_COLORS.blue},${TRAVEL_COLORS.cyan});border:3px solid #ffffff;box-shadow:0 4px 12px rgba(37,99,235,0.35)"></span>`,
+  className: 'planner-map-cluster',
+  iconSize: [24, 24],
+});
 
 const markerIcon = (category: TravelCategory, selected: boolean) => {
   const key = `${category}-${selected ? 'selected' : 'default'}`;
@@ -263,7 +268,7 @@ function SyncMapSize({ sizeInvalidateKey }: { sizeInvalidateKey?: string | numbe
   return null;
 }
 
-function FitBounds({ places }: { places: TravelPlace[] }) {
+function FitBounds({ places, boundsKey }: { places: TravelPlace[]; boundsKey: string }) {
   const map = useMap();
 
   useEffect(() => {
@@ -278,7 +283,7 @@ function FitBounds({ places }: { places: TravelPlace[] }) {
     }
     const bounds = L.latLngBounds(places.map((place) => [place.lat, place.lng] as [number, number]));
     map.fitBounds(bounds.pad(0.22), { animate: true, maxZoom: 14 });
-  }, [map, places]);
+  }, [boundsKey, map]);
 
   return null;
 }
@@ -322,8 +327,22 @@ export function TripMap({
   const { theme, t, translateDynamic, formatPrice } = useApp();
   const isDark = theme === 'dark';
   const deferredPlaces = useDeferredValue(places);
-  const validPlaces = useMemo(() => deferredPlaces.filter(validCoords), [deferredPlaces]);
-  const displayPlaces = useMemo(() => spreadOverlappingTripPlaces(validPlaces), [validPlaces]);
+  const displayPlacesKey = useMemo(
+    () =>
+      deferredPlaces
+        .filter(validCoords)
+        .map((place) => `${place.id}:${place.category}:${place.lat.toFixed(5)}:${place.lng.toFixed(5)}`)
+        .join('|'),
+    [deferredPlaces],
+  );
+  const displayPlaces = useMemo(
+    () => spreadOverlappingTripPlaces(deferredPlaces.filter(validCoords)),
+    [displayPlacesKey],
+  );
+  const boundsKey = useMemo(
+    () => displayPlaces.map((place) => `${place.id}:${place.lat.toFixed(5)}:${place.lng.toFixed(5)}`).join('|'),
+    [displayPlaces],
+  );
   const markerRefs = useRef<Record<string, L.Marker>>({});
   const tileUrl = isDark
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -346,7 +365,7 @@ export function TripMap({
     );
   }
 
-  if (!validPlaces.length) {
+  if (!displayPlaces.length) {
     return (
       <div
         className={`grid place-items-center rounded-2xl border border-dashed text-sm ${
@@ -383,7 +402,7 @@ export function TripMap({
         />
 
         <SyncMapSize sizeInvalidateKey={sizeInvalidateKey} />
-        <FitBounds places={displayPlaces} />
+        <FitBounds places={displayPlaces} boundsKey={boundsKey} />
         <FocusPlace
           places={displayPlaces}
           focusedPlaceId={focusedPlaceId}
@@ -396,13 +415,7 @@ export function TripMap({
           maxClusterRadius={55}
           showCoverageOnHover={false}
           removeOutsideVisibleBounds
-          iconCreateFunction={(cluster) =>
-            L.divIcon({
-              html: `<span style="display:block;width:18px;height:18px;border-radius:999px;background:linear-gradient(135deg,${TRAVEL_COLORS.blue},${TRAVEL_COLORS.cyan});border:3px solid #ffffff;box-shadow:0 4px 12px rgba(37,99,235,0.35)"></span>`,
-              className: 'planner-map-cluster',
-              iconSize: [24, 24],
-            })
-          }
+          iconCreateFunction={() => TRIP_MAP_CLUSTER_ICON}
         >
           {displayPlaces.map((place) => (
             <TripPlaceMarker

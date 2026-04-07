@@ -15,7 +15,7 @@ type QuickActionsProps = {
   onSuggestItinerary: () => void;
 };
 
-export function QuickActions({
+export const QuickActions = React.memo(function QuickActions({
   onAddDay,
   onAddActivity,
   onSuggestDay,
@@ -46,4 +46,4 @@ export function QuickActions({
       </div>
     </div>
   );
-}
+});
