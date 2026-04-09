@@ -315,7 +315,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
                             : 'border-[#D9E2EC] bg-[#F1F5F9] shadow-[0_10px_30px_rgba(15,23,42,0.06)]'
                         }`}
                       >
-                        <ImageCarousel images={item.images} className="h-[320px] md:h-[420px]" />
+                        <ImageCarousel images={item.images} className="h-[320px] md:h-[420px]" priority />
                       </div>
 
                       <section
