@@ -45,7 +45,7 @@ export function DayCard({
   onSelectPlace,
   onRemovePlace,
 }: DayCardProps) {
-  const { theme, t, formatPrice, translateDynamic } = useApp();
+  const { theme, t, formatPrice } = useApp();
   const isDark = theme === 'dark';
   const defaultDayLabel = `${t('planner.day')} ${dayIndex + 1}`;
   const normalizedTitle = day.title
@@ -64,10 +64,10 @@ export function DayCard({
       <button onClick={onSelectDay} className="mb-2 w-full text-left">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className={`text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(normalizedTitle)}</div>
+            <div className={`text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{normalizedTitle}</div>
             <div className={`mt-0.5 flex flex-wrap items-center gap-2 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <span className="inline-flex items-center gap-1"><Calendar size={12} />{day.date}</span>
-              <span className="inline-flex items-center gap-1"><MapPin size={12} />{translateDynamic(day.destination || t('planner.destination'))}</span>
+              <span className="inline-flex items-center gap-1"><MapPin size={12} />{day.destination || t('planner.destination')}</span>
             </div>
           </div>
           <div className="text-right">
@@ -116,9 +116,9 @@ export function DayCard({
                 }
               >
                 <button onClick={() => onSelectPlace(place.id)} className="min-w-0 flex-1 text-left">
-                  <div className={`truncate text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(place.name)}</div>
+                  <div className={`truncate text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{place.name}</div>
                   <div className={`truncate text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {translateDynamic(locationText)}
+                    {locationText}
                   </div>
                 </button>
                 <span
