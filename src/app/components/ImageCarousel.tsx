@@ -7,6 +7,7 @@ interface ImageCarouselProps {
   showIndicators?: boolean;
   showCounter?: boolean;
   label?: string;
+  priority?: boolean;
 }
 
 const NavButton = memo(({ direction, onClick }: {
@@ -31,6 +32,7 @@ export const ImageCarousel = memo(function ImageCarousel({
   showIndicators = true,
   showCounter = true,
   label,
+  priority = false,
 }: ImageCarouselProps) {
   const len = images.length;
   const [current, setCurrent] = useState(0);
@@ -130,7 +132,7 @@ export const ImageCarousel = memo(function ImageCarousel({
 
           return (
             <div
-              key={img}
+              key={`${img}-${i}`}
               className="relative shrink-0 bg-gray-200"
               style={{ minWidth: '100%', height: '100%' }}
             >
@@ -144,8 +146,9 @@ export const ImageCarousel = memo(function ImageCarousel({
                 <img
                   src={src}
                   alt={label ? `${label} ${i + 1}` : `slide-${i + 1}`}
-                  loading="lazy"
+                  loading={priority ? 'eager' : 'lazy'}
                   decoding="async"
+                  fetchPriority={priority ? 'high' : 'auto'}
                   className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
                   style={{ opacity: isReady ? 1 : 0 }}
                   onLoad={() => handleLoad(i)}
