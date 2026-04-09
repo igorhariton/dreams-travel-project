@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, Home, Building2, Trees, Mountain, Users, Bed, Bath, SlidersHorizontal } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import type { Rental } from '../data/travelData';
+import type { Rental, Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
 import { PaginationControls } from '../components/PaginationControls';
 import { BookingModal } from '../components/BookingModal';
@@ -41,10 +41,11 @@ function LazyCard({ children, minHeight = 420 }: { children: React.ReactNode; mi
 }
 
 export default function RentalsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicRentals, publicDestinations } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, theme, publicRentals, publicDestinations } = useApp();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [destFilter, setDestFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [minGuests, setMinGuests] = useState(1);
   const [sortBy, setSortBy] = useState<'rating' | 'price_asc' | 'price_desc'>('rating');
@@ -58,6 +59,15 @@ export default function RentalsPage() {
     [publicRentals],
   );
   const effectiveMaxPrice = maxPrice ?? sliderMaxPrice;
+  const selectTriggerToneClass = theme === 'dark'
+    ? 'rounded-2xl border border-slate-500/70 bg-[#162338]/90 px-4 text-sm font-medium text-slate-100 shadow-[0_8px_18px_rgba(2,6,23,0.35)] data-[placeholder]:text-slate-300 [&_svg]:text-slate-300 focus-visible:border-sky-300 focus-visible:ring-sky-300/30'
+    : 'rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25';
+  const selectContentToneClass = theme === 'dark'
+    ? 'z-[120] rounded-[16px] border border-slate-500/70 bg-[#152338]/95 p-1 text-slate-100 shadow-[0_18px_36px_rgba(2,6,23,0.58)] backdrop-blur'
+    : 'z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl';
+  const selectItemToneClass = theme === 'dark'
+    ? 'rounded-xl px-3 py-2 text-sm font-medium text-slate-100 focus:bg-[#264160] focus:text-white data-[state=checked]:bg-[#D7E7FB] data-[state=checked]:text-[#0F2747]'
+    : 'rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]';
 
   const typeCounts = useMemo(() => ({
     all: publicRentals.length,
@@ -72,14 +82,15 @@ export default function RentalsPage() {
       const normalizedSearch = deferredSearch.toLowerCase();
       const matchSearch = r.name.toLowerCase().includes(normalizedSearch) || r.location.toLowerCase().includes(normalizedSearch);
       const matchType = typeFilter === 'all' || r.type === typeFilter;
+      const matchDest = destFilter === 'all' || r.destinationId === destFilter;
       const matchPrice = r.pricePerNight <= effectiveMaxPrice;
       const matchGuests = r.maxGuests >= minGuests;
-      return matchSearch && matchType && matchPrice && matchGuests;
+      return matchSearch && matchType && matchDest && matchPrice && matchGuests;
     });
     if (sortBy === 'rating') return [...f].sort((a, b) => b.rating - a.rating);
     if (sortBy === 'price_asc') return [...f].sort((a, b) => a.pricePerNight - b.pricePerNight);
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
-  }, [publicRentals, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
+  }, [publicRentals, deferredSearch, typeFilter, destFilter, effectiveMaxPrice, minGuests, sortBy]);
 
   const pageSize = 9;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -94,7 +105,7 @@ export default function RentalsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [pageSize, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
+  }, [pageSize, deferredSearch, typeFilter, destFilter, effectiveMaxPrice, minGuests, sortBy]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -205,21 +216,43 @@ export default function RentalsPage() {
                 onChange={e => setSearch(e.target.value)}
                 className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
             </div>
-            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'price_asc' | 'price_desc')}>
-              <SelectTrigger className="h-[46px] w-full sm:w-[220px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+            <Select value={destFilter} onValueChange={setDestFilter}>
+              <SelectTrigger className={`h-[46px] w-full sm:w-[220px] ${selectTriggerToneClass}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+                className={selectContentToneClass}
               >
-                <SelectItem value="rating" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="all" className={selectItemToneClass}>
+                  {translateDynamic('All Destinations')}
+                </SelectItem>
+                {publicDestinations.map((destination: Destination) => (
+                  <SelectItem
+                    key={destination.id}
+                    value={destination.id}
+                    className={selectItemToneClass}
+                  >
+                    {destination.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'price_asc' | 'price_desc')}>
+              <SelectTrigger className={`h-[46px] w-full sm:w-[220px] ${selectTriggerToneClass}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent
+                align="start"
+                className={selectContentToneClass}
+              >
+                <SelectItem value="rating" className={selectItemToneClass}>
                   {translateDynamic('Top Rated')}
                 </SelectItem>
-                <SelectItem value="price_asc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="price_asc" className={selectItemToneClass}>
                   {translateDynamic('Price: Low to High')}
                 </SelectItem>
-                <SelectItem value="price_desc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="price_desc" className={selectItemToneClass}>
                   {translateDynamic('Price: High to Low')}
                 </SelectItem>
               </SelectContent>
@@ -288,7 +321,9 @@ export default function RentalsPage() {
                     </span>
                   </div>
                   <button onClick={e => handleFavorite(e, rental)}
-                    className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
+                    className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow ${
+                      theme === 'dark' ? 'bg-slate-900/85' : 'bg-white/90'
+                    }`}>
                     {isFavorite(rental.id) ? '❤️' : '🤍'}
                   </button>
                 </div>
@@ -359,7 +394,6 @@ export default function RentalsPage() {
         item={activeItem}
         onClose={closeDetails}
         onReserve={startBooking}
-        forceTheme="light"
       />
       <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>

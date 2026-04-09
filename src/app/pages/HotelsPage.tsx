@@ -44,7 +44,7 @@ function LazyCard({ children, minHeight = 320 }: { children: React.ReactNode; mi
 }
 
 export default function HotelsPage() {
-  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, publicHotels, publicDestinations } = useApp();
+  const { t, translateDynamic, addFavorite, removeFavorite, isFavorite, formatPrice, theme, publicHotels, publicDestinations } = useApp();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [destFilter, setDestFilter] = useState('all');
@@ -62,6 +62,15 @@ export default function HotelsPage() {
     [publicHotels],
   );
   const effectiveMaxPrice = maxPrice ?? sliderMaxPrice;
+  const selectTriggerToneClass = theme === 'dark'
+    ? 'rounded-2xl border border-slate-500/70 bg-[#162338]/90 px-4 text-sm font-medium text-slate-100 shadow-[0_8px_18px_rgba(2,6,23,0.35)] data-[placeholder]:text-slate-300 [&_svg]:text-slate-300 focus-visible:border-sky-300 focus-visible:ring-sky-300/30'
+    : 'rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25';
+  const selectContentToneClass = theme === 'dark'
+    ? 'z-[120] max-h-80 rounded-[16px] border border-slate-500/70 bg-[#152338]/95 p-1 text-slate-100 shadow-[0_18px_36px_rgba(2,6,23,0.58)] backdrop-blur'
+    : 'z-[120] max-h-80 rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl';
+  const selectItemToneClass = theme === 'dark'
+    ? 'rounded-xl px-3 py-2 text-sm font-medium text-slate-100 focus:bg-[#264160] focus:text-white data-[state=checked]:bg-[#D7E7FB] data-[state=checked]:text-[#0F2747]'
+    : 'rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]';
 
   const destinationAliasToId = useMemo(() => {
     const map = new Map<string, string>();
@@ -204,21 +213,21 @@ export default function HotelsPage() {
                 className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
             </div>
             <Select value={destFilter} onValueChange={setDestFilter}>
-              <SelectTrigger className="h-[46px] w-full sm:w-[220px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+              <SelectTrigger className={`h-[46px] w-full sm:w-[220px] ${selectTriggerToneClass}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="z-[120] max-h-80 rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+                className={selectContentToneClass}
               >
-                <SelectItem value="all" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="all" className={selectItemToneClass}>
                   {translateDynamic('All Destinations')}
                 </SelectItem>
                 {publicDestinations.map((d: Destination) => (
                   <SelectItem
                     key={d.id}
                     value={d.id}
-                    className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]"
+                    className={selectItemToneClass}
                   >
                     {d.name}
                   </SelectItem>
@@ -226,20 +235,20 @@ export default function HotelsPage() {
               </SelectContent>
             </Select>
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'price_asc' | 'price_desc')}>
-              <SelectTrigger className="h-[46px] w-full sm:w-[200px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+              <SelectTrigger className={`h-[46px] w-full sm:w-[200px] ${selectTriggerToneClass}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+                className={`${selectContentToneClass} max-h-none`}
               >
-                <SelectItem value="rating" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="rating" className={selectItemToneClass}>
                   {translateDynamic('Top Rated')}
                 </SelectItem>
-                <SelectItem value="price_asc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="price_asc" className={selectItemToneClass}>
                   {translateDynamic('Price: Low to High')}
                 </SelectItem>
-                <SelectItem value="price_desc" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
+                <SelectItem value="price_desc" className={selectItemToneClass}>
                   {translateDynamic('Price: High to Low')}
                 </SelectItem>
               </SelectContent>
@@ -313,7 +322,9 @@ export default function HotelsPage() {
                       </span>
                     </div>
                     <button onClick={e => handleFavoriteHotel(e, hotel)}
-                      className="absolute top-3 right-3 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
+                      className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow ${
+                        theme === 'dark' ? 'bg-slate-900/85' : 'bg-white/90'
+                      }`}>
                       {isFavorite(hotel.id) ? '❤️' : '🤍'}
                     </button>
                   </div>
@@ -421,7 +432,6 @@ export default function HotelsPage() {
         item={activeItem}
         onClose={closeDetails}
         onReserve={startBooking}
-        forceTheme="light"
       />
       <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
     </div>
