@@ -17,11 +17,11 @@ const NavButton = memo(({ direction, onClick }: {
   <button
     onClick={onClick}
     aria-label={direction === 'prev' ? 'Previous image' : 'Next image'}
-    className={`absolute ${direction === 'prev' ? 'left-2' : 'right-2'} top-1/2 -translate-y-1/2 w-8 h-8 bg-white/90 rounded-full shadow-md flex items-center justify-center hover:bg-white transition-colors z-10`}
+    className={`absolute ${direction === 'prev' ? 'left-2' : 'right-2'} top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-sky-200/90 bg-[linear-gradient(135deg,rgba(239,246,255,0.94)_0%,rgba(224,242,254,0.92)_100%)] shadow-[0_10px_22px_rgba(14,116,144,0.26)] ring-1 ring-white/70 backdrop-blur-[1px] transition-all hover:border-sky-300 hover:bg-[linear-gradient(135deg,rgba(239,246,255,0.98)_0%,rgba(207,250,254,0.95)_100%)]`}
   >
     {direction === 'prev'
-      ? <ChevronLeft size={16} className="text-gray-700" />
-      : <ChevronRight size={16} className="text-gray-700" />}
+      ? <ChevronLeft size={16} className="text-[#0c4a6e]" />
+      : <ChevronRight size={16} className="text-[#0c4a6e]" />}
   </button>
 ));
 NavButton.displayName = 'NavButton';
