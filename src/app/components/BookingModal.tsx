@@ -220,7 +220,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         className="h-20 w-24 rounded-xl object-cover ring-1 ring-[#D9E2EC] dark:ring-white/10"
                         loading="eager"
                         decoding="async"
-                    fetchpriority="high"
+                    fetchPriority="high"
                       />
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate font-semibold text-[#0F172A] dark:text-white">{item.name}</h3>
@@ -540,3 +540,4 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
     </AnimatePresence>
   );
 }
+
