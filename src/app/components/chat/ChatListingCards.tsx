@@ -1,6 +1,6 @@
 import React from 'react';
 import { MapPin, Star, Users } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/AppContext';
 import type { AssistantAction, AssistantListing } from '../../chat/types';
 
 interface ChatListingCardsProps {
@@ -10,7 +10,7 @@ interface ChatListingCardsProps {
 }
 
 export function ChatListingCards({ listings, formatPrice, onAction }: ChatListingCardsProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDarkTheme = theme === 'dark';
 
   if (listings.length === 0) return null;
