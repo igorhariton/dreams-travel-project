@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 
-import { useApp } from "../../context/AppContext";
+import { useTheme } from "../../context/AppContext";
 import { cn } from "./utils";
 
 function Calendar({
@@ -13,7 +13,7 @@ function Calendar({
   showOutsideDays = true,
   ...props
 }: React.ComponentProps<typeof DayPicker>) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDarkTheme = theme === "dark";
 
   return (
