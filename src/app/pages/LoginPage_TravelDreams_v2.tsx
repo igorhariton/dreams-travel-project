@@ -86,8 +86,8 @@ export default function TravelLoginPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
-      <div className="mx-auto grid h-full max-w-[1500px] overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(29,35,52,0.12)] lg:grid-cols-[1.02fr_1fr]">
+    <div className="travel-login-fixed h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
+      <div className="travel-login-card mx-auto grid h-full max-w-[1500px] overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(29,35,52,0.12)] lg:grid-cols-[1.02fr_1fr]">
         <section className="relative hidden overflow-hidden lg:block">
           <img
             src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1800&q=80"
@@ -139,7 +139,7 @@ export default function TravelLoginPage() {
           </div>
         </section>
 
-        <section className="relative flex h-full items-center justify-center bg-[linear-gradient(180deg,#fffdfa_0%,#f7f2ea_100%)] px-5 py-6 sm:px-8 md:px-12 lg:px-14">
+        <section className="travel-login-form-pane relative flex h-full items-center justify-center bg-[linear-gradient(180deg,#fffdfa_0%,#f7f2ea_100%)] px-5 py-6 sm:px-8 md:px-12 lg:px-14">
           <div className="w-full max-w-[520px]">
             <div className="mb-7">
               <div className="mb-4 flex items-center gap-3 lg:hidden">
@@ -160,7 +160,7 @@ export default function TravelLoginPage() {
                 </p>
               </div>
 
-              <h2 className="text-[2.25rem] font-black tracking-[-0.04em] text-[#1e275c] sm:text-[2.8rem]">
+              <h2 className="travel-login-title text-[2.25rem] font-black tracking-[-0.04em] text-[#1e275c] sm:text-[2.8rem]">
                 Welcome back to
                 <br />
                 TravelDreams
@@ -173,27 +173,27 @@ export default function TravelLoginPage() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="username or email"
-                className="h-14 w-full rounded-[14px] border border-[#cfd6e3] bg-white px-4"
+                className="travel-login-input h-14 w-full rounded-[14px] border border-[#cfd6e3] bg-white px-4"
               />
 
-              <div className="flex h-14 items-center rounded-[14px] border border-[#cfd6e3] bg-white px-4">
+              <div className="travel-login-input-shell flex h-14 items-center rounded-[14px] border border-[#cfd6e3] bg-white px-4">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="h-full w-full bg-transparent outline-none"
+                  className="travel-login-input h-full w-full bg-transparent outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="ml-3 text-sm font-semibold text-[#8a90a0]"
+                  className="travel-login-show-btn ml-3 text-sm font-semibold text-[#8a90a0]"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
 
-              <label className="flex items-center gap-3 text-[#545c6d]">
+              <label className="travel-login-remember flex items-center gap-3 text-[#545c6d]">
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -216,7 +216,7 @@ export default function TravelLoginPage() {
                 </p>
               )}
 
-              <div className="rounded-xl border border-[#d8dde8] bg-white/80 px-4 py-3 text-sm text-[#374151]">
+              <div className="travel-login-demo-box rounded-xl border border-[#d8dde8] bg-white/80 px-4 py-3 text-sm text-[#374151]">
                 <p className="font-semibold">Demo login credentials:</p>
                 <p className="mt-1">
                   Admin: <span className="font-semibold">admin</span> / <span className="font-semibold">admin2026!</span>
@@ -226,7 +226,7 @@ export default function TravelLoginPage() {
                 </p>
               </div>
 
-              <p className="text-center text-sm text-[#7d8494]">
+              <p className="travel-login-helper text-center text-sm text-[#7d8494]">
                 Don&apos;t have an account?{" "}
                 <Link
                   to="/register"
@@ -239,7 +239,7 @@ export default function TravelLoginPage() {
               <div className="grid gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  className="flex h-12 items-center justify-center gap-3 rounded-[14px] border border-[#d8dde8] bg-white text-sm font-semibold text-[#4d5565]"
+                  className="travel-login-social-btn flex h-12 items-center justify-center gap-3 rounded-[14px] border border-[#d8dde8] bg-white text-sm font-semibold text-[#4d5565]"
                 >
                   <GoogleIcon />
                   <span>Continue with Google</span>
@@ -247,7 +247,7 @@ export default function TravelLoginPage() {
 
                 <button
                   type="button"
-                  className="flex h-12 items-center justify-center gap-3 rounded-[14px] border border-[#d8dde8] bg-white text-sm font-semibold text-[#4d5565]"
+                  className="travel-login-social-btn flex h-12 items-center justify-center gap-3 rounded-[14px] border border-[#d8dde8] bg-white text-sm font-semibold text-[#4d5565]"
                 >
                   <FacebookIcon />
                   <span>Continue with Facebook</span>
