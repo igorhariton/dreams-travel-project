@@ -3,9 +3,11 @@ import { Search, Star, MapPin, Home, Building2, Trees, Mountain, Users, Bed, Bat
 import { useApp } from '../context/AppContext';
 import type { Rental } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
+import { PaginationControls } from '../components/PaginationControls';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { prefetchImages } from '../utils/prefetchImages';
 
 const typeConfig = {
   apartment: { icon: <Building2 size={14} />, label: 'Apartment', color: 'bg-blue-100 text-blue-700' },
@@ -50,8 +52,7 @@ export default function RentalsPage() {
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(18);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const sliderMaxPrice = useMemo(
     () => Math.max(700, ...publicRentals.map((rental) => Number(rental.pricePerNight) || 0)),
     [publicRentals],
@@ -80,33 +81,30 @@ export default function RentalsPage() {
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
   }, [publicRentals, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
 
-  const pageSize = 18;
-  const visibleRentals = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-  const hasMore = visibleCount < filtered.length;
+  const pageSize = 9;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedRentals = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
   const destinationById = useMemo(
     () => new Map(publicDestinations.map((destination) => [destination.id, destination])),
     [publicDestinations],
   );
 
   useEffect(() => {
-    setVisibleCount(pageSize);
+    setCurrentPage(1);
   }, [pageSize, deferredSearch, typeFilter, effectiveMaxPrice, minGuests, sortBy]);
 
   useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node || !hasMore) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setVisibleCount((count) => Math.min(count + pageSize, filtered.length));
-      },
-      { rootMargin: '600px' },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMore, pageSize, filtered.length]);
+  useEffect(() => {
+    const nextPageStart = currentPage * pageSize;
+    const nextPageRentals = filtered.slice(nextPageStart, nextPageStart + pageSize);
+    prefetchImages(nextPageRentals.map((rental) => rental.images[0]));
+  }, [filtered, currentPage, pageSize]);
 
   const handleFavorite = useCallback((e: React.MouseEvent, rental: Rental) => {
     e.stopPropagation();
@@ -266,15 +264,24 @@ export default function RentalsPage() {
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="text-sm text-gray-500 mb-6">
-          {visibleRentals.length} / {filtered.length} {translateDynamic('rentals available')}
+          {filtered.length} {translateDynamic('rentals available')}
         </p>
 
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="emerald"
+          className="mt-0 mb-6"
+        />
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
-          {visibleRentals.map(rental => (
+          {paginatedRentals.map((rental, index) => (
             <LazyCard key={rental.id} minHeight={420}>
               <div className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 h-full flex flex-col">
                 <div className="relative h-56 overflow-hidden shrink-0">
-                  <ImageCarousel images={rental.images} className="h-56" showIndicators={false} showCounter={false} />
+                  <ImageCarousel images={rental.images} className="h-56" showIndicators={false} showCounter={false} priority={index < 3} />
                   <div className="absolute top-3 left-3">
                     <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full ${typeConfig[rental.type].color}`}>
                       {typeConfig[rental.type].icon} {translateDynamic(typeConfig[rental.type].label)}
@@ -338,13 +345,13 @@ export default function RentalsPage() {
           ))}
         </div>
 
-        {hasMore && (
-          <div ref={loadMoreRef} className="mt-8 flex justify-center">
-            <div className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-500">
-              {translateDynamic('Loading more rentals...')}
-            </div>
-          </div>
-        )}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="emerald"
+        />
       </div>
 
       <ListingDetailsModal
