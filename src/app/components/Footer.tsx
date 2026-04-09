@@ -5,11 +5,38 @@ import { useApp } from '../context/AppContext';
 
 export function Footer() {
   const { t, translateDynamic, theme } = useApp();
+  const DESTINATIONS_PER_COLUMN = 5;
+  const topDestinations = [
+    { id: 'santorini', label: t('footer.dest.santorini') },
+    { id: 'bali', label: t('footer.dest.bali') },
+    { id: 'paris', label: t('footer.dest.paris') },
+    { id: 'maldives', label: t('footer.dest.maldives') },
+    { id: 'tokyo', label: t('footer.dest.tokyo') },
+    { id: 'dubai', label: t('footer.dest.dubai') },
+    { id: 'barcelona', label: translateDynamic('Barcelona, Spain') },
+    { id: 'newyork', label: translateDynamic('New York, USA') },
+    { id: 'rome', label: translateDynamic('Rome, Italy') },
+    { id: 'kyoto', label: translateDynamic('Kyoto, Japan') },
+    { id: 'istanbul', label: translateDynamic('Istanbul, Turkey') },
+    { id: 'vienna', label: translateDynamic('Vienna, Austria') },
+    { id: 'sydney', label: translateDynamic('Sydney, Australia') },
+    { id: 'amsterdam', label: translateDynamic('Amsterdam, Netherlands') },
+    { id: 'lisbon', label: translateDynamic('Lisbon, Portugal') },
+  ];
+  const topDestinationColumns = topDestinations.reduce<Array<Array<{ id: string; label: string }>>>(
+    (columns, destination, index) => {
+      const columnIndex = Math.floor(index / DESTINATIONS_PER_COLUMN);
+      if (!columns[columnIndex]) columns[columnIndex] = [];
+      columns[columnIndex].push(destination);
+      return columns;
+    },
+    [],
+  );
 
   return (
     <footer className={`${theme === 'dark' ? 'bg-slate-900 text-slate-300' : 'bg-gray-900 text-gray-300'}`}>
       <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
@@ -54,15 +81,24 @@ export function Footer() {
           </div>
 
           {/* Top Destinations */}
-          <div>
+          <div className="lg:col-span-2">
             <h4 className="text-white font-semibold mb-4">{translateDynamic('Top Destinations')}</h4>
-            <ul className="space-y-2 text-sm">
-              {['Santorini, Greece', 'Bali, Indonesia', 'Paris, France', 'Maldives', 'Tokyo, Japan', 'Dubai, UAE'].map(dest => (
-                <li key={dest}>
-                  <Link to="/destinations" className="hover:text-cyan-400 transition-colors">{dest}</Link>
-                </li>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-2">
+              {topDestinationColumns.map((column, columnIndex) => (
+                <ul key={`top-destination-column-${columnIndex}`} className="space-y-2 text-sm">
+                  {column.map((destination) => (
+                    <li key={destination.id}>
+                      <Link
+                        to={`/destinations?destination=${encodeURIComponent(destination.id)}`}
+                        className="inline-block py-0.5 hover:text-cyan-400 transition-colors"
+                      >
+                        {destination.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               ))}
-            </ul>
+            </div>
           </div>
 
           {/* Contact */}
