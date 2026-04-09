@@ -4,7 +4,7 @@ import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-le
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import 'react-leaflet-cluster/dist/assets/MarkerCluster.css';
-import { useApp } from '../../context/AppContext';
+import { useApp, useTheme } from '../../context/AppContext';
 import type { TravelCategory, TravelLayerType, TravelMapLocation, TravelPlace } from '../../types/travel';
 import { TRAVEL_CATEGORY_LABEL, TRAVEL_COLORS } from '../../types/travel';
 
@@ -184,7 +184,6 @@ type TripPlaceMarkerProps = {
   selected: boolean;
   markerRefs: React.MutableRefObject<Record<string, L.Marker>>;
   onPlaceSelect: (placeId: string) => void;
-  translateDynamic: (value: string) => string;
   formatPrice: (price?: number) => string;
   t: (key: string) => string;
 };
@@ -194,7 +193,6 @@ const TripPlaceMarker = React.memo(function TripPlaceMarker({
   selected,
   markerRefs,
   onPlaceSelect,
-  translateDynamic,
   formatPrice,
   t,
 }: TripPlaceMarkerProps) {
@@ -218,7 +216,7 @@ const TripPlaceMarker = React.memo(function TripPlaceMarker({
           {place.imageUrl && (
             <img
               src={place.imageUrl}
-              alt={translateDynamic(place.name)}
+              alt={place.name}
               className="mb-2 h-24 w-full rounded-lg object-cover"
               loading="lazy"
             />
@@ -237,15 +235,15 @@ const TripPlaceMarker = React.memo(function TripPlaceMarker({
             </div>
             <div className="grid grid-cols-[88px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[11px] leading-5">
               <span className="font-semibold text-slate-500">Name</span>
-              <span className="font-semibold text-slate-900">{translateDynamic(place.name)}</span>
+              <span className="font-semibold text-slate-900">{place.name}</span>
               <span className="font-semibold text-slate-500">Location</span>
-              <span className="text-slate-700">{translateDynamic(place.address || t('planner.unknown_address'))}</span>
+              <span className="text-slate-700">{place.address || t('planner.unknown_address')}</span>
               <span className="font-semibold text-slate-500">City</span>
-              <span className="text-slate-700">{translateDynamic(place.city || t('planner.na'))}</span>
+              <span className="text-slate-700">{place.city || t('planner.na')}</span>
               <span className="font-semibold text-slate-500">Country</span>
-              <span className="text-slate-700">{translateDynamic(place.country || t('planner.na'))}</span>
+              <span className="text-slate-700">{place.country || t('planner.na')}</span>
               <span className="font-semibold text-slate-500">Description</span>
-              <span className="text-slate-700">{translateDynamic(place.description || t('planner.na'))}</span>
+              <span className="text-slate-700">{place.description || t('planner.na')}</span>
             </div>
           </div>
         </div>
@@ -324,7 +322,7 @@ export function TripMap({
   isLoading = false,
   sizeInvalidateKey,
 }: TripMapProps) {
-  const { theme, t, translateDynamic, formatPrice } = useApp();
+  const { theme, t, formatPrice } = useApp();
   const isDark = theme === 'dark';
   const deferredPlaces = useDeferredValue(places);
   const displayPlacesKey = useMemo(
@@ -344,13 +342,9 @@ export function TripMap({
     [displayPlaces],
   );
   const markerRefs = useRef<Record<string, L.Marker>>({});
-  const tileUrl = isDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-  const tileAttribution = isDark
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; CARTO'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-  const tileSubdomains = isDark ? (['a', 'b', 'c', 'd'] as const) : (['a', 'b', 'c'] as const);
+  const tileUrl = LIGHT_TILE_URL;
+  const tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const tileSubdomains = ['a', 'b', 'c'] as const;
 
   if (isLoading) {
     return (
@@ -424,7 +418,6 @@ export function TripMap({
               selected={selectedPlaceId === place.id}
               markerRefs={markerRefs}
               onPlaceSelect={onPlaceSelect}
-              translateDynamic={translateDynamic}
               formatPrice={formatPrice}
               t={t}
             />
@@ -465,7 +458,6 @@ type CoordinateReference = {
 };
 
 const LIGHT_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const DARK_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const MALDIVES_MAIN_REFERENCE = { lat: 4.1755, lng: 73.5093 };
 const COORDINATE_WARNING_CACHE = new Set<string>();
 const GENERIC_LOCATION_NAMES = new Set(['destination', 'hotel', 'rental']);
@@ -1379,14 +1371,12 @@ export function TravelLayersMap({
   singleLocationZoom = SINGLE_MARKER_FALLBACK_ZOOM,
   forceTheme,
 }: TravelLayersMapProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDark = (forceTheme ?? theme) === 'dark';
   const mapThemeStyles = useMemo(() => getMapThemeStyles(isDark), [isDark]);
-  const mapTileUrl = isDark ? DARK_TILE_URL : LIGHT_TILE_URL;
-  const mapTileAttribution = isDark
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; CARTO'
-    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
-  const mapTileSubdomains = isDark ? (['a', 'b', 'c', 'd'] as const) : (['a', 'b', 'c'] as const);
+  const mapTileUrl = LIGHT_TILE_URL;
+  const mapTileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  const mapTileSubdomains = ['a', 'b', 'c'] as const;
   const mapRef = useRef<L.Map | null>(null);
   const [activeMarkerId, setActiveMarkerId] = useState<string | null>(selectedDestinationId || null);
   const [isLocating, setIsLocating] = useState(false);
