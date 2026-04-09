@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { CalendarDays, CheckCircle2, Minus, Plus, X } from 'lucide-react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
-import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/AppContext';
 import { Calendar } from '../ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -31,7 +31,7 @@ export function ChatBookingWidget({
   onSubmit,
   onCancel,
 }: ChatBookingWidgetProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDarkTheme = theme === 'dark';
   const [selectedListingId, setSelectedListingId] = useState(defaultListingId || listings[0]?.id || '');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
