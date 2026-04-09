@@ -1,10 +1,11 @@
 import React from 'react';
 import { Moon, Sun } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useI18n, useTheme } from '../context/AppContext';
 import { motion } from 'motion/react';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme, translateDynamic } = useApp();
+  const { theme, toggleTheme } = useTheme();
+  const { translateDynamic } = useI18n();
 
   return (
     <motion.button
