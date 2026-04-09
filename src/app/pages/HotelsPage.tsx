@@ -3,9 +3,11 @@ import { Search, Star, MapPin, SlidersHorizontal, Wifi, Coffee, Car, Waves, Dumb
 import { useApp } from '../context/AppContext';
 import type { Hotel, Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
+import { PaginationControls } from '../components/PaginationControls';
 import { BookingModal } from '../components/BookingModal';
 import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { prefetchImages } from '../utils/prefetchImages';
 
 const amenityIcons: Record<string, React.ReactNode> = {
   'Wifi': <Wifi size={13} />,
@@ -54,8 +56,7 @@ export default function HotelsPage() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [visibleCount, setVisibleCount] = useState(18);
-  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const sliderMaxPrice = useMemo(
     () => Math.max(1000, ...publicHotels.map((hotel) => Number(hotel.pricePerNight) || 0)),
     [publicHotels],
@@ -105,33 +106,30 @@ export default function HotelsPage() {
     return [...f].sort((a, b) => b.pricePerNight - a.pricePerNight);
   }, [publicHotels, deferredSearch, destFilter, effectiveMaxPrice, minStars, sortBy, resolveHotelDestinationId]);
 
-  const pageSize = viewMode === 'grid' ? 18 : 12;
-  const visibleHotels = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
-  const hasMore = visibleCount < filtered.length;
+  const pageSize = viewMode === 'grid' ? 9 : 8;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paginatedHotels = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
   const destinationById = useMemo(
     () => new Map(publicDestinations.map((destination) => [destination.id, destination])),
     [publicDestinations],
   );
 
   useEffect(() => {
-    setVisibleCount(pageSize);
+    setCurrentPage(1);
   }, [pageSize, deferredSearch, destFilter, effectiveMaxPrice, minStars, sortBy]);
 
   useEffect(() => {
-    const node = loadMoreRef.current;
-    if (!node || !hasMore) return;
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setVisibleCount((count) => Math.min(count + pageSize, filtered.length));
-      },
-      { rootMargin: '600px' },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMore, pageSize, filtered.length]);
+  useEffect(() => {
+    const nextPageStart = currentPage * pageSize;
+    const nextPageHotels = filtered.slice(nextPageStart, nextPageStart + pageSize);
+    prefetchImages(nextPageHotels.map((hotel) => hotel.images[0]));
+  }, [filtered, currentPage, pageSize]);
 
   const handleFavoriteHotel = useCallback((e: React.MouseEvent, hotel: Hotel) => {
     e.stopPropagation();
@@ -187,7 +185,7 @@ export default function HotelsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchpriority="high"
+          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-blue-900/50" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
@@ -290,16 +288,25 @@ export default function HotelsPage() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="text-sm text-gray-500 mb-6">
-          {visibleHotels.length} / {filtered.length} {translateDynamic('hotels available')}
+          {filtered.length} {translateDynamic('hotels available')}
         </p>
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="blue"
+          className="mt-0 mb-6"
+        />
 
         {viewMode === 'grid' ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-7">
-            {visibleHotels.map(hotel => (
+            {paginatedHotels.map((hotel, index) => (
               <LazyCard key={hotel.id} minHeight={380}>
                 <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group h-full flex flex-col">
                   <div className="relative h-56 overflow-hidden shrink-0">
-                    <ImageCarousel images={hotel.images} className="h-56" showIndicators={false} showCounter={false} />
+                    <ImageCarousel images={hotel.images} className="h-56" showIndicators={false} showCounter={false} priority={index < 3} />
                     <div className="absolute top-3 left-3">
                       <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                         {translateDynamic(hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1))}
@@ -349,11 +356,11 @@ export default function HotelsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {visibleHotels.map(hotel => (
+            {paginatedHotels.map((hotel, index) => (
               <LazyCard key={hotel.id} minHeight={160}>
                 <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 flex">
                   <div className="relative w-64 shrink-0 overflow-hidden">
-                    <ImageCarousel images={hotel.images} className="h-full min-h-[160px]" showIndicators={false} showCounter={false} />
+                    <ImageCarousel images={hotel.images} className="h-full min-h-[160px]" showIndicators={false} showCounter={false} priority={index < 2} />
                   </div>
                   <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
@@ -400,13 +407,13 @@ export default function HotelsPage() {
           </div>
         )}
 
-        {hasMore && (
-          <div ref={loadMoreRef} className="mt-8 flex justify-center">
-            <div className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-medium text-gray-500">
-              {translateDynamic('Loading more hotels...')}
-            </div>
-          </div>
-        )}
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="blue"
+        />
       </div>
 
       <ListingDetailsModal
@@ -420,3 +427,4 @@ export default function HotelsPage() {
     </div>
   );
 }
+
