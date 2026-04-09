@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Calendar, CheckCircle, CreditCard, Star, Users, X } from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useI18n } from '../context/AppContext';
 import type { ListingDetailsItem } from './ListingDetailsModal';
 import { Calendar as BookingCalendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -54,7 +54,7 @@ function toDisplayValue(value: string, placeholder: string) {
 }
 
 export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
-  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat } = useApp();
+  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat } = useI18n();
   const [step, setStep] = useState<1 | 2>(DEFAULT_FORM.step);
   const [checkIn, setCheckIn] = useState(DEFAULT_FORM.checkIn);
   const [checkOut, setCheckOut] = useState(DEFAULT_FORM.checkOut);
