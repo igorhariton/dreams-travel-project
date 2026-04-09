@@ -43,6 +43,8 @@ export default function HomePage() {
   const navigate = useNavigate();
   const heroSectionRef = useRef<HTMLElement>(null);
   const heroFrameRef = useRef<HTMLIFrameElement>(null);
+  const lastHeroSearchRef = useRef<string>('');
+  const lastHeroSearchAtRef = useRef(0);
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -161,8 +163,13 @@ export default function HomePage() {
       if (payload.checkIn) params.set('checkIn', payload.checkIn);
       if (payload.checkOut) params.set('checkOut', payload.checkOut);
       params.set('guests', String(payload.guests ?? 2));
-
-      navigate(`/planner?${params.toString()}`);
+      const nextUrl = `/planner?${params.toString()}`;
+      const now = Date.now();
+      const isDuplicateSearch = lastHeroSearchRef.current === nextUrl && now - lastHeroSearchAtRef.current < 1200;
+      if (isDuplicateSearch) return;
+      lastHeroSearchRef.current = nextUrl;
+      lastHeroSearchAtRef.current = now;
+      navigate(nextUrl);
     };
 
     window.addEventListener('message', onHeroMessage);
@@ -280,7 +287,10 @@ export default function HomePage() {
         className="py-12"
         style={{
           ...BELOW_FOLD_SECTION_STYLE,
-          background: 'linear-gradient(90deg, #5e7384 0%, #557c8b 48%, #4a8797 100%)',
+          background:
+            theme === 'dark'
+              ? 'linear-gradient(90deg, #14263a 0%, #173447 48%, #1a4b5f 100%)'
+              : 'linear-gradient(90deg, #5e7384 0%, #557c8b 48%, #4a8797 100%)',
         }}
       >
         <div className="max-w-5xl mx-auto px-6">
@@ -294,7 +304,11 @@ export default function HomePage() {
                 transition={{ delay: i * 0.1 }}
                 className="text-center text-white"
               >
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <div
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3 ${
+                    theme === 'dark' ? 'bg-slate-100/10' : 'bg-white/20'
+                  }`}
+                >
                   {s.icon}
                 </div>
                 <div className="text-3xl font-black mb-1">{s.value}</div>
@@ -334,7 +348,16 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
                   <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
                     {dest.tags.slice(0, 2).map(tag => (
-                      <span key={tag} className="bg-white/90 text-xs font-medium px-2 py-1 rounded-full text-gray-700">{translateDynamic(tag)}</span>
+                      <span
+                        key={tag}
+                        className={`text-xs font-medium px-2 py-1 rounded-full border ${
+                          theme === 'dark'
+                            ? 'bg-slate-900/85 border-slate-700/80 text-slate-100'
+                            : 'bg-white/90 border-white/70 text-gray-700'
+                        }`}
+                      >
+                        {translateDynamic(tag)}
+                      </span>
                     ))}
                   </div>
                   <button
@@ -349,7 +372,9 @@ export default function HomePage() {
                         });
                       }
                     }}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 transition-transform ${
+                      theme === 'dark' ? 'bg-slate-900/85' : 'bg-white/90'
+                    }`}
                   >
                     <span className={isFavorite(dest.id) ? 'text-red-500' : 'text-gray-400'}>
                       {isFavorite(dest.id) ? '❤️' : '🤍'}
@@ -472,15 +497,17 @@ export default function HomePage() {
                       {'★'.repeat(hotel.stars)}
                     </span>
                   </div>
-                  <button
-                    onClick={() => {
-                      if (isFavorite(hotel.id)) removeFavorite(hotel.id);
-                      else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location });
-                    }}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                  >
-                    <span className={isFavorite(hotel.id) ? 'text-red-500' : 'text-gray-400'}>{isFavorite(hotel.id) ? '❤️' : '🤍'}</span>
-                  </button>
+                    <button
+                      onClick={() => {
+                        if (isFavorite(hotel.id)) removeFavorite(hotel.id);
+                        else addFavorite({ id: hotel.id, type: 'hotel', name: hotel.name, image: hotel.images[0], price: hotel.pricePerNight, rating: hotel.rating, location: hotel.location });
+                      }}
+                    className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center hover:scale-110 transition-transform ${
+                      theme === 'dark' ? 'bg-slate-900/85' : 'bg-white/90'
+                    }`}
+                    >
+                      <span className={isFavorite(hotel.id) ? 'text-red-500' : 'text-gray-400'}>{isFavorite(hotel.id) ? '❤️' : '🤍'}</span>
+                    </button>
                 </div>
                 <div className="p-5">
                   <div className="flex items-start justify-between mb-2">
