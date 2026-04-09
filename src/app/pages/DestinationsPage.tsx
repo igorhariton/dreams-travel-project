@@ -1,13 +1,15 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Filter, Star, MapPin, Globe2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { Destination } from '../data/travelData';
 import { ImageCarousel } from '../components/ImageCarousel';
+import { PaginationControls } from '../components/PaginationControls';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { TravelLayersMap, isValidCoordinatePair } from '../components/map/TripMap';
 import type { TravelMapLocation } from '../types/travel';
+import { prefetchImages } from '../utils/prefetchImages';
 
 const MALDIVES_MAIN_POINT = { lat: 4.1755, lng: 73.5093 };
 
@@ -28,6 +30,19 @@ function resolveDestinationCenter(destination: Destination) {
     return { lat: destination.lat, lng: destination.lng };
   }
   return { lat: 20, lng: 0 };
+}
+
+function doesDestinationMatchParam(destination: Destination, value: string) {
+  const normalizedValue = slugify(value);
+  if (!normalizedValue) return false;
+  const candidates = [
+    destination.id,
+    destination.name,
+    destination.country,
+    `${destination.name}-${destination.country}`,
+    `${destination.name}, ${destination.country}`,
+  ];
+  return candidates.some((candidate) => slugify(candidate) === normalizedValue);
 }
 
 // Renders only when visible in viewport
@@ -63,6 +78,7 @@ export default function DestinationsPage() {
     publicDestinations,
   } = useApp();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [activeContinent, setActiveContinent] = useState('All');
@@ -72,6 +88,8 @@ export default function DestinationsPage() {
   const [sortBy, setSortBy] = useState<'rating' | 'name' | 'trending'>('rating');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const lastAppliedDestinationParamRef = useRef<string | null>(null);
 
   const continents = useMemo(
     () => ['All', ...Array.from(new Set(publicDestinations.map((destination) => destination.continent).filter(Boolean)))],
@@ -95,6 +113,13 @@ export default function DestinationsPage() {
     if (sortBy === 'name') return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     return [...filtered].sort((a, b) => b.reviews - a.reviews);
   }, [publicDestinations, deferredSearch, activeContinent, activeTags, sortBy]);
+
+  const pageSize = viewMode === 'grid' ? 9 : 8;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const paginatedDestinations = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, currentPage, pageSize]);
 
   const selectedDestinationMapLocations = useMemo<TravelMapLocation[]>(() => {
     if (!selectedDest) return [];
@@ -163,6 +188,52 @@ export default function DestinationsPage() {
     else addFavorite({ id: dest.id, type: 'destination', name: dest.name, image: dest.images[0], rating: dest.rating, location: dest.country });
   }, [isFavorite, addFavorite, removeFavorite]);
 
+  const clearDestinationParam = useCallback(() => {
+    if (!searchParams.has('destination')) return;
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete('destination');
+    setSearchParams(nextSearchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const closeSelectedDestination = useCallback(() => {
+    setSelectedDest(null);
+    clearDestinationParam();
+  }, [clearDestinationParam]);
+
+  useEffect(() => {
+    const destinationParam = searchParams.get('destination');
+    if (!destinationParam) {
+      lastAppliedDestinationParamRef.current = null;
+      return;
+    }
+
+    const normalizedParam = slugify(destinationParam);
+    if (!normalizedParam || lastAppliedDestinationParamRef.current === normalizedParam) return;
+
+    const matchedDestination = publicDestinations.find((destination) =>
+      doesDestinationMatchParam(destination, destinationParam)
+    );
+    if (!matchedDestination) return;
+
+    setSelectedDest(matchedDestination);
+    setActiveTab('overview');
+    lastAppliedDestinationParamRef.current = normalizedParam;
+  }, [searchParams, publicDestinations]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [deferredSearch, activeContinent, activeTags, sortBy, viewMode]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    const nextPageStart = currentPage * pageSize;
+    const nextPageDestinations = sorted.slice(nextPageStart, nextPageStart + pageSize);
+    prefetchImages(nextPageDestinations.map((destination) => destination.images[0]));
+  }, [sorted, currentPage, pageSize]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
@@ -173,7 +244,7 @@ export default function DestinationsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-              fetchpriority="high"
+              fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(2,6,23,0.72) 0%, rgba(2,6,23,0.5) 100%)' }} />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
@@ -257,16 +328,25 @@ export default function DestinationsPage() {
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="text-sm text-gray-500 mb-6">{sorted.length} {translateDynamic('destinations found')}</p>
 
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={sorted.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="blue"
+          className="mt-0 mb-6"
+        />
+
         {viewMode === 'grid' ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {sorted.map(dest => (
+            {paginatedDestinations.map((dest, index) => (
               <LazyCard key={dest.id}>
                 <div
                   className="group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
                   onClick={() => setSelectedDest(dest)}
                 >
                   <div className="relative h-60 overflow-hidden">
-                    <ImageCarousel images={dest.images} className="h-60" />
+                    <ImageCarousel images={dest.images} className="h-60" priority={index < 3} />
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
                       <button onClick={e => handleFavorite(e, dest)}
@@ -321,14 +401,14 @@ export default function DestinationsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {sorted.map(dest => (
+            {paginatedDestinations.map((dest, index) => (
               <LazyCard key={dest.id} minHeight={140}>
                 <div
                   onClick={() => setSelectedDest(dest)}
                   className="group bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex gap-4 p-4 border border-gray-100 h-full"
                 >
                   <div className="w-40 h-32 shrink-0 rounded-xl overflow-hidden">
-                    <ImageCarousel images={dest.images} className="h-32" />
+                    <ImageCarousel images={dest.images} className="h-32" priority={index < 2} />
                   </div>
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
@@ -357,6 +437,14 @@ export default function DestinationsPage() {
             ))}
           </div>
         )}
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalItems={sorted.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          tone="blue"
+        />
       </div>
 
       {/* Modal */}
@@ -364,14 +452,14 @@ export default function DestinationsPage() {
         {selectedDest && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setSelectedDest(null)}
+              onClick={closeSelectedDestination}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
             <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
               <div className="relative h-72">
-                <ImageCarousel images={selectedDest.images} className="h-72" />
+                <ImageCarousel images={selectedDest.images} className="h-72" priority />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
-                <button onClick={() => setSelectedDest(null)}
+                <button onClick={closeSelectedDestination}
                   className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
                   <X size={18} />
                 </button>
@@ -397,23 +485,7 @@ export default function DestinationsPage() {
               </div>
 
               <div className="p-6">
-                {activeTab === 'overview' && (
-                  <div>
-                    <p className="text-gray-600 leading-relaxed mb-5">{translateDynamic(selectedDest.description)}</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Best Season')}</div>
-                        <div className="font-medium text-gray-900">{translateDynamic(selectedDest.bestSeason)}</div>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-4">
-                        <div className="text-xs font-semibold text-gray-500 mb-1">{translateDynamic('Tags')}</div>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedDest.tags.map(tag => <span key={tag} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{translateDynamic(tag)}</span>)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {activeTab === 'overview' && selectedDestinationOverview}
                 {activeTab === 'culture' && (
                   <div>
                     <h3 className="font-bold text-gray-900 mb-3">🎭 {translateDynamic('Culture & Heritage')}</h3>
@@ -463,3 +535,4 @@ export default function DestinationsPage() {
     </div>
   );
 }
+
