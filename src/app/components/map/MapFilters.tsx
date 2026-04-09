@@ -1,5 +1,5 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { useI18n } from '../../context/AppContext';
 import type { TravelFilterOptions, TravelFilters } from '../../types/travel';
 import { Select } from '../common/Select';
 
@@ -20,7 +20,7 @@ export function MapFilters({
   onCityChange,
   onCategoryChange,
 }: MapFiltersProps) {
-  const { t, translateDynamic } = useApp();
+  const { t, translateDynamic } = useI18n();
   const tripOptions = options.trips.map((option) => ({
     ...option,
     label: option.value === 'all' ? t('planner.filter.all_trips') : translateDynamic(option.label),
