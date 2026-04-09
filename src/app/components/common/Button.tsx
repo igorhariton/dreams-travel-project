@@ -1,5 +1,5 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/AppContext';
 import { TRAVEL_COLORS } from '../../types/travel';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
@@ -24,7 +24,7 @@ export function Button({
   fullWidth = false,
   ...props
 }: ButtonProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDark = theme === 'dark';
 
   const variantStyles: Record<Variant, string> = {
