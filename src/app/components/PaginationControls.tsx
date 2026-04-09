@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { useI18n } from '../context/AppContext';
 
 type PaginationTone = 'blue' | 'emerald';
 
@@ -25,7 +25,7 @@ export function PaginationControls({
   tone = 'blue',
   className = '',
 }: PaginationControlsProps) {
-  const { t } = useApp();
+  const { t } = useI18n();
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
 
