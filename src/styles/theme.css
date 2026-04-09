@@ -819,6 +819,146 @@ html.dark select:focus {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22) !important;
 }
 
+/* Keep login page visuals stable regardless of global theme */
+html.dark .travel-login-fixed {
+  color-scheme: light;
+}
+
+html.dark .travel-login-fixed input[type="text"],
+html.dark .travel-login-fixed input[type="email"],
+html.dark .travel-login-fixed input[type="password"],
+html.dark .travel-login-fixed input[type="number"],
+html.dark .travel-login-fixed textarea,
+html.dark .travel-login-fixed select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cfd6e3 !important;
+  box-shadow: none !important;
+}
+
+html.dark .travel-login-fixed input:focus,
+html.dark .travel-login-fixed textarea:focus,
+html.dark .travel-login-fixed select:focus {
+  border-color: #93c5fd !important;
+  box-shadow: 0 0 0 2px rgba(147, 197, 253, 0.32) !important;
+}
+
+html.dark .travel-login-fixed ::placeholder {
+  color: #8a90a0 !important;
+}
+
+html.dark .travel-login-fixed {
+  background: #f4efe7 !important;
+  color: #0f172a !important;
+}
+
+html.dark .travel-login-fixed .travel-login-card {
+  background: #ffffff !important;
+}
+
+html.dark .travel-login-fixed .travel-login-form-pane {
+  background: linear-gradient(180deg, #fffdfa 0%, #f7f2ea 100%) !important;
+}
+
+html.dark .travel-login-fixed .travel-login-title {
+  color: #1e275c !important;
+}
+
+html.dark .travel-login-fixed .travel-login-input-shell {
+  background-color: #ffffff !important;
+  border-color: #cfd6e3 !important;
+}
+
+html.dark .travel-login-fixed .travel-login-input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cfd6e3 !important;
+}
+
+html.dark .travel-login-fixed .travel-login-input.bg-transparent {
+  background-color: transparent !important;
+}
+
+html.dark .travel-login-fixed .travel-login-show-btn {
+  color: #8a90a0 !important;
+}
+
+html.dark .travel-login-fixed .travel-login-remember,
+html.dark .travel-login-fixed .travel-login-helper {
+  color: #545c6d !important;
+}
+
+html.dark .travel-login-fixed .travel-login-demo-box {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: #d8dde8 !important;
+  color: #374151 !important;
+}
+
+html.dark .travel-login-fixed .travel-login-social-btn {
+  background: #ffffff !important;
+  border-color: #d8dde8 !important;
+  color: #4d5565 !important;
+}
+
+/* Keep register page visuals stable regardless of global theme */
+html.dark .travel-register-fixed {
+  color-scheme: light;
+  background: #f4efe7 !important;
+  color: #0f172a !important;
+}
+
+html.dark .travel-register-fixed .travel-register-card {
+  background: #ffffff !important;
+}
+
+html.dark .travel-register-fixed .travel-register-form-pane {
+  background: #fdfaf6 !important;
+  color: #0f172a !important;
+}
+
+html.dark .travel-register-fixed .travel-register-title {
+  color: #1e275c !important;
+}
+
+html.dark .travel-register-fixed .travel-register-subtitle {
+  color: #6b7280 !important;
+}
+
+html.dark .travel-register-fixed input[type="text"],
+html.dark .travel-register-fixed input[type="email"],
+html.dark .travel-register-fixed input[type="password"],
+html.dark .travel-register-fixed input[type="number"],
+html.dark .travel-register-fixed textarea,
+html.dark .travel-register-fixed select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+  box-shadow: none !important;
+}
+
+html.dark .travel-register-fixed .travel-register-input-shell {
+  background-color: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+html.dark .travel-register-fixed .travel-register-input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #d1d5db !important;
+}
+
+html.dark .travel-register-fixed .travel-register-input-transparent {
+  background-color: transparent !important;
+}
+
+html.dark .travel-register-fixed .travel-register-show-btn {
+  color: #6b7280 !important;
+}
+
+html.dark .travel-register-fixed ::placeholder {
+  color: #6b7280 !important;
+}
+
 /* Card styling */
 html.dark .card,
 html.dark [class*="card"] {
