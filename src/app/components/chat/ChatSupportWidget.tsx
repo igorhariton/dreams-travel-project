@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Headset, Mail, SendHorizontal, User, X } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/AppContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { SupportDraft } from '../../chat/types';
 
@@ -18,7 +18,7 @@ const SUPPORT_TOPICS = [
 ];
 
 export function ChatSupportWidget({ onSubmit, onCancel }: ChatSupportWidgetProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDarkTheme = theme === 'dark';
   const [topic, setTopic] = useState(SUPPORT_TOPICS[0].value);
   const [name, setName] = useState('');
