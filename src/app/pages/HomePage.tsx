@@ -427,7 +427,7 @@ export default function HomePage() {
                     alt={item.name}
                     loading="lazy"
                     decoding="async"
-                fetchpriority="low"
+                fetchPriority="low"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -572,7 +572,7 @@ export default function HomePage() {
       {/* CTA Banner */}
       <section className="relative py-20 overflow-hidden" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="absolute inset-0">
-              <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchpriority="low" className="w-full h-full object-cover" />
+              <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-cyan-900/80" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
@@ -607,3 +607,4 @@ export default function HomePage() {
     </>
   );
 }
+
