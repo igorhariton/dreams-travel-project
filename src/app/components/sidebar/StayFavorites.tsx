@@ -37,7 +37,7 @@ const StayFavoriteRow = React.memo(function StayFavoriteRow({
   onQuickAdd,
   onToggleFavorite,
 }: StayFavoriteRowProps) {
-  const { theme, t, translateDynamic } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
 
   return (
@@ -55,10 +55,10 @@ const StayFavoriteRow = React.memo(function StayFavoriteRow({
       >
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{translateDynamic(place.name)}</div>
+            <div className={`text-sm font-semibold ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{place.name}</div>
             <div className={`mt-0.5 inline-flex items-center gap-1 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <MapPin size={11} />
-              {translateDynamic(place.city || place.country || place.address || t('planner.unknown'))}
+              {place.city || place.country || place.address || t('planner.unknown')}
             </div>
           </div>
           <span
@@ -115,7 +115,7 @@ export const StayFavorites = React.memo(function StayFavorites({
   onToggleFavorite,
   onCategoryFilter,
 }: StayFavoritesProps) {
-  const { theme, t, translateDynamic } = useApp();
+  const { theme, t } = useApp();
   const isDark = theme === 'dark';
   const [activeTab, setActiveTab] = useState<'all' | TravelCategory>('all');
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_ITEMS);
@@ -208,7 +208,7 @@ export const StayFavorites = React.memo(function StayFavorites({
                 }`}
                 style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
               >
-                + {translateDynamic(favorite.name)}
+                + {favorite.name}
               </button>
             ))}
           </div>
@@ -234,7 +234,7 @@ export const StayFavorites = React.memo(function StayFavorites({
             className="w-full"
             onClick={loadMore}
           >
-            {translateDynamic(`Load more (${remainingItems})`)}
+            {`Load more (${remainingItems})`}
           </Button>
         ) : null}
       </div>
