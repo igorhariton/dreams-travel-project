@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Mail, MessageCircle, SendHorizontal, User, X } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/AppContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { AssistantListing, ContactDraft } from '../../chat/types';
 
@@ -17,7 +17,7 @@ export function ChatContactWidget({
   onSubmit,
   onCancel,
 }: ChatContactWidgetProps) {
-  const { theme } = useApp();
+  const { theme } = useTheme();
   const isDarkTheme = theme === 'dark';
   const [listingId, setListingId] = useState(defaultListingId || listings[0]?.id || '');
   const [name, setName] = useState('');
