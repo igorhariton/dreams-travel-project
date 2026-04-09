@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback, ReactNode } from 'react';
 import {
   destinations as seedDestinations,
   hotels as seedHotels,
@@ -644,6 +644,22 @@ interface AppContextType {
   getDraftListings: () => HostListing[];
 }
 
+interface I18nContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translateDynamic: (text: string) => string;
+  formatPrice: (price: number) => string;
+  getPriceWithoutFormat: (price: number) => number;
+  getCurrencySymbol: () => string;
+}
+
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
+}
+
 // ── Translations (unchanged from original) ────────────────────────────────────
 
 const translations: Record<Language, Record<string, string>> = {
@@ -1036,9 +1052,16 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
+const I18nContext = createContext<I18nContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const EXCHANGE_RATES: Record<Language, number> = { 'en': 1.0, 'ro': 4.97, 'ru': 98.50 };
 const CURRENCY_SYMBOLS: Record<Language, string> = { 'en': '$', 'ro': 'lei', 'ru': '₽' };
+const TRANSLATION_FLUSH_DELAY_MS = 220;
+const TRANSLATION_RETRY_DELAY_MS = 320;
+const TRANSLATION_BATCH_SIZE = 24;
+const TRANSLATION_MAX_TEXT_LENGTH = 84;
+const TRANSLATION_MAX_WORDS = 12;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── Existing state ────────────────────────────────────────────────────────
@@ -1058,6 +1081,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pendingTranslations = useRef<Set<string>>(new Set());
   const translationQueue = useRef<Map<Language, Set<string>>>(new Map());
   const translationFlushTimer = useRef<number | null>(null);
+  const isTranslationFlushRunning = useRef(false);
+  const hasQueuedFlushAfterRun = useRef(false);
 
   // ── New state ─────────────────────────────────────────────────────────────
   const [catalog, setCatalog] = useState<CatalogState>(() => {
@@ -1218,8 +1243,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     htmlElement.style.colorScheme = theme;
   }, [theme]);
 
-  const setTheme = (newTheme: Theme) => { setThemeState(newTheme); localStorage.setItem(STORAGE_KEYS.theme, newTheme); };
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.theme, newTheme);
+    }
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  }, [setTheme, theme]);
 
   // ── NEW: Auth ─────────────────────────────────────────────────────────────
   async function login(identifier: string, password: string) {
@@ -1459,15 +1491,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
   function getRejectedListings() { return hostListings.filter((l) => l.status === 'rejected'); }
   function getDraftListings() { return hostListings.filter((l) => l.status === 'draft'); }
 
-  // ── Existing: Translation logic (unchanged) ───────────────────────────────
-  const shouldTranslate = (text: string): boolean => {
-    if (!text || text.trim().length < 2) return false;
-    const hasLetters = /[A-Za-zÀ-ÖØ-öø-ÿА-Яа-я]/.test(text);
-    const hasManySymbols = /^[^A-Za-zÀ-ÖØ-öø-ÿА-Яа-я0-9\s]+$/.test(text);
-    return hasLetters && !hasManySymbols;
-  };
+  // ── Existing: Translation logic (performance-tuned) ───────────────────────
+  const hasQueuedTranslations = useCallback(() => {
+    for (const queuedTexts of translationQueue.current.values()) {
+      if (queuedTexts.size > 0) return true;
+    }
+    return false;
+  }, []);
 
-  const translateWithGoogle = async (text: string, target: Language): Promise<string> => {
+  const shouldTranslate = useCallback((text: string): boolean => {
+    const normalizedText = text.trim();
+    if (!normalizedText || normalizedText.length < 2) return false;
+    if (normalizedText.length > TRANSLATION_MAX_TEXT_LENGTH) return false;
+    if (normalizedText.split(/\s+/).length > TRANSLATION_MAX_WORDS) return false;
+    if (/https?:\/\/|www\./i.test(normalizedText)) return false;
+    const hasLetters = /[A-Za-zÀ-ÖØ-öø-ÿА-Яа-я]/.test(normalizedText);
+    const hasManySymbols = /^[^A-Za-zÀ-ÖØ-öø-ÿА-Яа-я0-9\s]+$/.test(normalizedText);
+    return hasLetters && !hasManySymbols;
+  }, []);
+
+  const translateWithGoogle = useCallback(async (text: string, target: Language): Promise<string> => {
     if (target === 'en') return text;
     const params = new URLSearchParams({ client: 'gtx', sl: 'en', tl: target, dt: 't', q: text });
     const res = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`);
@@ -1475,66 +1518,91 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const data = await res.json();
     const translated = Array.isArray(data?.[0]) ? data[0].map((chunk: any[]) => chunk?.[0] ?? '').join('') : '';
     return translated || text;
-  };
+  }, []);
 
-  const flushQueuedTranslations = async () => {
-    const queuedEntries = Array.from(translationQueue.current.entries()).map(([target, texts]) => [
-      target,
-      Array.from(texts),
-    ] as const);
-    translationQueue.current.clear();
+  const flushQueuedTranslations = useCallback(async () => {
+    if (isTranslationFlushRunning.current) {
+      hasQueuedFlushAfterRun.current = true;
+      return;
+    }
+
+    const queuedEntries = Array.from(translationQueue.current.entries())
+      .map(([target, texts]) => {
+        const batch = Array.from(texts).slice(0, TRANSLATION_BATCH_SIZE);
+        if (!batch.length) return null;
+        batch.forEach((text) => texts.delete(text));
+        if (texts.size === 0) translationQueue.current.delete(target);
+        return [target, batch] as [Language, string[]];
+      })
+      .filter((entry): entry is [Language, string[]] => entry !== null);
 
     if (!queuedEntries.length) return;
+    isTranslationFlushRunning.current = true;
 
     const mergedByLanguage: Partial<Record<Language, Record<string, string>>> = {};
 
-    await Promise.all(
-      queuedEntries.map(async ([target, texts]) => {
-        const translatedEntries = await Promise.all(
-          texts.map(async (text) => {
-            try {
-              return [text, await translateWithGoogle(text, target)] as const;
-            } catch {
-              return [text, text] as const;
-            }
-          }),
-        );
+    try {
+      await Promise.all(
+        queuedEntries.map(async ([target, texts]) => {
+          const translatedEntries = await Promise.all(
+            texts.map(async (text) => {
+              try {
+                return [text, await translateWithGoogle(text, target)] as const;
+              } catch {
+                return [text, text] as const;
+              }
+            }),
+          );
 
-        if (!translatedEntries.length) return;
-        mergedByLanguage[target] = Object.fromEntries(translatedEntries);
-      }),
-    );
+          if (!translatedEntries.length) return;
+          mergedByLanguage[target] = Object.fromEntries(translatedEntries);
+        }),
+      );
 
-    if (!Object.keys(mergedByLanguage).length) return;
+      if (!Object.keys(mergedByLanguage).length) return;
 
-    setDynamicTranslations((prev) => {
-      let hasChanges = false;
-      const next = { ...prev };
+      setDynamicTranslations((prev) => {
+        let hasChanges = false;
+        const next = { ...prev };
 
-      (Object.keys(mergedByLanguage) as Language[]).forEach((target) => {
-        const updates = mergedByLanguage[target];
-        if (!updates) return;
+        (Object.keys(mergedByLanguage) as Language[]).forEach((target) => {
+          const updates = mergedByLanguage[target];
+          if (!updates) return;
 
-        const currentEntries = prev[target];
-        const changedEntries = Object.entries(updates).filter(([text, translated]) => currentEntries[text] !== translated);
-        if (!changedEntries.length) return;
+          const currentEntries = prev[target];
+          const changedEntries = Object.entries(updates).filter(([text, translated]) => currentEntries[text] !== translated);
+          if (!changedEntries.length) return;
 
-        hasChanges = true;
-        next[target] = {
-          ...currentEntries,
-          ...Object.fromEntries(changedEntries),
-        };
+          hasChanges = true;
+          next[target] = {
+            ...currentEntries,
+            ...Object.fromEntries(changedEntries),
+          };
+        });
+
+        return hasChanges ? next : prev;
+      });
+    } finally {
+      queuedEntries.forEach(([target, texts]) => {
+        texts.forEach((text) => pendingTranslations.current.delete(`${target}::${text}`));
       });
 
-      return hasChanges ? next : prev;
-    });
+      isTranslationFlushRunning.current = false;
 
-    queuedEntries.forEach(([target, texts]) => {
-      texts.forEach((text) => pendingTranslations.current.delete(`${target}::${text}`));
-    });
-  };
+      if (typeof window !== 'undefined' && hasQueuedTranslations() && translationFlushTimer.current === null) {
+        translationFlushTimer.current = window.setTimeout(() => {
+          translationFlushTimer.current = null;
+          void flushQueuedTranslations();
+        }, TRANSLATION_RETRY_DELAY_MS);
+      }
 
-  const scheduleTranslation = (text: string, target: Language) => {
+      if (!hasQueuedTranslations()) {
+        hasQueuedFlushAfterRun.current = false;
+      }
+    }
+  }, [hasQueuedTranslations, translateWithGoogle]);
+
+  const scheduleTranslation = useCallback((text: string, target: Language) => {
     if (target === 'en') return;
 
     const cacheKey = `${target}::${text}`;
@@ -1546,39 +1614,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
     queuedTexts.add(text);
     translationQueue.current.set(target, queuedTexts);
 
-    if (translationFlushTimer.current !== null || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
+    if (isTranslationFlushRunning.current) {
+      hasQueuedFlushAfterRun.current = true;
+      return;
+    }
+    if (translationFlushTimer.current !== null) return;
 
     translationFlushTimer.current = window.setTimeout(() => {
       translationFlushTimer.current = null;
       void flushQueuedTranslations();
-    }, 120);
-  };
+    }, TRANSLATION_FLUSH_DELAY_MS);
+  }, [flushQueuedTranslations]);
 
-  const translateDynamic = (text: string): string => {
+  const translateDynamic = useCallback((text: string): string => {
     if (language === 'en' || !shouldTranslate(text)) return text;
     const cached = dynamicTranslations[language][text];
     if (cached) return cached;
     scheduleTranslation(text, language);
     return text;
-  };
+  }, [dynamicTranslations, language, scheduleTranslation, shouldTranslate]);
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     const localized = translations[language][key];
     if (localized) return localized;
     const english = translations['en'][key];
     if (!english) return key;
     return translateDynamic(english);
-  };
+  }, [language, translateDynamic]);
 
-  const getCurrencySymbol = (): string => CURRENCY_SYMBOLS[language];
-  const getPriceWithoutFormat = (price: number): number => Math.round(price * EXCHANGE_RATES[language]);
-  const formatPrice = (price: number): string => {
+  const getCurrencySymbol = useCallback((): string => CURRENCY_SYMBOLS[language], [language]);
+  const getPriceWithoutFormat = useCallback((price: number): number => Math.round(price * EXCHANGE_RATES[language]), [language]);
+  const formatPrice = useCallback((price: number): string => {
     const p = getPriceWithoutFormat(price);
     const s = CURRENCY_SYMBOLS[language];
     if (language === 'en') return `${s}${p}`;
     if (language === 'ro') return `${p} ${s}`;
     return `${p}${s}`;
-  };
+  }, [getPriceWithoutFormat, language]);
+
+  const i18nContextValue = useMemo<I18nContextType>(
+    () => ({
+      language,
+      setLanguage,
+      t,
+      translateDynamic,
+      formatPrice,
+      getPriceWithoutFormat,
+      getCurrencySymbol,
+    }),
+    [formatPrice, getCurrencySymbol, getPriceWithoutFormat, language, t, translateDynamic],
+  );
+  const themeContextValue = useMemo<ThemeContextType>(
+    () => ({
+      theme,
+      setTheme,
+      toggleTheme,
+    }),
+    [setTheme, theme, toggleTheme],
+  );
 
   const addFavorite = (item: FavoriteItem) => {
     const safeItem = sanitizeFavoriteItem(item);
@@ -1589,27 +1683,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
   return (
-    <AppContext.Provider value={{
-      // Existing
-      language, setLanguage, role, setRole, theme, setTheme, toggleTheme,
-      favorites, addFavorite, removeFavorite, isFavorite,
-      destinations, setDestinations, hotels, setHotels, rentals, setRentals,
-      publicDestinations, publicHotels, publicRentals,
-      t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
-      // New
-      currentUser, login, logout, register, isAuthLoading,
-      hostListings, addHostListing, updateHostListing, deleteHostListing,
-      submitHostListing, resubmitHostListing, duplicateHostListing,
-      approveListing, rejectListing,
-      getMyListings, getPendingListings, getApprovedListings, getRejectedListings, getDraftListings,
-    }}>
-      {children}
-    </AppContext.Provider>
+    <ThemeContext.Provider value={themeContextValue}>
+      <I18nContext.Provider value={i18nContextValue}>
+        <AppContext.Provider value={{
+          // Existing
+          language, setLanguage, role, setRole, theme, setTheme, toggleTheme,
+          favorites, addFavorite, removeFavorite, isFavorite,
+          destinations, setDestinations, hotels, setHotels, rentals, setRentals,
+          publicDestinations, publicHotels, publicRentals,
+          t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
+          // New
+          currentUser, login, logout, register, isAuthLoading,
+          hostListings, addHostListing, updateHostListing, deleteHostListing,
+          submitHostListing, resubmitHostListing, duplicateHostListing,
+          approveListing, rejectListing,
+          getMyListings, getPendingListings, getApprovedListings, getRejectedListings, getDraftListings,
+        }}>
+          {children}
+        </AppContext.Provider>
+      </I18nContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
+}
+
+export function useI18n() {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error('useI18n must be used within AppProvider');
+  return ctx;
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within AppProvider');
   return ctx;
 }
