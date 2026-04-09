@@ -34,8 +34,8 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
-      <div className="mx-auto grid h-full max-w-[1500px] overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(29,35,52,0.12)] lg:grid-cols-[1.02fr_1fr]">
+    <div className="travel-register-fixed h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
+      <div className="travel-register-card mx-auto grid h-full max-w-[1500px] overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(29,35,52,0.12)] lg:grid-cols-[1.02fr_1fr]">
         {/* LEFT */}
         <section className="relative hidden overflow-hidden lg:block">
           <img
@@ -82,7 +82,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         </section>
 
         {/* RIGHT */}
-        <section className="flex items-center justify-center bg-[#fdfaf6] px-6 md:px-12">
+        <section className="travel-register-form-pane flex items-center justify-center bg-[#fdfaf6] px-6 md:px-12">
           <div className="w-full max-w-[500px]">
             {/* MOBILE TOP */}
             <div className="mb-6 flex items-center gap-3 lg:hidden">
@@ -106,11 +106,11 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
               </p>
             </div>
 
-            <h2 className="text-[2.3rem] font-black text-[#1e275c]">
+            <h2 className="travel-register-title text-[2.3rem] font-black text-[#1e275c]">
               Create your account
             </h2>
 
-            <p className="mt-2 text-gray-500">
+            <p className="travel-register-subtitle mt-2 text-gray-500">
               Join TravelDreams and start exploring.
             </p>
 
@@ -120,7 +120,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                 placeholder="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                className="travel-register-input h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
               />
 
               <input
@@ -128,40 +128,40 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                className="travel-register-input h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
               />
 
-              <div className="flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
+              <div className="travel-register-input-shell flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-transparent outline-none"
+                  className="travel-register-input travel-register-input-transparent w-full bg-transparent outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="text-sm font-medium text-gray-500 transition hover:text-[#1e275c]"
+                  className="travel-register-show-btn text-sm font-medium text-gray-500 transition hover:text-[#1e275c]"
                 >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
 
-              <div className="flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
+              <div className="travel-register-input-shell flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full bg-transparent outline-none"
+                  className="travel-register-input travel-register-input-transparent w-full bg-transparent outline-none"
                 />
                 <button
                   type="button"
                   onClick={() =>
                     setShowConfirmPassword((prev) => !prev)
                   }
-                  className="text-sm font-medium text-gray-500 transition hover:text-[#1e275c]"
+                  className="travel-register-show-btn text-sm font-medium text-gray-500 transition hover:text-[#1e275c]"
                 >
                   {showConfirmPassword ? "Hide" : "Show"}
                 </button>
