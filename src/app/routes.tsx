@@ -1,7 +1,7 @@
 import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../layouts';
-import { useApp } from '../context';
+import { useI18n } from '../context';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const DestinationsPage = lazy(() => import('../pages/DestinationsPage'));
@@ -32,6 +32,8 @@ function prefetchAllPages() {
 
   const pages = [
     () => import('../pages/DestinationsPage'),
+    () => import('../pages/PlannerPage'),
+    () => import('./components/map/TripMap'),
   ];
 
   if ('requestIdleCallback' in window) {
@@ -56,7 +58,7 @@ if (typeof window !== 'undefined') {
 }
 
 function PageLoader() {
-  const { translateDynamic } = useApp();
+  const { translateDynamic } = useI18n();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
