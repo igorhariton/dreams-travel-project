@@ -75,6 +75,7 @@ export default function DestinationsPage() {
     addFavorite,
     removeFavorite,
     isFavorite,
+    theme,
     publicDestinations,
   } = useApp();
   const navigate = useNavigate();
@@ -350,7 +351,9 @@ export default function DestinationsPage() {
                     <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 40%)' }} />
                     <div className="absolute top-3 right-3">
                       <button onClick={e => handleFavorite(e, dest)}
-                        className="w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow">
+                        className={`w-9 h-9 rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow ${
+                          theme === 'dark' ? 'bg-slate-900/85' : 'bg-white/90'
+                        }`}>
                         {isFavorite(dest.id) ? '❤️' : '🤍'}
                       </button>
                     </div>
@@ -460,7 +463,9 @@ export default function DestinationsPage() {
                 <ImageCarousel images={selectedDest.images} className="h-72" priority />
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 45%)' }} />
                 <button onClick={closeSelectedDestination}
-                  className="absolute top-4 right-4 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow">
+                  className={`absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow ${
+                    theme === 'dark' ? 'bg-slate-900/85 hover:bg-slate-900' : 'bg-white/90 hover:bg-white'
+                  }`}>
                   <X size={18} />
                 </button>
                 <div className="absolute bottom-5 left-5 text-white pointer-events-none">
