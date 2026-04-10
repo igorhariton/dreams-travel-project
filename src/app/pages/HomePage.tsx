@@ -599,8 +599,7 @@ export default function HomePage() {
       {/* CTA Banner */}
       <section className="relative py-20 overflow-hidden" style={BELOW_FOLD_SECTION_STYLE}>
         <div className="absolute inset-0">
-              <img src="/images/_site/cta.jpg" alt="CTA" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-cyan-900/80" />
+          <img src="/images/_site/cta-new.png" alt="CTA" loading="lazy" decoding="async" fetchPriority="low" className="w-full h-full object-cover" />
         </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
