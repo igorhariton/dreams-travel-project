@@ -93,15 +93,22 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-gray-50 pt-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-rose-600 to-pink-500 py-16 px-6">
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Heart size={32} className="text-white fill-white" />
-          </div>
-          <h1 className="text-4xl font-black text-white mb-2">{t('favorites.title')}</h1>
-          <p className="text-white/80">{t('favorites.subtitle')}</p>
+      <div className="relative overflow-hidden py-16 px-6">
+        <img
+          src="/images/_site/hero-favorites.jpg"
+          alt="Favorites"
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/72 via-slate-900/56 to-cyan-950/54" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_46%)]" />
+        <div className="relative max-w-5xl mx-auto text-center">
+          <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('favorites.title')}</h1>
+          <p className="text-white/85 text-lg">{t('favorites.subtitle')}</p>
           {favorites.length > 0 && (
-            <div className="mt-4 inline-flex items-center gap-2 bg-white/20 rounded-full px-5 py-2 text-white text-sm">
+            <div className="mt-4 text-sm text-white/90">
               {favorites.length} {t('favorites.saved')} {favorites.length === 1 ? t('favorites.place_singular') : t('favorites.place_plural')}
             </div>
           )}
