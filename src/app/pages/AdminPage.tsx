@@ -220,23 +220,24 @@ function SectionCard({ children }: { children: React.ReactNode }) {
 
 // ── FIX 5: Pagination — text și border cu contrast corect pe light
 function Pagination({ current, total, pageSize, onChange }: { current: number; total: number; pageSize: number; onChange: (p: number) => void }) {
-  const totalPages = Math.ceil(total / pageSize);
-  if (totalPages <= 1) return null;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const safeCurrent = Math.min(Math.max(current, 1), totalPages);
+  if (total <= pageSize) return null;
   return (
     <div className="flex items-center justify-between pt-2">
-      <p className="text-sm text-slate-500">{Math.min((current - 1) * pageSize + 1, total)}–{Math.min(current * pageSize, total)} din {total}</p>
+      <p className="text-sm text-slate-500">{Math.min((safeCurrent - 1) * pageSize + 1, total)}–{Math.min(safeCurrent * pageSize, total)} din {total}</p>
       <div className="flex gap-1">
-        <button type="button" onClick={() => onChange(Math.max(1, current - 1))} disabled={current === 1} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40">← Prev</button>
+        <button type="button" onClick={() => onChange(Math.max(1, safeCurrent - 1))} disabled={safeCurrent === 1} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40">← Prev</button>
         {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-          const page = totalPages <= 7 ? i + 1 : current <= 4 ? i + 1 : current >= totalPages - 3 ? totalPages - 6 + i : current - 3 + i;
+          const page = totalPages <= 7 ? i + 1 : safeCurrent <= 4 ? i + 1 : safeCurrent >= totalPages - 3 ? totalPages - 6 + i : safeCurrent - 3 + i;
           return (
             <button key={page} type="button" onClick={() => onChange(page)}
-              className={'rounded-xl border px-3 py-1.5 text-sm transition ' + (page === current ? 'border-slate-900 bg-slate-950 text-white dark:bg-cyan-500 dark:border-cyan-500' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
+              className={'rounded-xl border px-3 py-1.5 text-sm transition ' + (page === safeCurrent ? 'border-slate-900 bg-slate-950 text-white dark:bg-cyan-500 dark:border-cyan-500' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300')}>
               {page}
             </button>
           );
         })}
-        <button type="button" onClick={() => onChange(Math.min(totalPages, current + 1))} disabled={current === totalPages} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40">Next →</button>
+        <button type="button" onClick={() => onChange(Math.min(totalPages, safeCurrent + 1))} disabled={safeCurrent === totalPages} className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40">Next →</button>
       </div>
     </div>
   );
@@ -660,6 +661,20 @@ export default function AdminPageV2() {
     return list;
   }, [enrichedRentals, query, continent, sortOrder]);
 
+  const getMaxPage = (itemsCount: number) => Math.max(1, Math.ceil(itemsCount / PAGE_SIZE));
+
+  useEffect(() => {
+    setDestPage((prev) => Math.min(prev, getMaxPage(filteredDestinations.length)));
+  }, [filteredDestinations.length]);
+
+  useEffect(() => {
+    setHotelPage((prev) => Math.min(prev, getMaxPage(filteredHotels.length)));
+  }, [filteredHotels.length]);
+
+  useEffect(() => {
+    setRentalPage((prev) => Math.min(prev, getMaxPage(filteredRentals.length)));
+  }, [filteredRentals.length]);
+
   const brokenHotels = enrichedHotels.filter((h) => !h.linked);
   const brokenRentals = enrichedRentals.filter((r) => !r.linked);
   const brokenLinks = brokenHotels.length + brokenRentals.length;
@@ -736,6 +751,7 @@ export default function AdminPageV2() {
         culture: 'To be updated', cuisine: 'To be updated', mustVisit: ['To be updated'], lat: 0, lng: 0,
       };
       setDestinations((prev) => [newItem, ...prev]);
+      setDestPage(1);
       setSection('destinations'); setView('destinations'); setIsAddModalOpen(false); return;
     }
 
@@ -749,6 +765,7 @@ export default function AdminPageV2() {
         type: (form.typeLabel.trim() || 'boutique') as Hotel['type'], stars: Number(form.stars) || 4,
       };
       setHotels((prev) => [newItem, ...prev]);
+      setHotelPage(1);
       setSection('hotels'); setView('hotels'); setIsAddModalOpen(false); return;
     }
 
@@ -763,6 +780,7 @@ export default function AdminPageV2() {
       maxGuests: Number(form.maxGuests) || 2, host: form.host.trim() || 'Admin Host',
     };
     setRentals((prev) => [newRental, ...prev]);
+    setRentalPage(1);
     setSection('rentals'); setView('rentals'); setIsAddModalOpen(false);
   }
 
