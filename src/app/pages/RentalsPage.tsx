@@ -175,10 +175,11 @@ export default function RentalsPage() {
           decoding="async"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/80 to-emerald-900/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/68 via-emerald-950/44 to-cyan-950/50" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_44%)]" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
-          <h1 className="text-4xl font-black text-white mb-2">{t('section.rentals')}</h1>
-          <p className="text-white/80">{t('section.rentals_sub')}</p>
+          <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('section.rentals')}</h1>
+          <p className="text-white/85">{t('section.rentals_sub')}</p>
         </div>
       </div>
 
