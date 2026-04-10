@@ -196,10 +196,11 @@ export default function HotelsPage() {
           decoding="async"
           fetchPriority="high"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-blue-900/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/68 via-slate-900/48 to-cyan-950/52" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_44%)]" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
-          <h1 className="text-4xl font-black text-white mb-2">{t('section.featured_hotels')}</h1>
-          <p className="text-white/80">{t('section.featured_hotels_sub')}</p>
+          <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('section.featured_hotels')}</h1>
+          <p className="text-white/85">{t('section.featured_hotels_sub')}</p>
         </div>
       </div>
 
