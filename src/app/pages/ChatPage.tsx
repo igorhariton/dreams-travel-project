@@ -18,6 +18,7 @@ import {
   submitSupportRequest,
 } from '../chat/service';
 import type { AssistantAction, AssistantContextState, AssistantReply, ChatMessage } from '../chat/types';
+import { isApiError } from '../../services/apiClient';
 
 const STORAGE_KEY = 'td_ai_assistant_session_v2';
 
@@ -195,6 +196,19 @@ function createAssistantMessage(reply: AssistantReply): ChatMessage {
   };
 }
 
+function toServiceErrorMessage(error: unknown, fallback: string) {
+  if (isApiError(error)) {
+    if (error.status === 401) return 'Session expired. Please sign in again.';
+    if (error.status === 403) return 'Access denied for this action.';
+    if (error.status && error.status >= 500) return 'Server error. Please try again in a moment.';
+    if (error.isNetworkError) return 'Network error. Check your internet connection and retry.';
+    if (error.isTimeout) return 'Request timed out. Please retry.';
+    return error.message || fallback;
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
 export default function ChatPage() {
   const { t, formatPrice, theme, publicDestinations, publicHotels, publicRentals } = useApp();
   const navigate = useNavigate();
@@ -339,13 +353,17 @@ export default function ChatPage() {
 
         setContextState(reply.context);
         setMessages((prev) => [...prev, createAssistantMessage(reply)]);
-      } catch {
+      } catch (error) {
+        const errorMessage = toServiceErrorMessage(
+          error,
+          'I could not reach the assistant service right now. Please try again in a moment.',
+        );
         setMessages((prev) => [
           ...prev,
           {
             id: createId('assistant'),
             role: 'assistant',
-            text: 'I could not reach the assistant service right now. Please try again in a moment.',
+            text: errorMessage,
             timestamp: Date.now(),
             actions: [
               { id: createId('retry'), label: 'Retry', kind: 'check_availability' },
@@ -397,72 +415,111 @@ export default function ChatPage() {
   const handleBookingSubmit = useCallback(
     async (draft: Parameters<typeof submitBookingRequest>[1]) => {
       const listing = listingCatalog.find((item) => item.id === draft.listingId);
-      const response = await submitBookingRequest(sessionId, draft);
+      try {
+        const response = await submitBookingRequest(sessionId, draft);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: createId('system'),
-          role: 'system',
-          text:
-            `Reservation request submitted for ${listing?.title || 'selected property'} ` +
-            `(${draft.checkIn} → ${draft.checkOut}, ${draft.guests} guests).`,
-          timestamp: Date.now(),
-        },
-        {
-          id: createId('assistant'),
-          role: 'assistant',
-          text:
-            `${response.message || 'Your request has been submitted successfully.'}\n` +
-            `Reference ID: ${response.referenceId}`,
-          timestamp: Date.now(),
-          actions: [
-            { id: createId('contact-host'), kind: 'contact_host', label: 'Contact host', payload: { listingId: draft.listingId } },
-            { id: createId('support'), kind: 'open_support', label: 'Customer support' },
-          ],
-        },
-      ]);
-      setActiveComposer(null);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('system'),
+            role: 'system',
+            text:
+              `Reservation request submitted for ${listing?.title || 'selected property'} ` +
+              `(${draft.checkIn} → ${draft.checkOut}, ${draft.guests} guests).`,
+            timestamp: Date.now(),
+          },
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text:
+              `${response.message || 'Your request has been submitted successfully.'}\n` +
+              `Reference ID: ${response.referenceId}`,
+            timestamp: Date.now(),
+            actions: [
+              { id: createId('contact-host'), kind: 'contact_host', label: 'Contact host', payload: { listingId: draft.listingId } },
+              { id: createId('support'), kind: 'open_support', label: 'Customer support' },
+            ],
+          },
+        ]);
+        setActiveComposer(null);
+      } catch (error) {
+        const errorMessage = toServiceErrorMessage(error, 'Reservation request failed.');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text: `${errorMessage}\nPlease try again after a moment.`,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
     },
     [listingCatalog, sessionId],
   );
 
   const handleContactSubmit = useCallback(
     async (draft: Parameters<typeof submitContactRequest>[1]) => {
-      const response = await submitContactRequest(sessionId, draft);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: createId('assistant'),
-          role: 'assistant',
-          text:
-            `${response.message || 'Host contact request sent.'}\n` +
-            `Reference ID: ${response.referenceId}\n` +
-            'A host representative should reply shortly through your contact channel.',
-          timestamp: Date.now(),
-        },
-      ]);
-      setActiveComposer(null);
+      try {
+        const response = await submitContactRequest(sessionId, draft);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text:
+              `${response.message || 'Host contact request sent.'}\n` +
+              `Reference ID: ${response.referenceId}\n` +
+              'A host representative should reply shortly through your contact channel.',
+            timestamp: Date.now(),
+          },
+        ]);
+        setActiveComposer(null);
+      } catch (error) {
+        const errorMessage = toServiceErrorMessage(error, 'Host contact request failed.');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text: `${errorMessage}\nPlease verify your details and try again.`,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
     },
     [sessionId],
   );
 
   const handleSupportSubmit = useCallback(
     async (draft: Parameters<typeof submitSupportRequest>[1]) => {
-      const response = await submitSupportRequest(sessionId, draft);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: createId('assistant'),
-          role: 'assistant',
-          text:
-            `${response.message || 'Support request submitted.'}\n` +
-            `Reference ID: ${response.referenceId}\n` +
-            'Our support team will follow up with you as soon as possible.',
-          timestamp: Date.now(),
-        },
-      ]);
-      setActiveComposer(null);
+      try {
+        const response = await submitSupportRequest(sessionId, draft);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text:
+              `${response.message || 'Support request submitted.'}\n` +
+              `Reference ID: ${response.referenceId}\n` +
+              'Our support team will follow up with you as soon as possible.',
+            timestamp: Date.now(),
+          },
+        ]);
+        setActiveComposer(null);
+      } catch (error) {
+        const errorMessage = toServiceErrorMessage(error, 'Support request failed.');
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: createId('assistant'),
+            role: 'assistant',
+            text: `${errorMessage}\nPlease try again shortly or contact support from your account dashboard.`,
+            timestamp: Date.now(),
+          },
+        ]);
+      }
     },
     [sessionId],
   );
