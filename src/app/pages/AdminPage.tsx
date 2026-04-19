@@ -200,7 +200,6 @@ function ImageThumb({ src, alt }: { src?: string; alt: string }) {
           className="h-full w-full object-cover"
           loading="lazy"
           decoding="async"
-              fetchPriority="low"
         />
       ) : (
         <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
@@ -1324,7 +1323,6 @@ export default function AdminPageV2() {
                               className="h-full w-full object-cover"
                               loading="lazy"
                               decoding="async"
-                      fetchPriority="low"
                             />
                           ) : null}
                         </div>
@@ -1541,7 +1539,6 @@ export default function AdminPageV2() {
                             className="h-full w-full object-cover"
                             loading="lazy"
                             decoding="async"
-                    fetchPriority="low"
                           />
                         )
                         : <div className="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
@@ -1972,7 +1969,6 @@ export default function AdminPageV2() {
                               className="h-full w-full object-cover"
                               loading="lazy"
                               decoding="async"
-                      fetchPriority="low"
                             />
                           ) : <div className="flex h-full items-center justify-center text-slate-400 text-xs">?</div>}
                         </div>
@@ -2163,7 +2159,6 @@ export default function AdminPageV2() {
                                 className="h-full w-full object-cover"
                                 loading="lazy"
                                 decoding="async"
-                        fetchPriority="low"
                               />
                             ) : '·'}
                           </div>
