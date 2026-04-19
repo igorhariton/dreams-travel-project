@@ -1,42 +1,86 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { register, isAuthLoading, currentUser, authError } = useApp();
 
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
+  React.useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (currentUser.role === "host") {
+      navigate("/host-dashboard", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
+  }, [currentUser, navigate]);
 
-    if (!fullName || !email || !password || !confirmPassword) {
-      alert("Please fill in all fields.");
+  React.useEffect(() => {
+    document.body.classList.add("auth-page-active");
+    return () => {
+      document.body.classList.remove("auth-page-active");
+    };
+  }, []);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!fullName.trim() || !email.trim() || !phone.trim() || !password || !confirmPassword) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
-    console.log({
-      fullName,
-      email,
+    const result = await register({
+      name: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
       password,
+      role: "host",
     });
 
-    alert("Account created successfully!");
+    if (!result.success) {
+      setError(result.error || "Registration failed.");
+      return;
+    }
+
+    if (result.role === "admin") {
+      navigate("/admin", { replace: true });
+      return;
+    }
+    if (result.role === "host") {
+      navigate("/host-dashboard", { replace: true });
+      return;
+    }
+    navigate("/", { replace: true });
   };
 
   return (
     <div className="travel-register-fixed h-screen overflow-hidden bg-[#f4efe7] p-2 md:p-4">
       <div className="travel-register-card mx-auto grid h-full max-w-[1500px] overflow-hidden rounded-[28px] bg-white shadow-[0_25px_80px_rgba(29,35,52,0.12)] lg:grid-cols-[1.02fr_1fr]">
-        {/* LEFT */}
         <section className="relative hidden overflow-hidden lg:block">
           <img
             src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1600&q=80"
@@ -81,10 +125,8 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
           </div>
         </section>
 
-        {/* RIGHT */}
         <section className="travel-register-form-pane flex items-center justify-center bg-[#fdfaf6] px-6 md:px-12">
           <div className="w-full max-w-[500px]">
-            {/* MOBILE TOP */}
             <div className="mb-6 flex items-center gap-3 lg:hidden">
               <button
                 type="button"
@@ -116,27 +158,47 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <input
+                id="register-full-name"
+                name="fullName"
                 type="text"
                 placeholder="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                autoComplete="name"
                 className="travel-register-input h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
               />
 
               <input
+                id="register-email"
+                name="email"
                 type="email"
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                className="travel-register-input h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              />
+
+              <input
+                id="register-phone"
+                name="phone"
+                type="tel"
+                placeholder="Phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
                 className="travel-register-input h-12 w-full rounded-xl border border-gray-300 px-4 outline-none transition-all duration-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
               />
 
               <div className="travel-register-input-shell flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
                 <input
+                  id="register-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="travel-register-input travel-register-input-transparent w-full bg-transparent outline-none"
                 />
                 <button
@@ -150,17 +212,18 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 
               <div className="travel-register-input-shell flex h-12 items-center rounded-xl border border-gray-300 px-4 transition-all duration-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/30">
                 <input
+                  id="register-confirm-password"
+                  name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  autoComplete="new-password"
                   className="travel-register-input travel-register-input-transparent w-full bg-transparent outline-none"
                 />
                 <button
                   type="button"
-                  onClick={() =>
-                    setShowConfirmPassword((prev) => !prev)
-                  }
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
                   className="travel-register-show-btn text-sm font-medium text-gray-500 transition hover:text-[#1e275c]"
                 >
                   {showConfirmPassword ? "Hide" : "Show"}
@@ -169,10 +232,17 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 
               <button
                 type="submit"
-                className="w-full h-12 rounded-xl bg-black text-white font-semibold shadow-[0_12px_30px_rgba(0,0,0,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(0,0,0,0.25)] active:scale-[0.98]"
+                disabled={isAuthLoading}
+                className="w-full h-12 rounded-xl bg-black text-white font-semibold shadow-[0_12px_30px_rgba(0,0,0,0.18)] transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_18px_40px_rgba(0,0,0,0.25)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Create Account
+                {isAuthLoading ? "Creating account..." : "Create Account"}
               </button>
+
+              {(error || authError) && (
+                <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+                  {error || authError}
+                </p>
+              )}
 
               <p className="text-center text-sm">
                 Already have an account?{" "}
