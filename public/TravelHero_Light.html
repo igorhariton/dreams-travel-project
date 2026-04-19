@@ -519,6 +519,169 @@ html, body {
   66%  { opacity: 0.75; transform: scale(0.99) translate(-8px,8px); }
   100% { opacity: 0.85; transform: scale(1.01) translate(5px,-10px); }
 }
+
+@media (max-width: 1100px) {
+  .stage {
+    grid-template-columns: 1fr;
+    align-content: start;
+    justify-items: stretch;
+    gap: 16px;
+    padding: 82px 14px 18px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .left {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .right,
+  .fcard,
+  .wx-bar,
+  .live,
+  .toast,
+  .ndots,
+  .pbar {
+    display: none !important;
+  }
+
+  .headline {
+    font-size: clamp(38px, 12.2vw, 56px);
+    line-height: 1.04;
+  }
+
+  .hl2 {
+    font-size: clamp(32px, 9.8vw, 46px);
+    margin-bottom: 14px;
+  }
+
+  .sub {
+    max-width: none;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+
+  .search-wrap {
+    width: 100%;
+    max-width: none;
+    padding: 8px;
+  }
+
+  .search-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sf {
+    border-right: none;
+    border: 1px solid rgba(42,127,171,0.14);
+    background: rgba(255,255,255,0.62);
+    min-height: 52px;
+  }
+
+  #sf-destination {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  #sf-dates,
+  #sf-guests {
+    flex: 1 1 calc(50% - 4px);
+    max-width: calc(50% - 4px);
+  }
+
+  .s-btn {
+    flex: 1 1 100%;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .search-pop {
+    left: 0;
+    right: 0;
+  }
+
+  .stats {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .stat {
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.8) !important;
+    padding: 11px 10px;
+  }
+
+  .stat + .stat {
+    border-left: 1px solid rgba(255,255,255,0.8) !important;
+  }
+
+  .s-num {
+    font-size: 22px;
+  }
+
+  .tags {
+    margin-top: 14px;
+    gap: 6px;
+  }
+
+  .tag {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 520px) {
+  .stage {
+    padding: 74px 10px 14px;
+    gap: 12px;
+  }
+
+  .pill {
+    margin-bottom: 14px;
+    padding: 6px 12px;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .headline {
+    font-size: clamp(28px, 11.8vw, 44px);
+  }
+
+  .hl2 {
+    font-size: clamp(24px, 9.4vw, 34px);
+    margin-bottom: 10px;
+  }
+
+  .sub {
+    font-size: 11px;
+    line-height: 1.42;
+    margin-bottom: 12px;
+  }
+
+  #sf-dates,
+  #sf-guests {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .s-num {
+    font-size: 19px;
+  }
+
+  .s-lbl {
+    font-size: 9px;
+  }
+}
 </style>
 </head>
 <body>
@@ -1082,10 +1245,12 @@ function renderHeroLanguage(){
   if (checkInPicker) {
     checkInPicker.set('locale', locale);
     checkInPicker.redraw();
+    ensureFlatpickrInputIdentity(checkInPicker, 'checkin');
   }
   if (checkOutPicker) {
     checkOutPicker.set('locale', locale);
     checkOutPicker.redraw();
+    ensureFlatpickrInputIdentity(checkOutPicker, 'checkout');
   }
 }
 
@@ -1109,6 +1274,21 @@ let activePanel = '';
 let checkInPicker = null;
 let checkOutPicker = null;
 
+function ensureFlatpickrInputIdentity(instance, prefix){
+  const container = instance && instance.calendarContainer;
+  if (!container) return;
+  const fields = container.querySelectorAll('input, select, textarea');
+  fields.forEach((field, index) => {
+    if (!(field instanceof HTMLElement)) return;
+    if (!field.getAttribute('id')) {
+      field.setAttribute('id', `${prefix}-flatpickr-field-${index}`);
+    }
+    if (!field.getAttribute('name')) {
+      field.setAttribute('name', `${prefix}_flatpickr_field_${index}`);
+    }
+  });
+}
+
 function initDatePickers(){
   const checkInInput = document.getElementById('checkInInput');
   const checkOutInput = document.getElementById('checkOutInput');
@@ -1126,6 +1306,10 @@ function initDatePickers(){
     monthSelectorType: 'static',
     disableMobile: true,
     allowInput: true,
+    onReady: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkin'),
+    onOpen: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkin'),
+    onMonthChange: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkin'),
+    onYearChange: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkin'),
     onChange: (_, value) => {
       if (!value) return;
       draftState.checkIn = value;
@@ -1145,6 +1329,10 @@ function initDatePickers(){
     monthSelectorType: 'static',
     disableMobile: true,
     allowInput: true,
+    onReady: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkout'),
+    onOpen: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkout'),
+    onMonthChange: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkout'),
+    onYearChange: (_, __, instance) => ensureFlatpickrInputIdentity(instance, 'checkout'),
     onChange: (_, value) => {
       if (!value) return;
       draftState.checkOut = value;
@@ -1155,6 +1343,9 @@ function initDatePickers(){
       syncDraftFields();
     },
   });
+
+  ensureFlatpickrInputIdentity(checkInPicker, 'checkin');
+  ensureFlatpickrInputIdentity(checkOutPicker, 'checkout');
 }
 
 function syncDraftFields(){
