@@ -5,6 +5,7 @@ import { ImageCarousel } from './ImageCarousel';
 import { useApp } from '../context/AppContext';
 import { TravelLayersMap, isValidCoordinatePair } from './map/TripMap';
 import type { TravelMapLocation } from '../types/travel';
+import { apiPost } from '../../services/apiClient';
 
 export interface ListingDetailsItem {
   id: string;
@@ -63,22 +64,57 @@ function writeGeocodeCache(cache: GeocodeCacheMap) {
   }
 }
 
+function parseGeocodePayload(payload: unknown): LatLng | null {
+  const parseLatLng = (value: unknown): LatLng | null => {
+    if (!value || typeof value !== 'object') return null;
+    const row = value as Record<string, unknown>;
+    const lat = Number(row.lat);
+    const lng = Number(row.lng ?? row.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+  };
+
+  const direct = parseLatLng(payload);
+  if (direct) return direct;
+
+  if (Array.isArray(payload)) {
+    for (const entry of payload) {
+      const parsed = parseLatLng(entry);
+      if (parsed) return parsed;
+    }
+  }
+
+  if (payload && typeof payload === 'object') {
+    const row = payload as Record<string, unknown>;
+    const nestedCandidates = [row.result, row.data, row.location];
+    for (const candidate of nestedCandidates) {
+      const parsed = parseLatLng(candidate);
+      if (parsed) return parsed;
+    }
+    if (Array.isArray(row.results)) {
+      for (const entry of row.results) {
+        const parsed = parseLatLng(entry);
+        if (parsed) return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function geocodeQuery(query: string, signal: AbortSignal): Promise<LatLng | null> {
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
-  const response = await fetch(url, {
-    method: 'GET',
-    signal,
-    headers: {
-      Accept: 'application/json',
+  const payload = await apiPost<unknown>(
+    '/geocode',
+    {
+      query,
+      limit: 1,
     },
-  });
-  if (!response.ok) return null;
-  const payload = (await response.json()) as Array<{ lat?: string; lon?: string }>;
-  const top = payload[0];
-  const lat = Number(top?.lat);
-  const lng = Number(top?.lon);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng };
+    {
+      timeoutMs: 12000,
+      signal,
+    },
+  );
+  return parseGeocodePayload(payload);
 }
 
 export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceTheme }: ListingDetailsModalProps) {
@@ -86,6 +122,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
   const isDark = (forceTheme ?? theme) === 'dark';
   const [resolvedCoords, setResolvedCoords] = useState<LatLng | null>(null);
   const [isResolvingCoords, setIsResolvingCoords] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -125,6 +162,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
         : null;
 
     setResolvedCoords(fallbackCoords);
+    setGeocodeError(null);
 
     const queries = Array.from(
       new Set(
@@ -144,6 +182,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
         if (now - cached.updatedAt > GEOCODE_CACHE_TTL_MS) continue;
         if (!active) return;
         setResolvedCoords({ lat: cached.lat, lng: cached.lng });
+        setGeocodeError(null);
         return;
       }
 
@@ -156,10 +195,16 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
           writeGeocodeCache(cache);
           if (!active) return;
           setResolvedCoords(coords);
+          setGeocodeError(null);
           return;
         }
+        if (active && !fallbackCoords) {
+          setGeocodeError('Map location is temporarily unavailable.');
+        }
       } catch {
-        // best-effort geocoding
+        if (active && !controller.signal.aborted && !fallbackCoords) {
+          setGeocodeError('Map location is temporarily unavailable.');
+        }
       } finally {
         if (active) setIsResolvingCoords(false);
       }
@@ -327,9 +372,14 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
                       >
                         <div className="flex items-center justify-between gap-3">
                           <h3 className={`text-lg font-bold ${isDark ? 'text-slate-50' : 'text-[#0F172A]'}`}>{translateDynamic('Location on map')}</h3>
-                          {isResolvingCoords && (
-                            <span className={`text-xs font-semibold ${isDark ? 'text-cyan-300' : 'text-sky-600'}`}>{translateDynamic('Updating location...')}</span>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {isResolvingCoords && (
+                              <span className={`text-xs font-semibold ${isDark ? 'text-cyan-300' : 'text-sky-600'}`}>{translateDynamic('Updating location...')}</span>
+                            )}
+                            {geocodeError && (
+                              <span className={`text-xs font-semibold ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>{translateDynamic(geocodeError)}</span>
+                            )}
+                          </div>
                         </div>
                         <div className={`mt-4 overflow-hidden rounded-xl border ${isDark ? 'border-slate-700' : 'border-[#D9E2EC]'}`}>
                           <TravelLayersMap
