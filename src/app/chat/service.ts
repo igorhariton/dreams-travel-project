@@ -18,10 +18,12 @@ import type {
   SupportDraft,
   TravelIntent,
 } from './types';
+import { apiPost } from '../../services/apiClient';
+import { ENABLE_CHAT_FALLBACK } from '../../services/env';
 
 const REQUEST_TIMEOUT_MS = 16000;
-const DEFAULT_CHAT_API_URL = '/api/assistant/chat';
-const DEFAULT_ACTIONS_API_BASE = '/api/assistant';
+const CHAT_API_PATH = '/assistant/chat';
+const ACTIONS_API_BASE_PATH = '/assistant';
 
 const DEFAULT_CONTEXT: AssistantContextState = {
   lastIntent: 'general',
@@ -215,23 +217,6 @@ function buildContext(
     ...context,
     ...next,
   };
-}
-
-type ViteEnvMap = Record<string, string | undefined>;
-
-function getViteEnv(): ViteEnvMap {
-  const meta = import.meta as ImportMeta & { env?: ViteEnvMap };
-  return meta.env ?? {};
-}
-
-function getApiUrl() {
-  const env = getViteEnv();
-  return (env.VITE_TRAVEL_ASSISTANT_API_URL || DEFAULT_CHAT_API_URL).trim();
-}
-
-function getActionsApiBase() {
-  const env = getViteEnv();
-  return (env.VITE_TRAVEL_ASSISTANT_ACTIONS_API_BASE || DEFAULT_ACTIONS_API_BASE).replace(/\/+$/, '');
 }
 
 function isIntent(value: unknown): value is TravelIntent {
@@ -604,82 +589,46 @@ function buildLocalReply(payload: AssistantRequestPayload): AssistantReply {
 }
 
 export async function requestTravelAssistantReply(payload: AssistantRequestPayload): Promise<AssistantReply> {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  const apiUrl = getApiUrl();
-
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const normalized = sanitizeApiReply(data, payload.context);
-      if (normalized) {
-        return normalized;
-      }
+    const data = await apiPost<unknown>(CHAT_API_PATH, payload, { timeoutMs: REQUEST_TIMEOUT_MS });
+    const normalized = sanitizeApiReply(data, payload.context);
+    if (normalized) {
+      return normalized;
     }
-  } catch {
-    // Gracefully fallback to local orchestrator
-  } finally {
-    window.clearTimeout(timeout);
+    throw new Error('Assistant response payload is invalid.');
+  } catch (error) {
+    if (ENABLE_CHAT_FALLBACK) {
+      return buildLocalReply(payload);
+    }
+    throw error;
   }
-
-  return buildLocalReply(payload);
 }
 
 async function postAction(endpoint: string, payload: Record<string, unknown>) {
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Request failed with ${response.status}`);
-    }
-
-    const data = await response.json();
-    const referenceId =
-      typeof data?.referenceId === 'string'
-        ? data.referenceId
-        : typeof data?.id === 'string'
-          ? data.id
-          : createId('REQ');
-    const message = typeof data?.message === 'string' ? data.message : undefined;
-    return { success: true, referenceId, message };
-  } catch {
-    return {
-      success: true,
-      referenceId: createId('REQ'),
-      message: 'Request captured locally and queued for delivery.',
-    };
-  } finally {
-    window.clearTimeout(timeout);
-  }
+  const data = await apiPost<unknown>(endpoint, payload, { timeoutMs: REQUEST_TIMEOUT_MS });
+  const response = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const referenceId =
+    typeof response.referenceId === 'string'
+      ? response.referenceId
+      : typeof response.id === 'string'
+        ? response.id
+        : createId('REQ');
+  const message = typeof response.message === 'string' ? response.message : undefined;
+  return { success: true, referenceId, message };
 }
 
 export async function submitBookingRequest(sessionId: string, draft: BookingDraft) {
-  const endpoint = `${getActionsApiBase()}/booking-request`;
+  const endpoint = `${ACTIONS_API_BASE_PATH}/booking-request`;
   return postAction(endpoint, { sessionId, ...draft });
 }
 
 export async function submitContactRequest(sessionId: string, draft: ContactDraft) {
-  const endpoint = `${getActionsApiBase()}/contact-host`;
+  const endpoint = `${ACTIONS_API_BASE_PATH}/contact-host`;
   return postAction(endpoint, { sessionId, ...draft });
 }
 
 export async function submitSupportRequest(sessionId: string, draft: SupportDraft) {
-  const endpoint = `${getActionsApiBase()}/support`;
+  const endpoint = `${ACTIONS_API_BASE_PATH}/support`;
   return postAction(endpoint, { sessionId, ...draft });
 }
 
