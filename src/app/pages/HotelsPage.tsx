@@ -194,7 +194,6 @@ export default function HotelsPage() {
           className="w-full h-full object-cover"
           loading="eager"
           decoding="async"
-          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/68 via-slate-900/48 to-cyan-950/52" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_44%)]" />
