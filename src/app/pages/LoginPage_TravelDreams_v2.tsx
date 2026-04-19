@@ -38,7 +38,7 @@ function FacebookIcon() {
 
 export default function TravelLoginPage() {
   const navigate = useNavigate();
-  const { login, isAuthLoading, currentUser } = useApp();
+  const { login, isAuthLoading, currentUser, authError } = useApp();
 
   const [identifier, setIdentifier] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -58,6 +58,13 @@ export default function TravelLoginPage() {
     }
     navigate("/", { replace: true });
   }, [currentUser, navigate]);
+
+  React.useEffect(() => {
+    document.body.classList.add("auth-page-active");
+    return () => {
+      document.body.classList.remove("auth-page-active");
+    };
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -101,7 +108,7 @@ export default function TravelLoginPage() {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-[#1f2937] shadow-lg backdrop-blur-md transition hover:scale-105"
+              className="travel-login-back-btn flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-lg font-bold text-[#1f2937] shadow-lg backdrop-blur-md transition hover:scale-105"
               aria-label="Go home"
             >
               ←
@@ -146,7 +153,7 @@ export default function TravelLoginPage() {
                 <button
                   type="button"
                   onClick={() => navigate("/")}
-                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-bold text-[#1f2937] shadow-md transition hover:scale-105"
+                  className="travel-login-back-btn flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-bold text-[#1f2937] shadow-md transition hover:scale-105"
                   aria-label="Go home"
                 >
                   ←
@@ -169,19 +176,25 @@ export default function TravelLoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <input
+                id="login-identifier"
+                name="identifier"
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 placeholder="username or email"
+                autoComplete="username"
                 className="travel-login-input h-14 w-full rounded-[14px] border border-[#cfd6e3] bg-white px-4"
               />
 
               <div className="travel-login-input-shell flex h-14 items-center rounded-[14px] border border-[#cfd6e3] bg-white px-4">
                 <input
+                  id="login-password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
+                  autoComplete="current-password"
                   className="travel-login-input h-full w-full bg-transparent outline-none"
                 />
                 <button
@@ -195,6 +208,8 @@ export default function TravelLoginPage() {
 
               <label className="travel-login-remember flex items-center gap-3 text-[#545c6d]">
                 <input
+                  id="remember-me"
+                  name="rememberMe"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
@@ -210,21 +225,11 @@ export default function TravelLoginPage() {
                 {isAuthLoading ? "Signing in..." : "Login"}
               </button>
 
-              {error && (
+              {(error || authError) && (
                 <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                  {error}
+                  {error || authError}
                 </p>
               )}
-
-              <div className="travel-login-demo-box rounded-xl border border-[#d8dde8] bg-white/80 px-4 py-3 text-sm text-[#374151]">
-                <p className="font-semibold">Demo login credentials:</p>
-                <p className="mt-1">
-                  Admin: <span className="font-semibold">admin</span> / <span className="font-semibold">admin2026!</span>
-                </p>
-                <p>
-                  Host: <span className="font-semibold">host</span> / <span className="font-semibold">host2026!</span>
-                </p>
-              </div>
 
               <p className="travel-login-helper text-center text-sm text-[#7d8494]">
                 Don&apos;t have an account?{" "}
