@@ -43,6 +43,37 @@ function autoContentI18nPlugin() {
   }
 }
 
+function leafletMarkerAssetFixPlugin() {
+  return {
+    name: 'leaflet-marker-asset-fix',
+    enforce: 'pre' as const,
+    transform(code: string, id: string) {
+      const normalizedId = id.replace(/\\/g, '/')
+      if (normalizedId.endsWith('/leaflet/dist/leaflet-src.esm.js')) {
+        return {
+          code: code
+            .replace('./assets/marker-icon-2x.png', './images/marker-icon-2x.png')
+            .replace('./assets/marker-icon.png', './images/marker-icon.png')
+            .replace('./assets/marker-shadow.png', './images/marker-shadow.png'),
+          map: null,
+        }
+      }
+
+      if (normalizedId.endsWith('/react-leaflet-cluster/dist/index.js')) {
+        return {
+          code: code
+            .replace('./assets/marker-icon-2x.png', '../../leaflet/dist/images/marker-icon-2x.png')
+            .replace('./assets/marker-icon.png', '../../leaflet/dist/images/marker-icon.png')
+            .replace('./assets/marker-shadow.png', '../../leaflet/dist/images/marker-shadow.png'),
+          map: null,
+        }
+      }
+
+      return null
+    },
+  }
+}
+
 export default defineConfig({
   plugins: [
     // The React and Tailwind plugins are both required for Make, even if
@@ -50,6 +81,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     autoContentI18nPlugin(),
+    leafletMarkerAssetFixPlugin(),
   ],
   resolve: {
     alias: {
@@ -66,6 +98,19 @@ export default defineConfig({
 
   build: {
     target: 'esnext',
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined
+          if (id.includes('leaflet') || id.includes('react-leaflet')) return 'vendor-map'
+          if (id.includes('framer-motion') || id.includes('/motion/')) return 'vendor-motion'
+          if (id.includes('react-router-dom')) return 'vendor-router'
+          if (id.includes('@radix-ui')) return 'vendor-radix'
+          return undefined
+        },
+      },
+    },
   },
 
   // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
