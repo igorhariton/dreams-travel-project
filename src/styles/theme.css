@@ -864,6 +864,12 @@ html.dark .travel-login-fixed .travel-login-title {
   color: #1e275c !important;
 }
 
+html.dark .travel-login-fixed .travel-login-back-btn {
+  background-color: #ffffff !important;
+  color: #1f2937 !important;
+  border: 1px solid #d8dde8 !important;
+}
+
 html.dark .travel-login-fixed .travel-login-input-shell {
   background-color: #ffffff !important;
   border-color: #cfd6e3 !important;
@@ -926,6 +932,7 @@ html.dark .travel-register-fixed .travel-register-subtitle {
 
 html.dark .travel-register-fixed input[type="text"],
 html.dark .travel-register-fixed input[type="email"],
+html.dark .travel-register-fixed input[type="tel"],
 html.dark .travel-register-fixed input[type="password"],
 html.dark .travel-register-fixed input[type="number"],
 html.dark .travel-register-fixed textarea,
@@ -957,6 +964,21 @@ html.dark .travel-register-fixed .travel-register-show-btn {
 
 html.dark .travel-register-fixed ::placeholder {
   color: #6b7280 !important;
+}
+
+/* Keep auth pages white on mobile even when global dark mode is enabled */
+html.dark body.auth-page-active,
+html.dark body.auth-page-active #root {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+@media (max-width: 1023px) {
+  html.dark .travel-login-fixed,
+  html.dark .travel-register-fixed {
+    min-height: 100dvh;
+    background: #ffffff !important;
+  }
 }
 
 /* Card styling */
