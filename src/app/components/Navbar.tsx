@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home, LogOut } from 'lucide-react';
+import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home, LogOut, Moon, Sun } from 'lucide-react';
 import { useApp, Language } from '../../context';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 import { supportedLanguages } from '../../i18n';
 
 export function Navbar() {
-  const { language, setLanguage, role, favorites, t, theme, currentUser, logout } = useApp();
+  const { language, setLanguage, role, favorites, t, theme, currentUser, logout, toggleTheme } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -307,6 +307,19 @@ export function Navbar() {
                     {lang.flag} {lang.code.toUpperCase()}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 text-slate-100'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                  title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+                >
+                  {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />}
+                  {theme === 'dark' ? 'Light' : 'Dark'}
+                </button>
                 {currentUser && (
                   <button
                     type="button"
