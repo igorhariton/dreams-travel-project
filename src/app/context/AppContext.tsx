@@ -7,6 +7,8 @@ import {
   type Hotel,
   type Rental,
 } from '../data/travelData';
+import { apiGet, apiPost, isApiError, onApiStatus } from '../../services/apiClient';
+import { APP_ENV, HAS_EXPLICIT_API_BASE_URL } from '../../services/env';
 
 export type Language = 'en' | 'ro' | 'ru';
 export type UserRole = 'user' | 'host' | 'admin';
@@ -91,40 +93,8 @@ export type RegisterData = {
   role: 'host';
 };
 
-const MOCK_USERS: (User & { username: string; password: string })[] = [
-  {
-    id: 'admin-1',
-    username: 'admin',
-    name: 'Admin TravelDreams',
-    email: 'admin@traveldreams.com',
-    phone: '+1 888 000 0000',
-    role: 'admin',
-    password: 'admin2026!',
-  },
-  {
-    id: 'host-1',
-    username: 'host',
-    name: 'Maria Ionescu',
-    email: 'maria@host.com',
-    phone: '+40 721 000 001',
-    role: 'host',
-    password: 'host2026!',
-  },
-  {
-    id: 'host-2',
-    username: 'host2',
-    name: 'John Smith',
-    email: 'john@host.com',
-    phone: '+44 7700 900001',
-    role: 'host',
-    password: 'host22026!',
-  },
-];
-
 const STORAGE_KEYS = {
   theme: 'theme',
-  user: 'td_user',
-  users: 'td_mock_users_v1',
   favorites: 'td_favorites_v1',
   hostListings: 'td_host_listings_v1',
   catalog: 'td_catalog_v1',
@@ -137,8 +107,6 @@ type CatalogState = {
 };
 
 const daysAgoIso = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
-
-const normalizeCredential = (value: string) => value.trim().toLowerCase();
 
 function loadStoredJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
@@ -242,21 +210,65 @@ function haveSameOrderedIds<T extends { id: string }>(left: T[], right: T[]) {
   return left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
 }
 
-function sanitizeUsername(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]/g, '');
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
 }
 
-function isEmailTaken(users: (User & { username: string; password: string })[], email: string) {
-  const normalized = normalizeCredential(email);
-  return users.some((user) => normalizeCredential(user.email) === normalized);
+function sanitizeUserRole(role: unknown): UserRole {
+  if (role === 'admin' || role === 'host' || role === 'user') return role;
+  return 'user';
 }
 
-function isUsernameTaken(users: (User & { username: string; password: string })[], username: string) {
-  const normalized = normalizeCredential(username);
-  return users.some((user) => normalizeCredential(user.username) === normalized);
+function sanitizeApiUser(value: unknown): User | null {
+  const row = asRecord(value);
+  if (!row) return null;
+
+  const id =
+    (typeof row.id === 'string' && row.id) ||
+    (typeof row.userId === 'string' && row.userId) ||
+    (typeof row.uid === 'string' && row.uid) ||
+    '';
+  if (!id) return null;
+
+  const name =
+    (typeof row.name === 'string' && row.name.trim()) ||
+    (typeof row.fullName === 'string' && row.fullName.trim()) ||
+    (typeof row.username === 'string' && row.username.trim()) ||
+    'User';
+  const email = (typeof row.email === 'string' && row.email.trim()) || '';
+  const phone = (typeof row.phone === 'string' && row.phone.trim()) || '';
+  const username = typeof row.username === 'string' && row.username.trim() ? row.username.trim() : undefined;
+
+  return {
+    id,
+    username,
+    name,
+    email,
+    phone,
+    role: sanitizeUserRole(row.role),
+  };
+}
+
+function extractApiUser(payload: unknown): User | null {
+  const root = asRecord(payload);
+  if (!root) return sanitizeApiUser(payload);
+
+  const data = asRecord(root.data);
+  const candidates = [root.user, data?.user, root.profile, data?.profile, payload];
+
+  for (const candidate of candidates) {
+    const user = sanitizeApiUser(candidate);
+    if (user) return user;
+  }
+
+  return null;
+}
+
+function toAuthErrorMessage(error: unknown, fallback: string) {
+  if (isApiError(error)) return error.message;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
 }
 
 function makeSlug(value: string) {
@@ -596,7 +608,6 @@ interface AppContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   role: UserRole;
-  setRole: (role: UserRole) => void;
   theme: Theme;
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
@@ -620,10 +631,14 @@ interface AppContextType {
   getCurrencySymbol: () => string;
   // ── New: Auth ──
   currentUser: User | null;
-  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole }>;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole; status?: number }>;
   logout: () => void;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string; role?: UserRole; status?: number }>;
   isAuthLoading: boolean;
+  authError: string | null;
+  refreshAuthSession: () => Promise<void>;
+  apiStatusMessage: string | null;
+  clearApiStatusMessage: () => void;
   // ── New: Host listings ──
   hostListings: HostListing[];
   addHostListing: (
@@ -1066,7 +1081,6 @@ const TRANSLATION_MAX_WORDS = 12;
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── Existing state ────────────────────────────────────────────────────────
   const [language, setLanguage] = useState<Language>('en');
-  const [role, setRole] = useState<UserRole>('user');
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEYS.theme);
@@ -1100,8 +1114,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [apiStatusMessage, setApiStatusMessage] = useState<string | null>(null);
   const [hostListings, setHostListings] = useState<HostListing[]>(() => loadStoredJson(STORAGE_KEYS.hostListings, INITIAL_LISTINGS));
-  const [mockUsers, setMockUsers] = useState<(User & { username: string; password: string })[]>(() => loadStoredJson(STORAGE_KEYS.users, MOCK_USERS));
+  const role: UserRole = currentUser?.role || 'user';
 
   const destinations = catalog.destinations;
   const hotels = catalog.hotels;
@@ -1175,17 +1191,75 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const publicHotels = approvedCatalog.publicHotels;
   const publicRentals = approvedCatalog.publicRentals;
 
-  // Restore session from localStorage
-  useEffect(() => {
+  const refreshAuthSession = useCallback(async () => {
+    setIsAuthLoading(true);
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.user);
-      if (saved) {
-        const user = JSON.parse(saved) as User;
-        setCurrentUser(user);
-        setRole(user.role);
+      const payload = await apiGet<unknown>('/auth/me');
+      const user = extractApiUser(payload);
+
+      if (!user) {
+        throw new Error('Session response does not include a valid user.');
       }
-    } catch {}
-    setIsAuthLoading(false);
+
+      setCurrentUser(user);
+      setAuthError(null);
+    } catch (error) {
+      if (isApiError(error) && error.status === 401) {
+        setCurrentUser(null);
+        setAuthError(null);
+      } else {
+        setCurrentUser(null);
+        setAuthError(toAuthErrorMessage(error, 'Unable to validate your session.'));
+      }
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const shouldBootstrapAuth = APP_ENV !== 'development' || HAS_EXPLICIT_API_BASE_URL;
+    if (!shouldBootstrapAuth) {
+      setIsAuthLoading(false);
+      return;
+    }
+    void refreshAuthSession();
+  }, [refreshAuthSession]);
+
+  useEffect(() => {
+    return onApiStatus(401, (error) => {
+      if (error.url.includes('/auth/login') || error.url.includes('/auth/register')) return;
+      setCurrentUser((previousUser) => {
+        if (!previousUser) return previousUser;
+        setAuthError('Your session has expired. Please sign in again.');
+        return null;
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    return onApiStatus(403, () => {
+      setApiStatusMessage('Access denied. You do not have permission to perform this action.');
+    });
+  }, []);
+
+  useEffect(() => {
+    return onApiStatus(500, () => {
+      setApiStatusMessage('Server error. Please retry in a few moments.');
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!apiStatusMessage || typeof window === 'undefined') return;
+    const timeoutId = window.setTimeout(() => {
+      setApiStatusMessage(null);
+    }, 6000);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [apiStatusMessage]);
+
+  const clearApiStatusMessage = useCallback(() => {
+    setApiStatusMessage(null);
   }, []);
 
   // Keep catalog synchronized with latest seed data even when stale local state exists.
@@ -1213,10 +1287,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     writeStoredJson(STORAGE_KEYS.favorites, favorites);
   }, [favorites]);
-
-  useEffect(() => {
-    writeStoredJson(STORAGE_KEYS.users, mockUsers);
-  }, [mockUsers]);
 
   useEffect(() => {
     writeStoredJson(STORAGE_KEYS.hostListings, hostListings);
@@ -1255,64 +1325,90 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // ── NEW: Auth ─────────────────────────────────────────────────────────────
   async function login(identifier: string, password: string) {
+    const normalizedIdentifier = identifier.trim();
+    if (!normalizedIdentifier || !password) {
+      return { success: false, error: 'Please provide both credentials.' };
+    }
+
     setIsAuthLoading(true);
-    await new Promise(r => setTimeout(r, 500));
-    const normalizedIdentifier = normalizeCredential(identifier);
-    const found = mockUsers.find((user) => {
-      const matchesIdentifier =
-        normalizeCredential(user.email) === normalizedIdentifier ||
-        normalizeCredential(user.username) === normalizedIdentifier ||
-        normalizeCredential(user.name) === normalizedIdentifier;
-      return matchesIdentifier && user.password === password;
-    });
-    setIsAuthLoading(false);
-    if (!found) return { success: false, error: 'Invalid username/email or password.' };
-    const { password: _pw, ...user } = found;
-    setCurrentUser(user);
-    setRole(user.role);
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-    return { success: true, role: user.role };
+    setAuthError(null);
+    try {
+      const payload = await apiPost<unknown>('/auth/login', {
+        identifier: normalizedIdentifier,
+        password,
+      });
+
+      let user = extractApiUser(payload);
+      if (!user) {
+        const mePayload = await apiGet<unknown>('/auth/me');
+        user = extractApiUser(mePayload);
+      }
+
+      if (!user) {
+        return { success: false, error: 'Login succeeded but user profile could not be loaded.' };
+      }
+
+      setCurrentUser(user);
+      setAuthError(null);
+      return { success: true, role: user.role };
+    } catch (error) {
+      if (isApiError(error) && error.status === 401) {
+        setCurrentUser(null);
+      }
+      return {
+        success: false,
+        error: toAuthErrorMessage(error, 'Login failed. Please try again.'),
+        status: isApiError(error) ? error.status : undefined,
+      };
+    } finally {
+      setIsAuthLoading(false);
+    }
   }
 
   function logout() {
-    setCurrentUser(null);
-    setRole('user');
-    localStorage.removeItem(STORAGE_KEYS.user);
+    setIsAuthLoading(true);
+    void apiPost('/auth/logout', {}).catch(() => undefined).finally(() => {
+      setCurrentUser(null);
+      setAuthError(null);
+      setIsAuthLoading(false);
+    });
   }
 
   async function register(data: RegisterData) {
     setIsAuthLoading(true);
-    await new Promise(r => setTimeout(r, 500));
-    if (isEmailTaken(mockUsers, data.email)) {
-      setIsAuthLoading(false);
-      return { success: false, error: 'Email already in use.' };
-    }
+    setAuthError(null);
+    try {
+      const payload = await apiPost<unknown>('/auth/register', {
+        name: data.name.trim(),
+        username: data.username?.trim() || undefined,
+        email: data.email.trim(),
+        phone: data.phone.trim(),
+        password: data.password,
+        role: data.role,
+      });
 
-    const usernameSource = data.username?.trim() || data.email.split('@')[0] || '';
-    const nextUsernameBase = sanitizeUsername(usernameSource);
-    const fallbackUsername = `host${Date.now().toString().slice(-4)}`;
-    const nextUsername = nextUsernameBase || fallbackUsername;
-    if (isUsernameTaken(mockUsers, nextUsername)) {
-      setIsAuthLoading(false);
-      return { success: false, error: 'Username already in use.' };
-    }
+      let user = extractApiUser(payload);
+      if (!user) {
+        const mePayload = await apiGet<unknown>('/auth/me');
+        user = extractApiUser(mePayload);
+      }
 
-    const newUser = {
-      id: 'host-' + Date.now(),
-      username: nextUsername,
-      name: data.name.trim(),
-      email: data.email.trim(),
-      phone: data.phone.trim(),
-      role: 'host' as UserRole,
-      password: data.password,
-    };
-    setMockUsers(prev => [...prev, newUser]);
-    const { password: _pw, ...user } = newUser;
-    setCurrentUser(user);
-    setRole('host');
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-    setIsAuthLoading(false);
-    return { success: true };
+      if (!user) {
+        return { success: false, error: 'Registration succeeded but user profile could not be loaded.' };
+      }
+
+      setCurrentUser(user);
+      setAuthError(null);
+      return { success: true, role: user.role };
+    } catch (error) {
+      return {
+        success: false,
+        error: toAuthErrorMessage(error, 'Registration failed. Please try again.'),
+        status: isApiError(error) ? error.status : undefined,
+      };
+    } finally {
+      setIsAuthLoading(false);
+    }
   }
 
   function getHostActor(): User | null {
@@ -1510,14 +1606,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return hasLetters && !hasManySymbols;
   }, []);
 
-  const translateWithGoogle = useCallback(async (text: string, target: Language): Promise<string> => {
+  const translateWithApi = useCallback(async (text: string, target: Language): Promise<string> => {
     if (target === 'en') return text;
-    const params = new URLSearchParams({ client: 'gtx', sl: 'en', tl: target, dt: 't', q: text });
-    const res = await fetch(`https://translate.googleapis.com/translate_a/single?${params.toString()}`);
-    if (!res.ok) return text;
-    const data = await res.json();
-    const translated = Array.isArray(data?.[0]) ? data[0].map((chunk: any[]) => chunk?.[0] ?? '').join('') : '';
-    return translated || text;
+    try {
+      const payload = await apiPost<unknown>(
+        '/translate',
+        {
+          text,
+          source: 'en',
+          target,
+        },
+        { timeoutMs: 10000 },
+      );
+      const row = asRecord(payload);
+      const data = asRecord(row?.data);
+      const translated =
+        (typeof row?.translatedText === 'string' && row.translatedText) ||
+        (typeof row?.translation === 'string' && row.translation) ||
+        (typeof row?.text === 'string' && row.text) ||
+        (typeof data?.translatedText === 'string' && data.translatedText) ||
+        (typeof data?.translation === 'string' && data.translation) ||
+        (typeof data?.text === 'string' && data.text) ||
+        '';
+      return translated || text;
+    } catch {
+      return text;
+    }
   }, []);
 
   const flushQueuedTranslations = useCallback(async () => {
@@ -1547,7 +1661,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           const translatedEntries = await Promise.all(
             texts.map(async (text) => {
               try {
-                return [text, await translateWithGoogle(text, target)] as const;
+                return [text, await translateWithApi(text, target)] as const;
               } catch {
                 return [text, text] as const;
               }
@@ -1600,7 +1714,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         hasQueuedFlushAfterRun.current = false;
       }
     }
-  }, [hasQueuedTranslations, translateWithGoogle]);
+  }, [hasQueuedTranslations, translateWithApi]);
 
   const scheduleTranslation = useCallback((text: string, target: Language) => {
     if (target === 'en') return;
@@ -1687,13 +1801,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       <I18nContext.Provider value={i18nContextValue}>
         <AppContext.Provider value={{
           // Existing
-          language, setLanguage, role, setRole, theme, setTheme, toggleTheme,
+          language, setLanguage, role, theme, setTheme, toggleTheme,
           favorites, addFavorite, removeFavorite, isFavorite,
           destinations, setDestinations, hotels, setHotels, rentals, setRentals,
           publicDestinations, publicHotels, publicRentals,
           t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
           // New
-          currentUser, login, logout, register, isAuthLoading,
+          currentUser, login, logout, register, isAuthLoading, authError, refreshAuthSession,
+          apiStatusMessage, clearApiStatusMessage,
           hostListings, addHostListing, updateHostListing, deleteHostListing,
           submitHostListing, resubmitHostListing, duplicateHostListing,
           approveListing, rejectListing,
