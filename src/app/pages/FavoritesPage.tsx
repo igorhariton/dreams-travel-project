@@ -100,7 +100,6 @@ export default function FavoritesPage() {
           className="absolute inset-0 h-full w-full object-cover"
           loading="eager"
           decoding="async"
-          fetchPriority="high"
         />
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950/72 via-slate-900/56 to-cyan-950/54" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_46%)]" />
