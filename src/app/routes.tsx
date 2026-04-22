@@ -9,6 +9,7 @@ const HotelsPage = lazy(() => import('../pages/HotelsPage'));
 const RentalsPage = lazy(() => import('../pages/RentalsPage'));
 const PlannerPage = lazy(() => import('../pages/PlannerPage'));
 const FavoritesPage = lazy(() => import('../pages/FavoritesPage'));
+const MyBookingsPage = lazy(() => import('../pages/MyBookingsPage'));
 const ChatPage = lazy(() => import('../pages/ChatPage'));
 const AdminPage = lazy(() => import('../pages/AdminPage'));
 const HostDashboardPage = lazy(() => import('../pages/HostDashboardPage'));
@@ -142,6 +143,14 @@ export const router = createBrowserRouter([
         element: (
           <SuspenseWrapper>
             <FavoritesPage />
+          </SuspenseWrapper>
+        ),
+      },
+      {
+        path: 'my-bookings',
+        element: (
+          <SuspenseWrapper>
+            <MyBookingsPage />
           </SuspenseWrapper>
         ),
       },

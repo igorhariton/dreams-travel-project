@@ -7,7 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { supportedLanguages } from '../../i18n';
 
 export function Navbar() {
-  const { language, setLanguage, role, favorites, t, theme, currentUser, logout, toggleTheme } = useApp();
+  const { language, setLanguage, role, favorites, bookings, t, theme, currentUser, logout, toggleTheme } = useApp();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
@@ -58,7 +58,7 @@ export function Navbar() {
       window.cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updateActiveTab);
     };
-  }, [location.pathname, language, role]);
+  }, [location.pathname, language, role, favorites.length, bookings.length]);
 
   const navLinks = useMemo(() => [
     { to: '/', label: t('nav.home'), icon: <Home size={16} /> },
@@ -67,11 +67,12 @@ export function Navbar() {
     { to: '/rentals', label: t('nav.rentals') },
     { to: '/planner', label: t('nav.planner') },
     { to: '/favorites', label: t('nav.favorites'), badge: favorites.length },
+    { to: '/my-bookings', label: t('nav.bookings'), badge: bookings.length },
     { to: '/chat', label: t('nav.chat'), icon: <MessageCircle size={16} /> },
     ...(!currentUser ? [{ to: '/login', label: t('nav.signin'), icon: <User size={16} /> }] : []),
     ...(role === 'host' ? [{ to: '/host-dashboard', label: t('nav.role.host'), icon: <Shield size={16} /> }] : []),
     ...(role === 'admin' ? [{ to: '/admin', label: t('nav.admin'), icon: <Shield size={16} /> }] : []),
-  ], [currentUser, favorites.length, role, t]);
+  ], [bookings.length, currentUser, favorites.length, role, t]);
 
   const languages: { code: Language; label: string; nativeLabel: string; flag: string }[] =
     supportedLanguages.map((lang) => ({

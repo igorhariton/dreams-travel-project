@@ -6,6 +6,7 @@ export { default as HomePage } from "./HomePage";
 export { default as HostDashboardPage } from "./HostDashboardPage";
 export { default as HotelsPage } from "./HotelsPage";
 export { default as LoginPage } from "./LoginPage";
+export { default as MyBookingsPage } from "./MyBookingsPage";
 export { default as PlannerPage } from "./PlannerPage";
 export { default as RegisterPage } from "./RegisterPage";
 export { default as RentalsPage } from "./RentalsPage";
