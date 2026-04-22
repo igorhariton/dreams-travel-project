@@ -9,6 +9,7 @@ import {
 } from '../data/travelData';
 import { apiGet, apiPost, isApiError, onApiStatus } from '../../services/apiClient';
 import { APP_ENV, HAS_EXPLICIT_API_BASE_URL } from '../../services/env';
+import type { BookingItem, BookingItemType, BookingStats, BookingStatus, CreateBookingInput } from '../types/booking';
 
 export type Language = 'en' | 'ro' | 'ru';
 export type UserRole = 'user' | 'host' | 'admin';
@@ -95,7 +96,9 @@ export type RegisterData = {
 
 const STORAGE_KEYS = {
   theme: 'theme',
+  language: 'td_language_v1',
   favorites: 'td_favorites_v1',
+  bookings: 'td_bookings_v1',
   hostListings: 'td_host_listings_v1',
   catalog: 'td_catalog_v1',
 } as const;
@@ -174,6 +177,95 @@ function sanitizeFavoritesList(value: unknown): FavoriteItem[] {
   }
 
   return favorites;
+}
+
+function sanitizeBookingType(type: unknown): BookingItemType | null {
+  if (type === 'hotel' || type === 'rental' || type === 'destination') return type;
+  if (typeof type !== 'string') return null;
+  const normalized = type.trim().toLowerCase();
+  if (normalized === 'hotel' || normalized === 'rental' || normalized === 'destination') return normalized;
+  return null;
+}
+
+function sanitizeBookingStatus(status: unknown): BookingStatus | null {
+  if (status === 'confirmed' || status === 'pending') return status;
+  if (typeof status !== 'string') return null;
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'confirmed' || normalized === 'pending') return normalized;
+  return null;
+}
+
+function sanitizeBookingItem(item: unknown): BookingItem | null {
+  if (!item || typeof item !== 'object') return null;
+
+  const candidate = item as Partial<BookingItem> & { name?: unknown; purchasedAt?: unknown };
+  const bookingType = sanitizeBookingType(candidate.type);
+  const bookingStatus = sanitizeBookingStatus(candidate.status);
+  const title =
+    (typeof candidate.title === 'string' && candidate.title.trim()) ||
+    (typeof candidate.name === 'string' && candidate.name.trim()) ||
+    '';
+  const bookedAt =
+    (typeof candidate.bookedAt === 'string' && candidate.bookedAt.trim()) ||
+    (typeof candidate.purchasedAt === 'string' && candidate.purchasedAt.trim()) ||
+    '';
+  const parsedPrice = Number(candidate.price);
+
+  if (
+    typeof candidate.id !== 'string' ||
+    !bookingType ||
+    !bookingStatus ||
+    !title ||
+    typeof candidate.location !== 'string' ||
+    typeof candidate.currency !== 'string' ||
+    typeof candidate.image !== 'string' ||
+    !bookedAt ||
+    !Number.isFinite(parsedPrice)
+  ) {
+    return null;
+  }
+
+  const parsedDate = new Date(bookedAt);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  const sanitized: BookingItem = {
+    id: candidate.id.trim(),
+    sourceId: typeof candidate.sourceId === 'string' ? candidate.sourceId.trim() : undefined,
+    title,
+    type: bookingType,
+    location: candidate.location.trim(),
+    price: Math.max(0, Math.round(parsedPrice)),
+    currency: candidate.currency.trim(),
+    image: candidate.image.trim(),
+    bookedAt: parsedDate.toISOString(),
+    status: bookingStatus,
+  };
+
+  return sanitized.id && sanitized.location && sanitized.currency && sanitized.image ? sanitized : null;
+}
+
+function sanitizeBookingsList(value: unknown): BookingItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const bookings: BookingItem[] = [];
+
+  for (const entry of value) {
+    const sanitized = sanitizeBookingItem(entry);
+    if (!sanitized) continue;
+    if (seen.has(sanitized.id)) continue;
+    seen.add(sanitized.id);
+    bookings.push(sanitized);
+  }
+
+  return bookings;
+}
+
+function buildBookingId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 function mergeCatalogById<T extends { id: string }>(seedItems: T[], storedItems: unknown): T[] {
@@ -615,6 +707,11 @@ interface AppContextType {
   addFavorite: (item: FavoriteItem) => void;
   removeFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
+  bookings: BookingItem[];
+  addBooking: (item: CreateBookingInput) => BookingItem | null;
+  removeBooking: (id: string) => void;
+  clearBookings: () => void;
+  getBookingStats: () => BookingStats;
   destinations: Destination[];
   setDestinations: React.Dispatch<React.SetStateAction<Destination[]>>;
   hotels: Hotel[];
@@ -681,7 +778,7 @@ const translations: Record<Language, Record<string, string>> = {
   en: {
     'nav.home': 'Home', 'nav.destinations': 'Destinations', 'nav.hotels': 'Hotels',
     'nav.rentals': 'Rentals', 'nav.planner': 'Planner', 'nav.favorites': 'Favorites',
-    'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Sign In',
+    'nav.bookings': 'My Bookings', 'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Sign In',
     'nav.role.user': 'Traveler', 'nav.role.host': 'Host', 'nav.role.admin': 'Admin',
     'hero.title': 'Discover Your Next Dream Destination',
     'hero.subtitle': 'Explore breathtaking destinations, book luxury stays, and craft unforgettable journeys.',
@@ -808,11 +905,30 @@ const translations: Record<Language, Record<string, string>> = {
     'booking.title': 'Complete Your Booking', 'booking.name': 'Full Name',
     'booking.email': 'Email Address', 'booking.phone': 'Phone Number',
     'booking.special': 'Special Requests', 'booking.success': 'Booking Confirmed!',
+    'my_bookings.badge': 'Purchases',
+    'my_bookings.title': 'My Bookings',
+    'my_bookings.subtitle': 'Track every booked stay and purchase date in one place.',
+    'my_bookings.stats.total': 'Total bookings',
+    'my_bookings.stats.confirmed': 'Confirmed',
+    'my_bookings.stats.pending': 'Pending',
+    'my_bookings.filter.all': 'All',
+    'my_bookings.status.confirmed': 'Confirmed',
+    'my_bookings.status.pending': 'Pending',
+    'my_bookings.empty.title': 'You have no bookings yet.',
+    'my_bookings.empty.subtitle': 'Start from hotels or rentals and your confirmed purchases will appear here automatically.',
+    'my_bookings.empty.explore_hotels': 'Explore Hotels',
+    'my_bookings.empty.explore_rentals': 'Explore Rentals',
+    'my_bookings.empty.filtered': 'No bookings match the selected filter.',
+    'my_bookings.type.hotel': 'Hotel',
+    'my_bookings.type.rental': 'Rental',
+    'my_bookings.type.destination': 'Destination',
+    'my_bookings.booked_on': 'Booked on',
+    'my_bookings.cancel': 'Cancel',
   },
   ro: {
     'nav.home': 'Acasă', 'nav.destinations': 'Destinații', 'nav.hotels': 'Hoteluri',
     'nav.rentals': 'Închirieri', 'nav.planner': 'Planificator', 'nav.favorites': 'Favorite',
-    'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Conectare',
+    'nav.bookings': 'Rezervările mele', 'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Conectare',
     'nav.role.user': 'Călător', 'nav.role.host': 'Gazdă', 'nav.role.admin': 'Admin',
     'hero.title': 'Descoperă Următoarea Ta Destinație de Vis',
     'hero.subtitle': 'Explorează destinații spectaculoase, rezervă cazări de lux și creează călătorii de neuitat.',
@@ -936,11 +1052,30 @@ const translations: Record<Language, Record<string, string>> = {
     'booking.title': 'Finalizează Rezervarea', 'booking.name': 'Nume Complet',
     'booking.email': 'Adresă Email', 'booking.phone': 'Număr Telefon',
     'booking.special': 'Cereri Speciale', 'booking.success': 'Rezervare Confirmată!',
+    'my_bookings.badge': 'Achiziții',
+    'my_bookings.title': 'Rezervările mele',
+    'my_bookings.subtitle': 'Urmărește toate sejururile rezervate și data achiziției într-un singur loc.',
+    'my_bookings.stats.total': 'Total rezervări',
+    'my_bookings.stats.confirmed': 'Confirmate',
+    'my_bookings.stats.pending': 'În așteptare',
+    'my_bookings.filter.all': 'Toate',
+    'my_bookings.status.confirmed': 'Confirmată',
+    'my_bookings.status.pending': 'În așteptare',
+    'my_bookings.empty.title': 'Nu ai rezervări încă.',
+    'my_bookings.empty.subtitle': 'Începe cu hoteluri sau închirieri, iar achizițiile confirmate vor apărea aici automat.',
+    'my_bookings.empty.explore_hotels': 'Explorează Hoteluri',
+    'my_bookings.empty.explore_rentals': 'Explorează Închirieri',
+    'my_bookings.empty.filtered': 'Nicio rezervare nu corespunde filtrului selectat.',
+    'my_bookings.type.hotel': 'Hotel',
+    'my_bookings.type.rental': 'Închiriere',
+    'my_bookings.type.destination': 'Destinație',
+    'my_bookings.booked_on': 'Rezervat pe',
+    'my_bookings.cancel': 'Anulează',
   },
   ru: {
     'nav.home': 'Главная', 'nav.destinations': 'Направления', 'nav.hotels': 'Отели',
     'nav.rentals': 'Аренда', 'nav.planner': 'Планировщик', 'nav.favorites': 'Избранное',
-    'nav.chat': 'Чат', 'nav.admin': 'Админ', 'nav.signin': 'Войти',
+    'nav.bookings': 'Мои брони', 'nav.chat': 'Чат', 'nav.admin': 'Админ', 'nav.signin': 'Войти',
     'nav.role.user': 'Путешественник', 'nav.role.host': 'Хозяин', 'nav.role.admin': 'Админ',
     'hero.title': 'Откройте для Себя Место Своей Мечты',
     'hero.subtitle': 'Исследуйте потрясающие направления, бронируйте роскошное жильё и создавайте незабываемые путешествия.',
@@ -1063,6 +1198,25 @@ const translations: Record<Language, Record<string, string>> = {
     'booking.title': 'Завершить Бронирование', 'booking.name': 'Полное Имя',
     'booking.email': 'Электронная Почта', 'booking.phone': 'Номер Телефона',
     'booking.special': 'Особые Пожелания', 'booking.success': 'Бронирование Подтверждено!',
+    'my_bookings.badge': 'Покупки',
+    'my_bookings.title': 'Мои бронирования',
+    'my_bookings.subtitle': 'Отслеживайте все бронирования и даты покупки в одном месте.',
+    'my_bookings.stats.total': 'Всего бронирований',
+    'my_bookings.stats.confirmed': 'Подтверждено',
+    'my_bookings.stats.pending': 'В ожидании',
+    'my_bookings.filter.all': 'Все',
+    'my_bookings.status.confirmed': 'Подтверждено',
+    'my_bookings.status.pending': 'В ожидании',
+    'my_bookings.empty.title': 'У вас пока нет бронирований.',
+    'my_bookings.empty.subtitle': 'Начните с отелей или аренды, и подтвержденные покупки автоматически появятся здесь.',
+    'my_bookings.empty.explore_hotels': 'Смотреть отели',
+    'my_bookings.empty.explore_rentals': 'Смотреть аренду',
+    'my_bookings.empty.filtered': 'Нет бронирований по выбранному фильтру.',
+    'my_bookings.type.hotel': 'Отель',
+    'my_bookings.type.rental': 'Аренда',
+    'my_bookings.type.destination': 'Направление',
+    'my_bookings.booked_on': 'Забронировано',
+    'my_bookings.cancel': 'Отменить',
   },
 };
 
@@ -1080,7 +1234,13 @@ const TRANSLATION_MAX_WORDS = 12;
 
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── Existing state ────────────────────────────────────────────────────────
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.language);
+      if (stored === 'en' || stored === 'ro' || stored === 'ru') return stored;
+    }
+    return 'en';
+  });
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(STORAGE_KEYS.theme);
@@ -1090,6 +1250,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   });
   const [favorites, setFavorites] = useState<FavoriteItem[]>(() =>
     sanitizeFavoritesList(loadStoredJson<unknown>(STORAGE_KEYS.favorites, [])),
+  );
+  const [bookings, setBookings] = useState<BookingItem[]>(() =>
+    sanitizeBookingsList(loadStoredJson<unknown>(STORAGE_KEYS.bookings, [])),
   );
   const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({ en: {}, ro: {}, ru: {} });
   const pendingTranslations = useRef<Set<string>>(new Set());
@@ -1287,6 +1450,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     writeStoredJson(STORAGE_KEYS.favorites, favorites);
   }, [favorites]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.language, language);
+  }, [language]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.bookings, bookings);
+  }, [bookings]);
 
   useEffect(() => {
     writeStoredJson(STORAGE_KEYS.hostListings, hostListings);
@@ -1796,6 +1968,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeFavorite = (id: string) => setFavorites(prev => prev.filter(f => f.id !== id));
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
+  const addBooking = (item: CreateBookingInput): BookingItem | null => {
+    const safeBooking = sanitizeBookingItem({
+      id: buildBookingId(),
+      sourceId: item.sourceId,
+      title: item.title,
+      type: item.type,
+      location: item.location,
+      price: item.price,
+      currency: item.currency,
+      image: item.image,
+      bookedAt: item.bookedAt || new Date().toISOString(),
+      status: item.status || 'confirmed',
+    });
+
+    if (!safeBooking) return null;
+    setBookings((prev) => [safeBooking, ...prev]);
+    return safeBooking;
+  };
+
+  const removeBooking = (id: string) => {
+    setBookings((prev) => prev.filter((booking) => booking.id !== id));
+  };
+
+  const clearBookings = () => {
+    setBookings([]);
+  };
+
+  const getBookingStats = (): BookingStats => {
+    const confirmed = bookings.filter((booking) => booking.status === 'confirmed').length;
+    const pending = bookings.filter((booking) => booking.status === 'pending').length;
+
+    return {
+      total: bookings.length,
+      confirmed,
+      pending,
+    };
+  };
+
   return (
     <ThemeContext.Provider value={themeContextValue}>
       <I18nContext.Provider value={i18nContextValue}>
@@ -1803,6 +2013,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // Existing
           language, setLanguage, role, theme, setTheme, toggleTheme,
           favorites, addFavorite, removeFavorite, isFavorite,
+          bookings, addBooking, removeBooking, clearBookings, getBookingStats,
           destinations, setDestinations, hotels, setHotels, rentals, setRentals,
           publicDestinations, publicHotels, publicRentals,
           t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
