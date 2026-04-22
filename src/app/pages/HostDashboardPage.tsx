@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
@@ -930,7 +930,7 @@ export default function HostDashboardPage() {
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className={isDarkTheme
             ? 'travel-panel border border-slate-700 bg-slate-900/70 p-5 shadow-sm'
-            : 'travel-panel border border-[#BFD8FF] bg-gradient-to-br from-[#EEF4FF] to-[#E8F8FF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.09)]'}
+            : 'travel-panel border border-[#BFD8FF] bg-linear-to-br from-[#EEF4FF] to-[#E8F8FF] p-5 shadow-[0_10px_28px_rgba(14,116,144,0.09)]'}
           >
             <p className={`text-sm ${isDarkTheme ? 'text-slate-500 dark:text-slate-400' : 'text-[#1E3A8A]'}`}>Total listings</p>
             <p className={`mt-2 text-3xl font-black ${isDarkTheme ? 'text-slate-900 dark:text-slate-100' : 'text-[#0F172A]'}`}>{myListings.length}</p>
@@ -1348,7 +1348,7 @@ export default function HostDashboardPage() {
 
   if (isAuthLoading) {
     return (
-      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
+      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-(--background) pt-20`}>
         <div className="mx-auto max-w-xl px-4">
           <div className={isDarkTheme
             ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
@@ -1363,7 +1363,7 @@ export default function HostDashboardPage() {
 
   if (role !== 'host') {
     return (
-      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
+      <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-(--background) pt-20`}>
         <div className="mx-auto max-w-xl px-4">
           <div className={isDarkTheme
             ? 'travel-panel border border-slate-700 bg-slate-900/70 p-10 text-center shadow-sm'
@@ -1380,7 +1380,7 @@ export default function HostDashboardPage() {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                className="rounded-full bg-linear-to-r from-blue-600 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
               >
                 Go to login
               </button>
@@ -1392,9 +1392,9 @@ export default function HostDashboardPage() {
   }
 
   return (
-    <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-[var(--background)] pt-20`}>
+    <div className={`host-dashboard ${isDarkTheme ? 'host-theme-dark' : 'host-theme-light'} min-h-screen bg-(--background) pt-20`}>
       <div className="mx-auto max-w-[1500px] px-4 pb-10 sm:px-6">
-        <header className={`travel-shell overflow-hidden border bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-8 shadow-sm ${isDarkTheme ? 'border-slate-700' : 'border-[#BFD8FF]'}`}>
+        <header className={`travel-shell overflow-hidden border bg-linear-to-r from-blue-600 to-cyan-500 px-6 py-8 shadow-sm ${isDarkTheme ? 'border-slate-700' : 'border-[#BFD8FF]'}`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="travel-badge inline-flex items-center gap-2 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
@@ -1431,7 +1431,7 @@ export default function HostDashboardPage() {
                     onClick={() => setSection(item.key)}
                     className={`host-nav-item flex w-full items-center justify-between rounded-[18px] px-3 py-2.5 text-sm font-semibold transition ${
                       section === item.key
-                        ? 'bg-gradient-to-r from-blue-500 to-cyan-400 text-white'
+                        ? 'bg-linear-to-r from-blue-500 to-cyan-400 text-white'
                         : isDarkTheme
                           ? 'text-slate-200 hover:bg-slate-800'
                           : 'text-[#23406A] hover:bg-[#EAF3FF] hover:text-[#0F2747]'
@@ -1478,7 +1478,7 @@ export default function HostDashboardPage() {
       </div>
 
       {previewListing && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/55 p-4" onClick={() => setPreviewId(null)}>
+        <div className="fixed inset-0 z-120 flex items-center justify-center bg-slate-900/55 p-4" onClick={() => setPreviewId(null)}>
           <div
             className={`travel-shell max-h-[92vh] w-full max-w-4xl overflow-hidden border shadow-2xl ${isDarkTheme ? 'border-slate-700 bg-slate-900' : 'border-[#CFE0F0] bg-[#F8FBFF]'}`}
             onClick={(event) => event.stopPropagation()}
@@ -1551,4 +1551,5 @@ export default function HostDashboardPage() {
     </div>
   );
 }
+
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
@@ -175,7 +175,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] overflow-hidden p-4">
+        <div className="fixed inset-0 z-100 overflow-hidden p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -191,7 +191,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
               className="travel-shell relative flex max-h-[min(92vh,920px)] w-full max-w-5xl flex-col overflow-hidden border border-[#D9E2EC] bg-[#FFFFFF] shadow-[0_20px_60px_rgba(15,23,42,0.14)] dark:border-slate-700 dark:bg-[#111827] dark:shadow-[0_20px_50px_rgba(2,6,23,0.42)]"
             >
               {confirmed ? (
-                <div className="booking-modal-scroll flex min-h-[420px] flex-col items-center justify-center overflow-y-auto bg-gradient-to-b from-[#f8fafc] to-white px-8 py-16 text-center dark:from-[#111827] dark:to-[#111827]">
+                <div className="booking-modal-scroll flex min-h-[420px] flex-col items-center justify-center overflow-y-auto bg-linear-to-b from-[#f8fafc] to-white px-8 py-16 text-center dark:from-[#111827] dark:to-[#111827]">
                   <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 shadow-inner dark:bg-emerald-500/15">
                     <CheckCircle size={40} className="text-emerald-600" />
                   </div>
@@ -202,7 +202,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                 </div>
               ) : (
                 <>
-                  <div className="shrink-0 border-b border-[#D9E2EC] bg-gradient-to-r from-[#EEF4FA] via-[#F1F5F9] to-[#FFFFFF] px-6 py-5 text-[#0F172A] dark:border-slate-700 dark:from-[#0b1220] dark:via-[#0f172a] dark:to-[#111827] dark:text-white">
+                  <div className="shrink-0 border-b border-[#D9E2EC] bg-linear-to-r from-[#EEF4FA] via-[#F1F5F9] to-[#FFFFFF] px-6 py-5 text-[#0F172A] dark:border-slate-700 dark:from-[#0b1220] dark:via-[#0f172a] dark:to-[#111827] dark:text-white">
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h2 className="text-xl font-bold">{step === 1 ? translateDynamic('Reservation Details') : translateDynamic('Payment & Confirmation')}</h2>
@@ -241,7 +241,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     </div>
                   </div>
 
-                  <div className="booking-modal-scroll flex-1 overflow-y-auto bg-gradient-to-b from-[#F8FAFC] to-white p-6 dark:from-[#111827] dark:to-[#111827]">
+                  <div className="booking-modal-scroll flex-1 overflow-y-auto bg-linear-to-b from-[#F8FAFC] to-white p-6 dark:from-[#111827] dark:to-[#111827]">
                     {step === 1 && (
                       <div className="w-full space-y-6">
                         <div className="grid grid-cols-2 gap-4">
@@ -539,4 +539,5 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
     </AnimatePresence>
   );
 }
+
 

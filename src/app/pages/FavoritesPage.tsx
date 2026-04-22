@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel as HotelIcon, Home as HomeIcon, Globe2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -101,7 +101,7 @@ export default function FavoritesPage() {
           loading="eager"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/72 via-slate-900/56 to-cyan-950/54" />
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950/72 via-slate-900/56 to-cyan-950/54" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_46%)]" />
         <div className="relative max-w-5xl mx-auto text-center">
           <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('favorites.title')}</h1>
@@ -142,7 +142,7 @@ export default function FavoritesPage() {
             <div className="text-7xl mb-6">💔</div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('favorites.empty')}</h2>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">{t('favorites.empty_sub')}</p>
-            <Link to="/destinations" className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-all">
+            <Link to="/destinations" className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-all">
               {t('favorites.explore_destinations')} <ArrowRight size={18} />
             </Link>
           </motion.div>
@@ -166,7 +166,7 @@ export default function FavoritesPage() {
                         alt={item.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
                       <div className="absolute top-3 left-3">
                         <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
                           {cfg.icon} {t(cfg.labelKey)}
@@ -207,13 +207,13 @@ export default function FavoritesPage() {
                         {item.type !== 'destination' && (
                           <button
                             onClick={() => openSavedListing(item.id, item.type)}
-                            className="flex-1 py-2 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
+                            className="flex-1 py-2 bg-linear-to-r from-rose-500 to-pink-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
                           >
                             {t('common.view_details')}
                           </button>
                         )}
                         {item.type === 'destination' && (
-                          <Link to="/destinations" className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all text-center">
+                          <Link to="/destinations" className="flex-1 py-2 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all text-center">
                             {t('favorites.explore_short')} →
                           </Link>
                         )}
@@ -233,10 +233,10 @@ export default function FavoritesPage() {
         )}
 
         {favorites.length > 0 && (
-          <div className="mt-12 bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
+          <div className="mt-12 bg-linear-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
             <h3 className="font-bold text-gray-900 mb-2">{t('favorites.cta_title')}</h3>
             <p className="text-sm text-gray-600 mb-4">{t('favorites.cta_subtitle')}</p>
-            <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
+            <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
               {t('favorites.open_planner')} <ArrowRight size={16} />
             </Link>
           </div>
@@ -253,3 +253,4 @@ export default function FavoritesPage() {
     </div>
   );
 }
+

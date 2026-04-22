@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 
@@ -103,7 +103,7 @@ export default function RegisterPage() {
             </button>
 
             <div className="flex items-center gap-3 rounded-full bg-white/88 px-4 py-3 shadow-lg">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-yellow-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-yellow-300">
                 ✈
               </div>
               <p className="text-xl font-black text-[#1f2937]">
@@ -139,7 +139,7 @@ export default function RegisterPage() {
                 </span>
               </button>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-yellow-300">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-yellow-300">
                 ✈
               </div>
 
@@ -260,3 +260,4 @@ export default function RegisterPage() {
     </div>
   );
 }
+

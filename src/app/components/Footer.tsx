@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Facebook, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -40,7 +40,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
                 <span className="text-white text-lg">✈</span>
               </div>
               <span className="text-white font-bold text-lg">Travel<span className="text-cyan-400">Dreams</span></span>
@@ -133,3 +133,4 @@ export function Footer() {
     </footer>
   );
 }
+

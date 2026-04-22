@@ -1,4 +1,4 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import React, { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -1194,13 +1194,13 @@ export default function AdminPageV2() {
                 className={
                   'flex flex-col items-center justify-center rounded-3xl border p-6 text-center ' +
                   (isDarkTheme
-                    ? 'border-orange-700/30 bg-gradient-to-b from-orange-950/35 via-slate-900 to-slate-900'
-                    : 'border-[#BFDBFE] bg-gradient-to-b from-[#EEF6FF] via-[#ECFEFF] to-[#E0F2FE]')
+                    ? 'border-orange-700/30 bg-linear-to-b from-orange-950/35 via-slate-900 to-slate-900'
+                    : 'border-[#BFDBFE] bg-linear-to-b from-[#EEF6FF] via-[#ECFEFF] to-[#E0F2FE]')
                 }
               >
                 <div
                   className={
-                    'flex h-28 w-28 items-center justify-center rounded-full border-[10px] border-dashed text-3xl font-semibold ' +
+                    'flex h-28 w-28 items-center justify-center rounded-full border-10 border-dashed text-3xl font-semibold ' +
                     (isDarkTheme
                       ? 'border-orange-700 bg-slate-900 text-orange-300'
                       : 'border-[#93C5FD] bg-white text-[#2563EB] shadow-[0_10px_24px_rgba(37,99,235,0.16)]')
@@ -1216,7 +1216,7 @@ export default function AdminPageV2() {
                     'mt-5 w-full rounded-2xl text-white ' +
                     (isDarkTheme
                       ? 'bg-orange-500 hover:bg-orange-400'
-                      : 'bg-gradient-to-r from-[#2563EB] to-[#06B6D4] hover:brightness-105')
+                      : 'bg-linear-to-r from-[#2563EB] to-[#06B6D4] hover:brightness-105')
                   }
                 >
                   {t.openBrokenLinks}
@@ -1696,7 +1696,7 @@ export default function AdminPageV2() {
               <button
                 type="button"
                 onClick={() => navigate('/login')}
-                className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                className="rounded-full bg-linear-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
               >
                 Go to login
               </button>
@@ -1721,7 +1721,7 @@ export default function AdminPageV2() {
         <aside className={`sticky top-20 h-fit rounded-[28px] p-4 shadow-sm ${isDarkTheme ? 'bg-slate-900 border border-slate-700/50' : 'bg-white border border-slate-200'}`}>
           <div className={`flex items-center gap-3 px-2 pb-4 ${isDarkTheme ? 'border-b border-white/10' : 'border-b border-slate-200'}`}>
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-violet-500 font-bold text-white">A</div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-cyan-400 to-violet-500 font-bold text-white">A</div>
               <div>
                 <p className={`text-lg font-semibold ${isDarkTheme ? 'text-white' : 'text-slate-900'}`}>Travel Admin</p>
                 <p className={`text-xs ${isDarkTheme ? 'text-slate-400' : 'text-slate-500'}`}>Control center</p>
@@ -1771,7 +1771,7 @@ export default function AdminPageV2() {
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button onClick={() => openAddModal()} className="rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white hover:brightness-105">
+              <Button onClick={() => openAddModal()} className="rounded-2xl bg-linear-to-r from-blue-500 to-cyan-400 text-white hover:brightness-105">
                 <Plus className="mr-2 h-4 w-4" /> {t.addItem}
               </Button>
               <Button variant="outline" onClick={exportData} className={`rounded-2xl ${isDarkTheme ? 'border-slate-600 bg-slate-800 text-white' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
@@ -1789,10 +1789,10 @@ export default function AdminPageV2() {
 
           {/* Stat cards */}
           <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
-            <StatCard title="Revenue" value="$30,200" icon={LayoutDashboard} hint="All earnings" tone="bg-gradient-to-r from-orange-400 to-rose-400" />
-            <StatCard title="Destinations" value={destinations.length} icon={MapPin} hint="Active travel locations" tone="bg-gradient-to-r from-emerald-400 to-cyan-400" />
-            <StatCard title="Listings" value={hotels.length + rentals.length} icon={Database} hint="Hotels and rentals" tone="bg-gradient-to-r from-pink-400 to-rose-400" />
-            <StatCard title="Broken links" value={brokenLinks} icon={AlertTriangle} hint="Need mapping review" tone="bg-gradient-to-r from-cyan-500 to-sky-500" />
+            <StatCard title="Revenue" value="$30,200" icon={LayoutDashboard} hint="All earnings" tone="bg-linear-to-r from-orange-400 to-rose-400" />
+            <StatCard title="Destinations" value={destinations.length} icon={MapPin} hint="Active travel locations" tone="bg-linear-to-r from-emerald-400 to-cyan-400" />
+            <StatCard title="Listings" value={hotels.length + rentals.length} icon={Database} hint="Hotels and rentals" tone="bg-linear-to-r from-pink-400 to-rose-400" />
+            <StatCard title="Broken links" value={brokenLinks} icon={AlertTriangle} hint="Need mapping review" tone="bg-linear-to-r from-cyan-500 to-sky-500" />
           </div>
 
           {renderMainSection()}
@@ -1803,7 +1803,7 @@ export default function AdminPageV2() {
           ADD MODAL
       ══════════════════════════════════════════════════════════════════════ */}
       {isAddModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
           <div className="flex w-full max-w-6xl flex-col rounded-[28px] border border-slate-200 bg-white shadow-2xl dark:border-slate-700/50 dark:bg-slate-900" style={{ maxHeight: '85vh' }}>
 
             {/* Header */}
@@ -2001,7 +2001,7 @@ export default function AdminPageV2() {
           EDIT MODAL
       ══════════════════════════════════════════════════════════════════════ */}
       {editTarget !== null && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
           <div className="custom-scroll w-full max-w-6xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700/50 dark:bg-slate-900" style={{ maxHeight: '85vh' }}>
 
             {/* Header */}
@@ -2195,4 +2195,5 @@ export default function AdminPageV2() {
     </div>
   );
 }
+
 

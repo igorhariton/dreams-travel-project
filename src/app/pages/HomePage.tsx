@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, MapPin, Calendar, Users, Star, ArrowRight, Plane, Hotel, Home as HomeIcon, Map as MapIcon, Shield, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -345,7 +345,7 @@ export default function HomePage() {
               >
                 <div className="relative h-52 overflow-hidden">
                   <ImageCarousel images={dest.images} className="h-52" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent pointer-events-none" />
                   <div className="absolute top-3 left-3 flex gap-2 pointer-events-none">
                     {dest.tags.slice(0, 2).map(tag => (
                       <span
@@ -429,7 +429,7 @@ export default function HomePage() {
                   { icon: '🏛️', title: 'Historical Sites', desc: 'Explore ancient ruins, museums and UNESCO heritage sites' },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                    <div className="w-12 h-12 bg-linear-to-br from-blue-50 to-cyan-50 rounded-xl flex items-center justify-center text-2xl shrink-0">
                       {item.icon}
                     </div>
                     <div>
@@ -454,7 +454,7 @@ export default function HomePage() {
                     decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                   <div className="absolute bottom-3 left-4 text-white">
                     <div className="font-semibold">{translateDynamic(item.name)}</div>
                     <div className="text-xs text-white/80">{translateDynamic(item.dest)}</div>
@@ -492,7 +492,7 @@ export default function HomePage() {
                 <div className="relative h-56 overflow-hidden">
                   <ImageCarousel images={hotel.images} className="h-56" />
                   <div className="absolute top-3 left-3">
-                    <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                    <span className="bg-linear-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                       {'★'.repeat(hotel.stars)}
                     </span>
                   </div>
@@ -533,7 +533,7 @@ export default function HomePage() {
                   </div>
                   <button
                     onClick={() => openHotelDetails(hotel)}
-                    className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
+                    className="w-full py-2.5 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
                   >
                     {t('common.view_details')}
                   </button>
@@ -632,4 +632,5 @@ export default function HomePage() {
     </>
   );
 }
+
 

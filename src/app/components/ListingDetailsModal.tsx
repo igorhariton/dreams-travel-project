@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Bath, BedDouble, Building2, Home, MapPin, ShieldCheck, Star, Users, X } from 'lucide-react';
 import { ImageCarousel } from './ImageCarousel';
@@ -298,7 +298,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
                 }`}
               >
                 <div
-                  className={`shrink-0 border-b bg-gradient-to-r px-6 py-5 ${
+                  className={`shrink-0 border-b bg-linear-to-r px-6 py-5 ${
                     isDark
                       ? 'border-slate-700 from-[#0b1220] via-[#0f172a] to-[#111827] text-white'
                       : 'border-[#D9E2EC] from-[#EEF4FA] via-[#F1F5F9] to-[#FFFFFF] text-[#0F172A]'
@@ -350,7 +350,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
                   </div>
                 </div>
 
-                <div className={`app-modal-scroll flex-1 overflow-y-auto bg-gradient-to-b px-6 py-6 ${isDark ? 'from-[#111827] to-[#111827]' : 'from-[#F8FAFC] to-white'}`}>
+                <div className={`app-modal-scroll flex-1 overflow-y-auto bg-linear-to-b px-6 py-6 ${isDark ? 'from-[#111827] to-[#111827]' : 'from-[#F8FAFC] to-white'}`}>
                   <div className="grid gap-8 lg:grid-cols-[1.35fr_0.9fr]">
                     <div className="space-y-6">
                       <div
@@ -426,7 +426,7 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
 
                   <div className="space-y-6">
                     <section
-                      className={`travel-panel border bg-gradient-to-br p-6 ${
+                      className={`travel-panel border bg-linear-to-br p-6 ${
                         isDark
                           ? 'border-slate-700 from-[#111827] via-[#0f172a] to-[#111827] text-white shadow-none'
                           : 'border-[#D9E2EC] from-[#FFFFFF] via-[#F8FAFC] to-[#EEF4FA] text-[#0F172A] shadow-[0_14px_32px_rgba(15,23,42,0.08)]'
@@ -492,3 +492,4 @@ export function ListingDetailsModal({ isOpen, item, onClose, onReserve, forceThe
     </AnimatePresence>
   );
 }
+

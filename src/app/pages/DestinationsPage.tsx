@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
+﻿import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Filter, Star, MapPin, Globe2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -246,7 +246,7 @@ export default function DestinationsPage() {
           loading="eager"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/48 to-cyan-950/52" />
+        <div className="absolute inset-0 bg-linear-to-r from-slate-950/70 via-slate-900/48 to-cyan-950/52" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_46%)]" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-3">{t('section.top_destinations')}</h1>
@@ -280,12 +280,12 @@ export default function DestinationsPage() {
 
           <div className="flex items-center gap-3 mt-4">
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'rating' | 'name' | 'trending')}>
-              <SelectTrigger className="h-[46px] w-[160px] rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
+              <SelectTrigger className="h-[46px] w-40 rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="z-[120] rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl"
+                className="z-120 rounded-2xl border border-[#D9E2EC] bg-white p-1 shadow-xl"
               >
                 <SelectItem value="rating" className="rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]">
                   {translateDynamic('Top Rated')}
@@ -393,7 +393,7 @@ export default function DestinationsPage() {
                         e.stopPropagation();
                         setSelectedDest(dest);
                       }}
-                      className="mt-auto w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
+                      className="mt-auto w-full py-2.5 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
                     >
                       {t('common.view_details')}
                     </button>
@@ -453,7 +453,7 @@ export default function DestinationsPage() {
       {/* Modal */}
       <AnimatePresence>
         {selectedDest && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={closeSelectedDestination}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
@@ -509,7 +509,7 @@ export default function DestinationsPage() {
                     <div className="space-y-2">
                       {selectedDest.mustVisit.map((place, i) => (
                         <div key={place} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                          <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
+                          <div className="w-7 h-7 bg-linear-to-br from-blue-600 to-cyan-500 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0">{i + 1}</div>
                           <span className="font-medium text-gray-800">{translateDynamic(place)}</span>
                         </div>
                       ))}
@@ -528,7 +528,7 @@ export default function DestinationsPage() {
                 <button
                   type="button"
                   onClick={() => navigate('/hotels')}
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm"
+                  className="flex-1 py-3 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm"
                 >
                   {translateDynamic('Explore Hotels')} →
                 </button>
@@ -540,4 +540,5 @@ export default function DestinationsPage() {
     </div>
   );
 }
+
 

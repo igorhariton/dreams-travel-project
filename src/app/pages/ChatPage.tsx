@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Mic, RefreshCw, Send, User } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -677,9 +677,9 @@ export default function ChatPage() {
   }, []);
 
   return (
-    <div className={`h-[100dvh] pt-16 ${isDarkTheme ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
+    <div className={`h-dvh pt-16 ${isDarkTheme ? 'bg-[#0B1220]' : 'bg-[#F8FAFC]'}`}>
       <div className="mx-auto flex h-full min-h-0 max-w-6xl flex-col overflow-hidden px-4 py-6">
-        <div className="travel-shell mb-4 flex items-center justify-between gap-3 bg-gradient-to-r from-blue-600 to-cyan-500 p-5 text-white shadow-md">
+        <div className="travel-shell mb-4 flex items-center justify-between gap-3 bg-linear-to-r from-blue-600 to-cyan-500 p-5 text-white shadow-md">
           <div className="flex min-w-0 items-center gap-3">
             <div className="travel-panel flex h-12 w-12 items-center justify-center bg-white/20">
               <Bot size={24} />
@@ -761,7 +761,7 @@ export default function ChatPage() {
                       <div
                         className={`travel-panel flex h-9 w-9 items-center justify-center ${
                           message.role === 'assistant'
-                            ? 'bg-gradient-to-br from-blue-600 to-cyan-500 text-white'
+                            ? 'bg-linear-to-br from-blue-600 to-cyan-500 text-white'
                             : isDarkTheme
                               ? 'bg-[#243144] text-[#F9FAFB]'
                               : 'bg-[#EAF1F8] text-[#0F172A]'
@@ -773,7 +773,7 @@ export default function ChatPage() {
                         <div
                           className={`travel-panel px-4 py-3 text-sm leading-relaxed shadow-sm ${
                             message.role === 'user'
-                              ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
+                              ? 'bg-linear-to-r from-blue-600 to-cyan-500 text-white'
                               : isDarkTheme
                                 ? 'border border-[#334155] bg-[#1F2937] text-[#F9FAFB]'
                                 : 'border border-[#D9E2EC] bg-[#F8FAFC] text-[#0F172A]'
@@ -820,7 +820,7 @@ export default function ChatPage() {
             <AnimatePresence>
               {isSending && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-3">
-                  <div className="travel-panel flex h-9 w-9 items-center justify-center bg-gradient-to-br from-blue-600 to-cyan-500 text-white">
+                  <div className="travel-panel flex h-9 w-9 items-center justify-center bg-linear-to-br from-blue-600 to-cyan-500 text-white">
                     <Bot size={15} />
                   </div>
                   <div
@@ -965,3 +965,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

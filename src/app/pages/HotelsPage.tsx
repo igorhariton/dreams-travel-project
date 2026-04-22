@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
+﻿import React, { useState, useMemo, useCallback, useRef, useEffect, useDeferredValue } from 'react';
 import { Search, Star, MapPin, SlidersHorizontal, Wifi, Coffee, Car, Waves, Dumbbell, Utensils } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { Hotel, Destination } from '../data/travelData';
@@ -66,8 +66,8 @@ export default function HotelsPage() {
     ? 'rounded-2xl border border-slate-500/70 bg-[#162338]/90 px-4 text-sm font-medium text-slate-100 shadow-[0_8px_18px_rgba(2,6,23,0.35)] data-[placeholder]:text-slate-300 [&_svg]:text-slate-300 focus-visible:border-sky-300 focus-visible:ring-sky-300/30'
     : 'rounded-2xl border-[#D9E2EC] bg-white px-4 text-sm font-medium text-[#475569] shadow-sm focus-visible:border-[#60A5FA] focus-visible:ring-[#60A5FA]/25';
   const selectContentToneClass = theme === 'dark'
-    ? 'z-[120] max-h-80 rounded-[16px] border border-slate-500/70 bg-[#152338]/95 p-1 text-slate-100 shadow-[0_18px_36px_rgba(2,6,23,0.58)] backdrop-blur'
-    : 'z-[120] max-h-80 rounded-[16px] border border-[#D9E2EC] bg-white p-1 shadow-xl';
+    ? 'z-120 max-h-80 rounded-2xl border border-slate-500/70 bg-[#152338]/95 p-1 text-slate-100 shadow-[0_18px_36px_rgba(2,6,23,0.58)] backdrop-blur'
+    : 'z-120 max-h-80 rounded-2xl border border-[#D9E2EC] bg-white p-1 shadow-xl';
   const selectItemToneClass = theme === 'dark'
     ? 'rounded-xl px-3 py-2 text-sm font-medium text-slate-100 focus:bg-[#264160] focus:text-white data-[state=checked]:bg-[#D7E7FB] data-[state=checked]:text-[#0F2747]'
     : 'rounded-xl px-3 py-2 text-sm font-medium text-[#0F172A] focus:bg-[#F1F5F9] data-[state=checked]:bg-[#DBEAFE]';
@@ -195,7 +195,7 @@ export default function HotelsPage() {
           loading="eager"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/68 via-slate-900/48 to-cyan-950/52" />
+        <div className="absolute inset-0 bg-linear-to-r from-slate-950/68 via-slate-900/48 to-cyan-950/52" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_44%)]" />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 pt-16">
           <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('section.featured_hotels')}</h1>
@@ -317,7 +317,7 @@ export default function HotelsPage() {
                   <div className="relative h-56 overflow-hidden shrink-0">
                     <ImageCarousel images={hotel.images} className="h-56" showIndicators={false} showCounter={false} priority={index < 3} />
                     <div className="absolute top-3 left-3">
-                      <span className="bg-gradient-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+                      <span className="bg-linear-to-r from-blue-600 to-cyan-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full">
                         {translateDynamic(hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1))}
                       </span>
                     </div>
@@ -357,7 +357,7 @@ export default function HotelsPage() {
                     <button
                       type="button"
                       onClick={() => openHotelDetails(hotel)}
-                      className="mt-auto w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
+                      className="mt-auto w-full py-2.5 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                       {t('common.view_details')}
                     </button>
                   </div>
@@ -371,7 +371,7 @@ export default function HotelsPage() {
               <LazyCard key={hotel.id} minHeight={160}>
                 <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 flex">
                   <div className="relative w-64 shrink-0 overflow-hidden">
-                    <ImageCarousel images={hotel.images} className="h-full min-h-[160px]" showIndicators={false} showCounter={false} priority={index < 2} />
+                    <ImageCarousel images={hotel.images} className="h-full min-h-40" showIndicators={false} showCounter={false} priority={index < 2} />
                   </div>
                   <div className="flex-1 p-5 flex flex-col justify-between">
                     <div>
@@ -407,7 +407,7 @@ export default function HotelsPage() {
                       <button
                         type="button"
                         onClick={() => openHotelDetails(hotel)}
-                        className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
+                        className="flex-1 py-2 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all">
                         {t('common.view_details')}
                       </button>
                     </div>
@@ -437,4 +437,5 @@ export default function HotelsPage() {
     </div>
   );
 }
+
 

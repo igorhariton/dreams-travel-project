@@ -1,4 +1,4 @@
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Circle, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -1533,7 +1533,7 @@ export function TravelLayersMap({
     const map = mapRef.current;
     if (!map) return;
 
-    fitMapToVisibleMarkers(map, activeLocations, { animate: true, singleMarkerZoom });
+    fitMapToVisibleMarkers(map, activeLocations, { animate: true, singleMarkerZoom: singleLocationZoom });
   };
 
   const handleLocateUser = () => {
@@ -1893,7 +1893,7 @@ export function TravelLayersMap({
         <button
           type="button"
           onClick={onExploreHotels}
-          className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+          className="w-full rounded-xl bg-linear-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90"
         >
           Explore Hotels
         </button>
@@ -1901,3 +1901,4 @@ export function TravelLayersMap({
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+﻿import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Globe, Heart, MessageCircle, Map, Menu, X, ChevronDown, User, Shield, Home, LogOut, Moon, Sun } from 'lucide-react';
 import { useApp, Language } from '../../context';
@@ -123,7 +123,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-md">
+            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-md">
               <span className="text-white text-lg">✈</span>
             </div>
             <div className="hidden sm:block">
@@ -345,3 +345,4 @@ export function Navbar() {
     </nav>
   );
 }
+

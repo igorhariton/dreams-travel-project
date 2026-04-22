@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, memo, useEffect } from 'react';
+﻿import React, { useState, useCallback, useRef, memo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ImageCarouselProps {
@@ -138,7 +138,7 @@ export const ImageCarousel = memo(function ImageCarousel({
             >
               {/* Skeleton shimmer — visible until image is ready */}
               {!isReady && (
-                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
+                <div className="absolute inset-0 bg-linear-to-r from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
               )}
 
               {/* Image — only in DOM when needed, fades in when ready */}
@@ -161,7 +161,7 @@ export const ImageCarousel = memo(function ImageCarousel({
 
       {/* Location label */}
       {label && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-3 pt-6 z-10 pointer-events-none">
+        <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/60 to-transparent px-3 pb-3 pt-6 z-10 pointer-events-none">
           <span className="text-white text-sm font-semibold drop-shadow">{label}</span>
         </div>
       )}
@@ -202,3 +202,4 @@ export const ImageCarousel = memo(function ImageCarousel({
   );
 });
 ImageCarousel.displayName = 'ImageCarousel';
+

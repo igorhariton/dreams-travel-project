@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+﻿import React, { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../layouts';
 import { useI18n } from '../context';
@@ -63,7 +63,7 @@ function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center animate-pulse">
+        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center animate-pulse">
           <span className="text-white text-xl">✈</span>
         </div>
         <div className="text-gray-400 text-sm">{translateDynamic('Loading...')}</div>
@@ -172,3 +172,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
