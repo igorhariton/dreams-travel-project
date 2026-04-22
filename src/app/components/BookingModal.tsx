@@ -3,8 +3,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Calendar, CheckCircle, CreditCard, Star, Users, X } from 'lucide-react';
-import { useI18n } from '../context/AppContext';
+import { useApp } from '../context/AppContext';
 import type { ListingDetailsItem } from './ListingDetailsModal';
+import type { BookingStatus } from '../types/booking';
 import { Calendar as BookingCalendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
@@ -54,7 +55,8 @@ function toDisplayValue(value: string, placeholder: string) {
 }
 
 export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
-  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat } = useI18n();
+  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat, addBooking, theme } = useApp();
+  const isDarkTheme = theme === 'dark';
   const [step, setStep] = useState<1 | 2>(DEFAULT_FORM.step);
   const [checkIn, setCheckIn] = useState(DEFAULT_FORM.checkIn);
   const [checkOut, setCheckOut] = useState(DEFAULT_FORM.checkOut);
@@ -149,7 +151,23 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
   const today = startOfToday();
 
   const handleConfirm = () => {
-    if (!isPaymentValid) return;
+    if (!isPaymentValid || confirmed) return;
+
+    const bookingStatus: BookingStatus = (pricing.nights + guests + item.id.length) % 4 === 0 ? 'pending' : 'confirmed';
+    const totalPrice = pricing.total > 0 ? pricing.total : getPriceWithoutFormat(item.pricePerNight);
+
+    addBooking({
+      sourceId: item.id,
+      title: item.name,
+      type: item.kind,
+      location: item.location,
+      price: totalPrice,
+      currency: getCurrencySymbol(),
+      image: item.images[0] || '/images/_site/hero-hotels.jpg',
+      bookedAt: new Date().toISOString(),
+      status: bookingStatus,
+    });
+
     setConfirmed(true);
     window.setTimeout(() => {
       onClose();
@@ -188,52 +206,75 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
               initial={{ opacity: 0, scale: 0.96, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 20 }}
-              className="travel-shell relative flex max-h-[min(92vh,920px)] w-full max-w-5xl flex-col overflow-hidden border border-[#D9E2EC] bg-[#FFFFFF] shadow-[0_20px_60px_rgba(15,23,42,0.14)] dark:border-slate-700 dark:bg-[#111827] dark:shadow-[0_20px_50px_rgba(2,6,23,0.42)]"
+              className={`travel-shell relative flex max-h-[min(92vh,920px)] w-full max-w-5xl flex-col overflow-hidden border ${
+                isDarkTheme
+                  ? 'border-slate-700 bg-[#111827] shadow-[0_20px_50px_rgba(2,6,23,0.42)]'
+                  : 'border-[#D9E2EC] bg-[#FFFFFF] shadow-[0_20px_60px_rgba(15,23,42,0.14)]'
+              }`}
             >
               {confirmed ? (
-                <div className="booking-modal-scroll flex min-h-[420px] flex-col items-center justify-center overflow-y-auto bg-linear-to-b from-[#f8fafc] to-white px-8 py-16 text-center dark:from-[#111827] dark:to-[#111827]">
-                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 shadow-inner dark:bg-emerald-500/15">
+                <div className={`booking-modal-scroll flex min-h-[420px] flex-col items-center justify-center overflow-y-auto px-8 py-16 text-center ${
+                  isDarkTheme ? 'bg-linear-to-b from-[#111827] to-[#111827]' : 'bg-linear-to-b from-[#f8fafc] to-white'
+                }`}>
+                  <div className={`mb-4 flex h-20 w-20 items-center justify-center rounded-full shadow-inner ${isDarkTheme ? 'bg-emerald-500/15' : 'bg-emerald-100'}`}>
                     <CheckCircle size={40} className="text-emerald-600" />
                   </div>
-                  <h2 className="mb-2 text-2xl font-bold text-slate-950 dark:text-slate-50">{t('booking.success')}</h2>
-                  <p className="max-w-md text-slate-600 dark:text-slate-300">
-                    {translateDynamic('Your booking for')} <strong className="text-slate-900 dark:text-slate-50">{item.name}</strong> {translateDynamic('has been confirmed. A confirmation email will be sent shortly.')}
+                  <h2 className={`mb-2 text-2xl font-bold ${isDarkTheme ? 'text-slate-50' : 'text-slate-950'}`}>{t('booking.success')}</h2>
+                  <p className={`max-w-md ${isDarkTheme ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {translateDynamic('Your booking for')} <strong className={isDarkTheme ? 'text-slate-50' : 'text-slate-900'}>{item.name}</strong> {translateDynamic('has been confirmed. A confirmation email will be sent shortly.')}
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="shrink-0 border-b border-[#D9E2EC] bg-linear-to-r from-[#EEF4FA] via-[#F1F5F9] to-[#FFFFFF] px-6 py-5 text-[#0F172A] dark:border-slate-700 dark:from-[#0b1220] dark:via-[#0f172a] dark:to-[#111827] dark:text-white">
+                  <div className={`shrink-0 border-b px-6 py-5 ${
+                    isDarkTheme
+                      ? 'border-slate-700 bg-linear-to-r from-[#0b1220] via-[#0f172a] to-[#111827] text-white'
+                      : 'border-[#D9E2EC] bg-linear-to-r from-[#EEF4FA] via-[#F1F5F9] to-[#FFFFFF] text-[#0F172A]'
+                  }`}>
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h2 className="text-xl font-bold">{step === 1 ? translateDynamic('Reservation Details') : translateDynamic('Payment & Confirmation')}</h2>
-                        <p className="mt-1 text-sm text-[#64748B] dark:text-slate-300">{translateDynamic('Step')} {step} {translateDynamic('of')} 2</p>
+                        <p className={`mt-1 text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#64748B]'}`}>{translateDynamic('Step')} {step} {translateDynamic('of')} 2</p>
                       </div>
-                      <button onClick={onClose} className="rounded-full p-2 text-[#64748B] transition-colors hover:bg-[#EEF4FA] hover:text-[#0F172A] dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
+                      <button
+                        onClick={onClose}
+                        className={`rounded-full p-2 transition-colors ${
+                          isDarkTheme
+                            ? 'text-slate-300 hover:bg-white/10 hover:text-white'
+                            : 'text-[#64748B] hover:bg-[#EEF4FA] hover:text-[#0F172A]'
+                        }`}
+                      >
                         <X size={20} />
                       </button>
                     </div>
 
-                    <div className="mt-4 flex gap-4 rounded-[1.25rem] border border-[#D9E2EC] bg-[#EEF4FA] p-4 dark:border-white/10 dark:bg-white/5">
+                    <div className={`mt-4 flex gap-4 rounded-[1.25rem] border p-4 ${
+                      isDarkTheme ? 'border-white/10 bg-white/5' : 'border-[#D9E2EC] bg-[#EEF4FA]'
+                    }`}>
                       <img
                         src={item.images[0]}
                         alt={item.name}
-                        className="h-20 w-24 rounded-xl object-cover ring-1 ring-[#D9E2EC] dark:ring-white/10"
+                        className={`h-20 w-24 rounded-xl object-cover ring-1 ${isDarkTheme ? 'ring-white/10' : 'ring-[#D9E2EC]'}`}
                         loading="eager"
                         decoding="async"
                       />
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-semibold text-[#0F172A] dark:text-white">{item.name}</h3>
-                        <p className="truncate text-sm text-[#475569] dark:text-slate-300">{item.location}</p>
+                        <h3 className={`truncate font-semibold ${isDarkTheme ? 'text-white' : 'text-[#0F172A]'}`}>{item.name}</h3>
+                        <p className={`truncate text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>{item.location}</p>
                         <div className="mt-2 flex items-center gap-1">
                           <Star size={12} className="fill-amber-400 text-amber-400" />
-                          <span className="text-sm font-medium text-[#0F172A] dark:text-white">{item.rating}</span>
+                          <span className={`text-sm font-medium ${isDarkTheme ? 'text-white' : 'text-[#0F172A]'}`}>{item.rating}</span>
                         </div>
                       </div>
                       <div className="ml-auto text-right">
-                        <div className="text-lg font-bold text-[#0F172A] dark:text-white">{formatPriceDisplay(pricing.pricePerNight || item.pricePerNight)}</div>
-                        <div className="text-xs text-[#64748B] dark:text-slate-300">{t('common.per_night')}</div>
+                        <div className={`text-lg font-bold ${isDarkTheme ? 'text-white' : 'text-[#0F172A]'}`}>{formatPriceDisplay(pricing.pricePerNight || item.pricePerNight)}</div>
+                        <div className={`text-xs ${isDarkTheme ? 'text-slate-300' : 'text-[#64748B]'}`}>{t('common.per_night')}</div>
                         {pricing.multiplier !== 1.0 && (
-                          <div className={`mt-1 text-xs font-medium ${pricing.multiplier > 1 ? 'text-amber-600 dark:text-amber-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
+                          <div className={`mt-1 text-xs font-medium ${
+                            pricing.multiplier > 1
+                              ? isDarkTheme ? 'text-amber-300' : 'text-amber-600'
+                              : isDarkTheme ? 'text-emerald-300' : 'text-emerald-600'
+                          }`}>
                             {pricing.multiplier > 1 ? `Peak season` : `Off-season deal`}
                           </div>
                         )}
@@ -241,12 +282,14 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     </div>
                   </div>
 
-                  <div className="booking-modal-scroll flex-1 overflow-y-auto bg-linear-to-b from-[#F8FAFC] to-white p-6 dark:from-[#111827] dark:to-[#111827]">
+                  <div className={`booking-modal-scroll flex-1 overflow-y-auto p-6 ${
+                    isDarkTheme ? 'bg-linear-to-b from-[#111827] to-[#111827]' : 'bg-linear-to-b from-[#F8FAFC] to-white'
+                  }`}>
                     {step === 1 && (
                       <div className="w-full space-y-6">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#475569] dark:text-slate-200">
+                            <label className={`mb-2 flex items-center gap-1.5 text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>
                               <Calendar size={14} /> {t('hero.checkin')}
                             </label>
                             <Popover
@@ -256,14 +299,18 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                               <PopoverTrigger asChild>
                                 <button
                                   type="button"
-                                  className={`travel-input travel-date-input flex w-full items-center justify-between px-4 py-3 text-left text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50 ${
-                                    openDateField === 'checkIn' ? 'border-[#60A5FA] ring-2 ring-[#60A5FA]/20 dark:border-[#3B82F6] dark:ring-[#3B82F6]/25' : ''
+                                  className={`travel-input travel-date-input flex w-full items-center justify-between px-4 py-3 text-left text-sm focus:outline-none ${
+                                    isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                                  } ${
+                                    openDateField === 'checkIn'
+                                      ? isDarkTheme ? 'border-[#3B82F6] ring-2 ring-[#3B82F6]/25' : 'border-[#60A5FA] ring-2 ring-[#60A5FA]/20'
+                                      : ''
                                   }`}
                                 >
-                                  <span className={checkIn ? 'text-[#0F172A] dark:text-slate-50' : 'text-[#64748B] dark:text-slate-400'}>
+                                  <span className={checkIn ? (isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]') : (isDarkTheme ? 'text-slate-400' : 'text-[#64748B]')}>
                                     {toDisplayValue(checkIn, translateDynamic('Select check-in'))}
                                   </span>
-                                  <Calendar size={16} className="text-[#64748B] dark:text-slate-400" />
+                                  <Calendar size={16} className={isDarkTheme ? 'text-slate-400' : 'text-[#64748B]'} />
                                 </button>
                               </PopoverTrigger>
                               <PopoverContent
@@ -283,7 +330,9 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                   disabled={{ before: today }}
                                   className="w-full rounded-[20px] bg-transparent p-0"
                                 />
-                                <div className="travel-calendar-footer mt-4 flex items-center justify-between border-t border-[#E5E7EB] pt-3 text-xs text-[#64748B] dark:border-[#334155] dark:text-[#94A3B8]">
+                                <div className={`travel-calendar-footer mt-4 flex items-center justify-between border-t pt-3 text-xs ${
+                                  isDarkTheme ? 'border-[#334155] text-[#94A3B8]' : 'border-[#E5E7EB] text-[#64748B]'
+                                }`}>
                                   <span>{translateDynamic('Choose your check-in date')}</span>
                                   {(checkIn || checkOut) && (
                                     <button
@@ -292,7 +341,9 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                         setCheckIn('');
                                         setCheckOut('');
                                       }}
-                                      className="travel-badge px-3 py-1 font-medium text-[#475569] transition-colors hover:bg-[#EFF6FF] dark:text-[#CBD5E1] dark:hover:bg-[#243144]"
+                                      className={`travel-badge px-3 py-1 font-medium transition-colors ${
+                                        isDarkTheme ? 'text-[#CBD5E1] hover:bg-[#243144]' : 'text-[#475569] hover:bg-[#EFF6FF]'
+                                      }`}
                                     >
                                       {translateDynamic('Clear')}
                                     </button>
@@ -302,7 +353,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                             </Popover>
                           </div>
                           <div>
-                            <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#475569] dark:text-slate-200">
+                            <label className={`mb-2 flex items-center gap-1.5 text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>
                               <Calendar size={14} /> {t('hero.checkout')}
                             </label>
                             <Popover
@@ -312,14 +363,18 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                               <PopoverTrigger asChild>
                                 <button
                                   type="button"
-                                  className={`travel-input travel-date-input flex w-full items-center justify-between px-4 py-3 text-left text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50 ${
-                                    openDateField === 'checkOut' ? 'border-[#60A5FA] ring-2 ring-[#60A5FA]/20 dark:border-[#3B82F6] dark:ring-[#3B82F6]/25' : ''
+                                  className={`travel-input travel-date-input flex w-full items-center justify-between px-4 py-3 text-left text-sm focus:outline-none ${
+                                    isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                                  } ${
+                                    openDateField === 'checkOut'
+                                      ? isDarkTheme ? 'border-[#3B82F6] ring-2 ring-[#3B82F6]/25' : 'border-[#60A5FA] ring-2 ring-[#60A5FA]/20'
+                                      : ''
                                   }`}
                                 >
-                                  <span className={checkOut ? 'text-[#0F172A] dark:text-slate-50' : 'text-[#64748B] dark:text-slate-400'}>
+                                  <span className={checkOut ? (isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]') : (isDarkTheme ? 'text-slate-400' : 'text-[#64748B]')}>
                                     {toDisplayValue(checkOut, translateDynamic('Select check-out'))}
                                   </span>
-                                  <Calendar size={16} className="text-[#64748B] dark:text-slate-400" />
+                                  <Calendar size={16} className={isDarkTheme ? 'text-slate-400' : 'text-[#64748B]'} />
                                 </button>
                               </PopoverTrigger>
                               <PopoverContent
@@ -339,7 +394,9 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                   disabled={{ before: today }}
                                   className="w-full rounded-[20px] bg-transparent p-0"
                                 />
-                                <div className="travel-calendar-footer mt-4 flex items-center justify-between border-t border-[#E5E7EB] pt-3 text-xs text-[#64748B] dark:border-[#334155] dark:text-[#94A3B8]">
+                                <div className={`travel-calendar-footer mt-4 flex items-center justify-between border-t pt-3 text-xs ${
+                                  isDarkTheme ? 'border-[#334155] text-[#94A3B8]' : 'border-[#E5E7EB] text-[#64748B]'
+                                }`}>
                                   <span>{translateDynamic('Choose your check-out date')}</span>
                                   {(checkIn || checkOut) && (
                                     <button
@@ -348,7 +405,9 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                         setCheckIn('');
                                         setCheckOut('');
                                       }}
-                                      className="travel-badge px-3 py-1 font-medium text-[#475569] transition-colors hover:bg-[#EFF6FF] dark:text-[#CBD5E1] dark:hover:bg-[#243144]"
+                                      className={`travel-badge px-3 py-1 font-medium transition-colors ${
+                                        isDarkTheme ? 'text-[#CBD5E1] hover:bg-[#243144]' : 'text-[#475569] hover:bg-[#EFF6FF]'
+                                      }`}
                                     >
                                       {translateDynamic('Clear')}
                                     </button>
@@ -360,35 +419,49 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                         </div>
 
                         <div>
-                          <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-[#475569] dark:text-slate-200">
+                          <label className={`mb-2 flex items-center gap-1.5 text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>
                             <Users size={14} /> {t('hero.guests')}
                           </label>
                           <div className="flex items-center gap-3">
-                            <button onClick={() => setGuests(Math.max(1, guests - 1))} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-100 dark:hover:bg-[#243144]">-</button>
-                            <span className="w-8 text-center font-semibold text-slate-900 dark:text-slate-50">{guests}</span>
-                            <button onClick={() => setGuests(Math.min(item.maxGuests || 12, guests + 1))} className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 bg-white font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-100 dark:hover:bg-[#243144]">+</button>
-                            <span className="text-sm text-[#64748B] dark:text-slate-400">{t('common.guests')}</span>
+                            <button
+                              onClick={() => setGuests(Math.max(1, guests - 1))}
+                              className={`flex h-9 w-9 items-center justify-center rounded-full border font-bold transition-colors ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-100 hover:bg-[#243144]' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              -
+                            </button>
+                            <span className={`w-8 text-center font-semibold ${isDarkTheme ? 'text-slate-50' : 'text-slate-900'}`}>{guests}</span>
+                            <button
+                              onClick={() => setGuests(Math.min(item.maxGuests || 12, guests + 1))}
+                              className={`flex h-9 w-9 items-center justify-center rounded-full border font-bold transition-colors ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-100 hover:bg-[#243144]' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              +
+                            </button>
+                            <span className={`text-sm ${isDarkTheme ? 'text-slate-400' : 'text-[#64748B]'}`}>{t('common.guests')}</span>
                           </div>
                         </div>
 
-                        <div className="travel-summary-box border border-[#D9E2EC] bg-[#F1F5F9] p-4 dark:border-slate-700 dark:bg-[#1f2937]">
+                        <div className={`travel-summary-box border p-4 ${isDarkTheme ? 'border-slate-700 bg-[#1f2937]' : 'border-[#D9E2EC] bg-[#F1F5F9]'}`}>
                           {isReservationValid ? (
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span className="text-[#475569] dark:text-slate-300">{formatPriceDisplay(pricing.pricePerNight)} × {pricing.nights} {t('common.nights')}</span>
-                                <span className="font-medium text-[#0F172A] dark:text-slate-50">{formatPriceDisplay(pricing.subtotal)}</span>
+                                <span className={isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}>{formatPriceDisplay(pricing.pricePerNight)} × {pricing.nights} {t('common.nights')}</span>
+                                <span className={isDarkTheme ? 'font-medium text-slate-50' : 'font-medium text-[#0F172A]'}>{formatPriceDisplay(pricing.subtotal)}</span>
                               </div>
                               <div className="flex justify-between text-sm">
-                                <span className="text-[#475569] dark:text-slate-300">{translateDynamic('Taxes & fees (12%)')}</span>
-                                <span className="font-medium text-[#0F172A] dark:text-slate-50">{formatPriceDisplay(pricing.taxes)}</span>
+                                <span className={isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}>{translateDynamic('Taxes & fees (12%)')}</span>
+                                <span className={isDarkTheme ? 'font-medium text-slate-50' : 'font-medium text-[#0F172A]'}>{formatPriceDisplay(pricing.taxes)}</span>
                               </div>
-                              <div className="flex justify-between border-t border-[#E5E7EB] pt-2 font-bold text-[#0F172A] dark:border-slate-700 dark:text-slate-50">
+                              <div className={`flex justify-between border-t pt-2 font-bold ${isDarkTheme ? 'border-slate-700 text-slate-50' : 'border-[#E5E7EB] text-[#0F172A]'}`}>
                                 <span>{t('common.total')}</span>
                                 <span>{formatPriceDisplay(pricing.total)}</span>
                               </div>
                             </div>
                           ) : (
-                            <p className="text-sm text-[#64748B] dark:text-slate-300">{translateDynamic('Select valid check-in and check-out dates to continue to payment.')}</p>
+                            <p className={`text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#64748B]'}`}>{translateDynamic('Select valid check-in and check-out dates to continue to payment.')}</p>
                           )}
                         </div>
 
@@ -405,10 +478,10 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                     {step === 2 && (
                       <div className="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
                         <div className="space-y-4">
-                          <div className="travel-panel border border-[#D9E2EC] bg-[#F1F5F9] p-5 dark:border-slate-700 dark:bg-[#1f2937]">
+                          <div className={`travel-panel border p-5 ${isDarkTheme ? 'border-slate-700 bg-[#1f2937]' : 'border-[#D9E2EC] bg-[#F1F5F9]'}`}>
                             <div className="mb-3 flex items-center gap-2">
-                              <CreditCard size={16} className="text-[#475569] dark:text-slate-300" />
-                              <span className="text-sm font-medium text-[#475569] dark:text-slate-200">{translateDynamic('Payment method')}</span>
+                              <CreditCard size={16} className={isDarkTheme ? 'text-slate-300' : 'text-[#475569]'} />
+                              <span className={`text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>{translateDynamic('Payment method')}</span>
                             </div>
                             <div className="space-y-3">
                               <input
@@ -416,7 +489,9 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                 value={cardNumber}
                                 onChange={(e) => setCardNumber(e.target.value)}
                                 placeholder={translateDynamic('Card number: **** **** **** 4242')}
-                                className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                                className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                  isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                                }`}
                               />
                               <div className="grid grid-cols-2 gap-3">
                                 <input
@@ -424,97 +499,111 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
                                   value={expiry}
                                   onChange={(e) => setExpiry(e.target.value)}
                                   placeholder={translateDynamic('MM / YY')}
-                                  className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                                  className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                    isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                                  }`}
                                 />
                                 <input
                                   type="text"
                                   value={cvc}
                                   onChange={(e) => setCvc(e.target.value)}
                                   placeholder={translateDynamic('CVC')}
-                                  className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                                  className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                    isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                                  }`}
                                 />
                               </div>
                             </div>
                           </div>
 
                           <div>
-                            <label className="mb-1.5 block text-sm font-medium text-[#475569] dark:text-slate-200">{t('booking.name')}</label>
+                            <label className={`mb-1.5 block text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>{t('booking.name')}</label>
                             <input
                               type="text"
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder={translateDynamic('John Doe')}
-                              className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                              className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                              }`}
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-sm font-medium text-[#475569] dark:text-slate-200">{t('booking.email')}</label>
+                            <label className={`mb-1.5 block text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>{t('booking.email')}</label>
                             <input
                               type="email"
                               value={email}
                               onChange={(e) => setEmail(e.target.value)}
                               placeholder={translateDynamic('john@example.com')}
-                              className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                              className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                              }`}
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-sm font-medium text-[#475569] dark:text-slate-200">{t('booking.phone')}</label>
+                            <label className={`mb-1.5 block text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>{t('booking.phone')}</label>
                             <input
                               type="tel"
                               value={phone}
                               onChange={(e) => setPhone(e.target.value)}
                               placeholder={translateDynamic('+1 234 567 8900')}
-                              className="travel-input w-full px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                              className={`travel-input w-full px-3 py-3 text-sm focus:outline-none ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                              }`}
                             />
                           </div>
                           <div>
-                            <label className="mb-1.5 block text-sm font-medium text-[#475569] dark:text-slate-200">{t('booking.special')}</label>
+                            <label className={`mb-1.5 block text-sm font-medium ${isDarkTheme ? 'text-slate-200' : 'text-[#475569]'}`}>{t('booking.special')}</label>
                             <textarea
                               value={special}
                               onChange={(e) => setSpecial(e.target.value)}
                               placeholder={translateDynamic('Late check-in, dietary requirements...')}
                               rows={4}
-                              className="travel-input w-full resize-none px-3 py-3 text-sm focus:outline-none dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-50"
+                              className={`travel-input w-full resize-none px-3 py-3 text-sm focus:outline-none ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-50' : ''
+                              }`}
                             />
                           </div>
                         </div>
 
                         <div className="space-y-4">
-                          <div className="travel-panel border border-[#D9E2EC] bg-[#F1F5F9] p-5 dark:border-slate-700 dark:bg-[#1f2937]">
-                            <h3 className="text-base font-semibold text-[#0F172A] dark:text-slate-50">{translateDynamic('Booking summary')}</h3>
+                          <div className={`travel-panel border p-5 ${isDarkTheme ? 'border-slate-700 bg-[#1f2937]' : 'border-[#D9E2EC] bg-[#F1F5F9]'}`}>
+                            <h3 className={`text-base font-semibold ${isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]'}`}>{translateDynamic('Booking summary')}</h3>
                             <div className="mt-4 space-y-3">
-                              <div className="flex justify-between text-sm text-[#475569] dark:text-slate-300">
+                              <div className={`flex justify-between text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>
                                 <span>{translateDynamic('Stay')}</span>
-                                <span className="max-w-[220px] text-right font-medium text-[#0F172A] dark:text-slate-50">{item.name}</span>
+                                <span className={`max-w-[220px] text-right font-medium ${isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]'}`}>{item.name}</span>
                               </div>
-                              <div className="flex justify-between text-sm text-[#475569] dark:text-slate-300">
+                              <div className={`flex justify-between text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>
                                 <span>{translateDynamic('Dates')}</span>
-                                <span className="font-medium text-[#0F172A] dark:text-slate-50">
+                                <span className={`font-medium ${isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]'}`}>
                                   {checkIn && checkOut ? `${toDisplayValue(checkIn, '')} - ${toDisplayValue(checkOut, '')}` : '--'}
                                 </span>
                               </div>
-                              <div className="flex justify-between text-sm text-[#475569] dark:text-slate-300">
+                              <div className={`flex justify-between text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>
                                 <span>{translateDynamic('Guests')}</span>
-                                <span className="font-medium text-[#0F172A] dark:text-slate-50">{guests}</span>
+                                <span className={`font-medium ${isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]'}`}>{guests}</span>
                               </div>
-                              <div className="flex justify-between text-sm text-[#475569] dark:text-slate-300">
+                              <div className={`flex justify-between text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#475569]'}`}>
                                 <span>{translateDynamic('Nightly rate')}</span>
-                                <span className="font-medium text-[#0F172A] dark:text-slate-50">{formatPriceDisplay(pricing.pricePerNight || item.pricePerNight)}</span>
+                                <span className={`font-medium ${isDarkTheme ? 'text-slate-50' : 'text-[#0F172A]'}`}>{formatPriceDisplay(pricing.pricePerNight || item.pricePerNight)}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="travel-summary-box border border-[#D9E2EC] bg-[#DCFCE7] p-5 dark:border-slate-700 dark:bg-[#243144]">
-                            <div className="flex justify-between text-sm text-[#166534] dark:text-slate-300">
+                          <div className={`travel-summary-box border p-5 ${isDarkTheme ? 'border-slate-700 bg-[#243144]' : 'border-[#D9E2EC] bg-[#DCFCE7]'}`}>
+                            <div className={`flex justify-between text-sm ${isDarkTheme ? 'text-slate-300' : 'text-[#166534]'}`}>
                               <span>{translateDynamic('Reservation total')}</span>
-                              <span className="font-semibold text-[#166534] dark:text-slate-50">{formatPriceDisplay(pricing.total)}</span>
+                              <span className={`font-semibold ${isDarkTheme ? 'text-slate-50' : 'text-[#166534]'}`}>{formatPriceDisplay(pricing.total)}</span>
                             </div>
                           </div>
 
                           <div className="flex gap-3">
                             <button
                               onClick={() => setStep(1)}
-                              className="travel-secondary-button flex-1 py-3 font-medium transition-colors dark:border-slate-700 dark:bg-[#1f2937] dark:text-slate-200 dark:hover:bg-[#243144]"
+                              className={`travel-secondary-button flex-1 py-3 font-medium transition-colors ${
+                                isDarkTheme ? 'border-slate-700 bg-[#1f2937] text-slate-200 hover:bg-[#243144]' : ''
+                              }`}
                             >
                               ← {translateDynamic('Back to Reservation')}
                             </button>
@@ -539,5 +628,6 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
     </AnimatePresence>
   );
 }
+
 
 

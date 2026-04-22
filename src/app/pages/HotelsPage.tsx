@@ -210,7 +210,7 @@ export default function HotelsPage() {
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 flex-1">
               <Search size={15} className="text-gray-400" />
               <input type="text" placeholder={translateDynamic('Search hotels...')} value={search} onChange={e => setSearch(e.target.value)}
-                className="bg-transparent outline-none text-sm text-gray-700 w-full placeholder-gray-400" />
+                className="travel-no-focus-ring w-full appearance-none border-0 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none ring-0 shadow-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus:border-0" />
             </div>
             <Select value={destFilter} onValueChange={setDestFilter}>
               <SelectTrigger className={`h-[46px] w-full sm:w-[220px] ${selectTriggerToneClass}`}>

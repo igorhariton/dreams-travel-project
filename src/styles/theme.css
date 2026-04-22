@@ -819,6 +819,22 @@ html.dark select:focus {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22) !important;
 }
 
+/* Explicit opt-out for search fields that should not show blue focus glow */
+input.travel-no-focus-ring,
+input.travel-no-focus-ring:focus,
+input.travel-no-focus-ring:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+html.dark input.travel-no-focus-ring,
+html.dark input.travel-no-focus-ring:focus,
+html.dark input.travel-no-focus-ring:focus-visible {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* Keep login page visuals stable regardless of global theme */
 html.dark .travel-login-fixed {
   color-scheme: light;
