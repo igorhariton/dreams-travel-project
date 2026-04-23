@@ -14,11 +14,12 @@ const typeConfig = {
 };
 
 export default function FavoritesPage() {
-  const { t, translateDynamic, favorites, removeFavorite, formatPrice, publicHotels, publicRentals, publicDestinations } = useApp();
+  const { t, translateDynamic, favorites, removeFavorite, formatPrice, publicHotels, publicRentals, publicDestinations, theme } = useApp();
   const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
   const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const isDark = theme === 'dark';
 
   const filtered = filter === 'all' ? favorites : favorites.filter(f => f.type === filter);
   const destinationById = new Map(publicDestinations.map((destination) => [destination.id, destination]));
@@ -233,9 +234,15 @@ export default function FavoritesPage() {
         )}
 
         {favorites.length > 0 && (
-          <div className="mt-12 bg-linear-to-r from-rose-50 to-pink-50 border border-rose-100 rounded-2xl p-6 text-center">
-            <h3 className="font-bold text-gray-900 mb-2">{t('favorites.cta_title')}</h3>
-            <p className="text-sm text-gray-600 mb-4">{t('favorites.cta_subtitle')}</p>
+          <div
+            className={`mt-12 rounded-2xl p-6 text-center ${
+              isDark
+                ? 'bg-linear-to-r from-slate-900 to-slate-800 border border-slate-700/90 shadow-lg shadow-slate-950/30'
+                : 'bg-linear-to-r from-rose-50 to-pink-50 border border-rose-100'
+            }`}
+          >
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t('favorites.cta_title')}</h3>
+            <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{t('favorites.cta_subtitle')}</p>
             <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
               {t('favorites.open_planner')} <ArrowRight size={16} />
             </Link>
