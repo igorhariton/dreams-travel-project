@@ -120,7 +120,7 @@ export function Navbar() {
               : 'bg-white/95 backdrop-blur-md shadow-sm'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="mx-auto max-w-[90rem] px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export function Navbar() {
           </div>
 
           {/* Right controls */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-3">
             {/* Language switcher */}
             <div className="relative">
               <button

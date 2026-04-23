@@ -1,8 +1,9 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { format, startOfToday } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import { Calendar, CheckCircle, CreditCard, Star, Users, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import type { ListingDetailsItem } from './ListingDetailsModal';
 import type { BookingStatus } from '../types/booking';
@@ -55,7 +56,9 @@ function toDisplayValue(value: string, placeholder: string) {
 }
 
 export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
-  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat, addBooking, theme } = useApp();
+  const { t, translateDynamic, getCurrencySymbol, getPriceWithoutFormat, addBooking, theme, currentUser } = useApp();
+  const navigate = useNavigate();
+  const location = useLocation();
   const isDarkTheme = theme === 'dark';
   const [step, setStep] = useState<1 | 2>(DEFAULT_FORM.step);
   const [checkIn, setCheckIn] = useState(DEFAULT_FORM.checkIn);
@@ -70,6 +73,17 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
   const [cvc, setCvc] = useState(DEFAULT_FORM.cvc);
   const [confirmed, setConfirmed] = useState(DEFAULT_FORM.confirmed);
   const [openDateField, setOpenDateField] = useState<'checkIn' | 'checkOut' | null>(null);
+  const returnPath = `${location.pathname}${location.search}${location.hash}`;
+
+  const redirectToLogin = useCallback(() => {
+    onClose();
+    navigate('/login', { state: { from: returnPath } });
+  }, [navigate, onClose, returnPath]);
+
+  useEffect(() => {
+    if (!isOpen || currentUser) return;
+    redirectToLogin();
+  }, [currentUser, isOpen, redirectToLogin]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -89,7 +103,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
   }, [isOpen, item?.id]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !currentUser) return;
 
     const { body, documentElement } = document;
     const previousBodyOverflow = body.style.overflow;
@@ -113,7 +127,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
       body.style.paddingRight = previousBodyPaddingRight;
       documentElement.style.overflow = previousHtmlOverflow;
     };
-  }, [isOpen]);
+  }, [currentUser, isOpen]);
 
   const pricing = useMemo(() => {
     if (!item) {
@@ -133,7 +147,7 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
     return { nights, multiplier, pricePerNight, subtotal, taxes, total };
   }, [checkIn, checkOut, getPriceWithoutFormat, item]);
 
-  if (!item) return null;
+  if (!item || (isOpen && !currentUser)) return null;
 
   const formatPriceDisplay = (price: number): string => {
     const symbol = getCurrencySymbol();
@@ -152,6 +166,10 @@ export function BookingModal({ isOpen, onClose, item }: BookingModalProps) {
 
   const handleConfirm = () => {
     if (!isPaymentValid || confirmed) return;
+    if (!currentUser) {
+      redirectToLogin();
+      return;
+    }
 
     const bookingStatus: BookingStatus = (pricing.nights + guests + item.id.length) % 4 === 0 ? 'pending' : 'confirmed';
     const totalPrice = pricing.total > 0 ? pricing.total : getPriceWithoutFormat(item.pricePerNight);

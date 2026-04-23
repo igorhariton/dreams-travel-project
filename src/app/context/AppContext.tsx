@@ -1969,6 +1969,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
 
   const addBooking = (item: CreateBookingInput): BookingItem | null => {
+    if (!currentUser) return null;
+
     const safeBooking = sanitizeBookingItem({
       id: buildBookingId(),
       sourceId: item.sourceId,

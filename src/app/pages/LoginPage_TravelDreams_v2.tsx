@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 
 function GoogleIcon() {
@@ -38,7 +38,15 @@ function FacebookIcon() {
 
 export default function TravelLoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthLoading, currentUser, authError } = useApp();
+  const requestedRedirect = React.useMemo(() => {
+    const from = (location.state as { from?: unknown } | null)?.from;
+    if (typeof from !== "string" || !from.startsWith("/") || from.startsWith("/login")) {
+      return "/";
+    }
+    return from;
+  }, [location.state]);
 
   const [identifier, setIdentifier] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -56,8 +64,8 @@ export default function TravelLoginPage() {
       navigate("/host-dashboard", { replace: true });
       return;
     }
-    navigate("/", { replace: true });
-  }, [currentUser, navigate]);
+    navigate(requestedRedirect, { replace: true });
+  }, [currentUser, navigate, requestedRedirect]);
 
   React.useEffect(() => {
     document.body.classList.add("auth-page-active");
@@ -89,7 +97,7 @@ export default function TravelLoginPage() {
       navigate("/host-dashboard", { replace: true });
       return;
     }
-    navigate("/", { replace: true });
+    navigate(requestedRedirect, { replace: true });
   };
 
   return (
