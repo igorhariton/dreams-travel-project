@@ -87,7 +87,7 @@ namespace TravelBackend.BusinessLayer.Core
                     CheckOut = data.CheckOut,
                     Guests = data.Guests,
                     TotalPrice = data.TotalPrice,
-                    Status = data.Status == 0 ? BookingStatus.Pending : data.Status,
+                    Status = string.IsNullOrWhiteSpace(data.Status) ? "pending" : data.Status.Trim().ToLowerInvariant(),
                     CreatedAt = DateTime.Now
                 };
                 db.Bookings.Add(bookingData);
@@ -120,7 +120,7 @@ namespace TravelBackend.BusinessLayer.Core
             localData.CheckOut = data.CheckOut;
             localData.Guests = data.Guests;
             localData.TotalPrice = data.TotalPrice;
-            localData.Status = data.Status;
+            localData.Status = string.IsNullOrWhiteSpace(data.Status) ? localData.Status : data.Status.Trim().ToLowerInvariant();
             localData.UpdatedAt = DateTime.Now;
 
             using (var db = new TravelContext())

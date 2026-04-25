@@ -1,5 +1,3 @@
-using TravelBackend.Domain.Entities.Booking;
-
 namespace TravelBackend.Domain.Models.Booking
 {
     public class BookingDto
@@ -12,6 +10,6 @@ namespace TravelBackend.Domain.Models.Booking
         public DateTime CheckOut { get; set; }
         public int Guests { get; set; }
         public decimal TotalPrice { get; set; }
-        public BookingStatus Status { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 }

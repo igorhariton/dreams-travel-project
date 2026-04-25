@@ -28,7 +28,9 @@ namespace TravelBackend.Domain.Entities.Booking
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; }
 
-        public BookingStatus Status { get; set; }
+        [Required]
+        [StringLength(30)]
+        public string Status { get; set; } = string.Empty;
 
         public bool IsDeleted { get; set; }
 
