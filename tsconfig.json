@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["frontend/src/vite-env.d.ts"],
+  "exclude": ["backend", "frontend/dist", "dist", ".dist", "node_modules"]
+}
