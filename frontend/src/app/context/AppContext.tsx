@@ -1,0 +1,2053 @@
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo, useCallback, ReactNode } from 'react';
+import {
+  destinations as seedDestinations,
+  hotels as seedHotels,
+  rentals as seedRentals,
+  type Destination,
+  type Hotel,
+  type Rental,
+} from '../data/travelData';
+import { apiGet, apiPost, isApiError, onApiStatus } from '../../services/apiClient';
+import { APP_ENV, HAS_EXPLICIT_API_BASE_URL } from '../../services/env';
+import type { BookingItem, BookingItemType, BookingStats, BookingStatus, CreateBookingInput } from '../types/booking';
+
+export type Language = 'en' | 'ro' | 'ru';
+export type UserRole = 'user' | 'host' | 'admin';
+export type Theme = 'light' | 'dark';
+
+export interface FavoriteItem {
+  id: string;
+  type: 'destination' | 'hotel' | 'rental';
+  name: string;
+  image: string;
+  price?: number;
+  rating?: number;
+  location: string;
+}
+
+// ── NEW: Host Listings System ─────────────────────────────────────────────────
+
+export type ListingStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
+export type HostListingCategory = 'hotel' | 'rental';
+
+export type HostListingType =
+  | 'hotel'
+  | 'resort'
+  | 'boutique_hotel'
+  | 'apartment'
+  | 'villa'
+  | 'house'
+  | 'cabin'
+  | 'chalet'
+  | 'guesthouse';
+
+export type HostListing = {
+  id: string;
+  hostId: string;
+  hostName: string;
+  hostPublicId?: string;
+  type: HostListingCategory; // keep compatibility for existing admin UI
+  listingType: HostListingType;
+  name: string;
+  location: string;
+  address: string;
+  destinationId: string;
+  description: string;
+  pricePerNight: number;
+  maxGuests: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  stars?: number;
+  images: string[];
+  amenities: string[];
+  policies?: string;
+  availabilityNotes?: string;
+  featuredTags?: string[];
+  status: ListingStatus;
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewNote?: string;
+  bookingsCount?: number;
+  earningsTotal?: number;
+  hotelType?: string;
+  rentalType?: string;
+};
+
+export type User = {
+  id: string;
+  username?: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: UserRole;
+};
+
+export type RegisterData = {
+  name: string;
+  username?: string;
+  email: string;
+  phone: string;
+  password: string;
+  role: 'host';
+};
+
+const STORAGE_KEYS = {
+  theme: 'theme',
+  language: 'td_language_v1',
+  favorites: 'td_favorites_v1',
+  bookings: 'td_bookings_v1',
+  hostListings: 'td_host_listings_v1',
+  catalog: 'td_catalog_v1',
+} as const;
+
+type CatalogState = {
+  destinations: Destination[];
+  hotels: Hotel[];
+  rentals: Rental[];
+};
+
+const daysAgoIso = (days: number) => new Date(Date.now() - days * 86400000).toISOString();
+
+function loadStoredJson<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStoredJson<T>(key: string, value: T) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function sanitizeFavoriteItem(item: unknown): FavoriteItem | null {
+  if (!item || typeof item !== 'object') return null;
+
+  const candidate = item as Partial<FavoriteItem>;
+  const validType = candidate.type === 'destination' || candidate.type === 'hotel' || candidate.type === 'rental';
+
+  if (
+    typeof candidate.id !== 'string' ||
+    !validType ||
+    typeof candidate.name !== 'string' ||
+    typeof candidate.image !== 'string' ||
+    typeof candidate.location !== 'string'
+  ) {
+    return null;
+  }
+
+  const sanitized: FavoriteItem = {
+    id: candidate.id.trim(),
+    type: candidate.type,
+    name: candidate.name.trim(),
+    image: candidate.image.trim(),
+    location: candidate.location.trim(),
+  };
+
+  if (typeof candidate.price === 'number' && Number.isFinite(candidate.price)) {
+    sanitized.price = candidate.price;
+  }
+
+  if (typeof candidate.rating === 'number' && Number.isFinite(candidate.rating)) {
+    sanitized.rating = candidate.rating;
+  }
+
+  return sanitized.id && sanitized.name && sanitized.image && sanitized.location ? sanitized : null;
+}
+
+function sanitizeFavoritesList(value: unknown): FavoriteItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const favorites: FavoriteItem[] = [];
+
+  for (const entry of value) {
+    const sanitized = sanitizeFavoriteItem(entry);
+    if (!sanitized) continue;
+    if (seen.has(sanitized.id)) continue;
+    seen.add(sanitized.id);
+    favorites.push(sanitized);
+  }
+
+  return favorites;
+}
+
+function sanitizeBookingType(type: unknown): BookingItemType | null {
+  if (type === 'hotel' || type === 'rental' || type === 'destination') return type;
+  if (typeof type !== 'string') return null;
+  const normalized = type.trim().toLowerCase();
+  if (normalized === 'hotel' || normalized === 'rental' || normalized === 'destination') return normalized;
+  return null;
+}
+
+function sanitizeBookingStatus(status: unknown): BookingStatus | null {
+  if (status === 'confirmed' || status === 'pending') return status;
+  if (typeof status !== 'string') return null;
+  const normalized = status.trim().toLowerCase();
+  if (normalized === 'confirmed' || normalized === 'pending') return normalized;
+  return null;
+}
+
+function sanitizeBookingItem(item: unknown): BookingItem | null {
+  if (!item || typeof item !== 'object') return null;
+
+  const candidate = item as Partial<BookingItem> & { name?: unknown; purchasedAt?: unknown };
+  const bookingType = sanitizeBookingType(candidate.type);
+  const bookingStatus = sanitizeBookingStatus(candidate.status);
+  const title =
+    (typeof candidate.title === 'string' && candidate.title.trim()) ||
+    (typeof candidate.name === 'string' && candidate.name.trim()) ||
+    '';
+  const bookedAt =
+    (typeof candidate.bookedAt === 'string' && candidate.bookedAt.trim()) ||
+    (typeof candidate.purchasedAt === 'string' && candidate.purchasedAt.trim()) ||
+    '';
+  const parsedPrice = Number(candidate.price);
+
+  if (
+    typeof candidate.id !== 'string' ||
+    !bookingType ||
+    !bookingStatus ||
+    !title ||
+    typeof candidate.location !== 'string' ||
+    typeof candidate.currency !== 'string' ||
+    typeof candidate.image !== 'string' ||
+    !bookedAt ||
+    !Number.isFinite(parsedPrice)
+  ) {
+    return null;
+  }
+
+  const parsedDate = new Date(bookedAt);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  const sanitized: BookingItem = {
+    id: candidate.id.trim(),
+    sourceId: typeof candidate.sourceId === 'string' ? candidate.sourceId.trim() : undefined,
+    title,
+    type: bookingType,
+    location: candidate.location.trim(),
+    price: Math.max(0, Math.round(parsedPrice)),
+    currency: candidate.currency.trim(),
+    image: candidate.image.trim(),
+    bookedAt: parsedDate.toISOString(),
+    status: bookingStatus,
+  };
+
+  return sanitized.id && sanitized.location && sanitized.currency && sanitized.image ? sanitized : null;
+}
+
+function sanitizeBookingsList(value: unknown): BookingItem[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const bookings: BookingItem[] = [];
+
+  for (const entry of value) {
+    const sanitized = sanitizeBookingItem(entry);
+    if (!sanitized) continue;
+    if (seen.has(sanitized.id)) continue;
+    seen.add(sanitized.id);
+    bookings.push(sanitized);
+  }
+
+  return bookings;
+}
+
+function buildBookingId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function mergeCatalogById<T extends { id: string }>(seedItems: T[], storedItems: unknown): T[] {
+  const storedMap = new Map<string, T>();
+
+  if (Array.isArray(storedItems)) {
+    for (const entry of storedItems) {
+      if (!entry || typeof entry !== 'object') continue;
+      const candidate = entry as T;
+      if (typeof candidate.id !== 'string') continue;
+      storedMap.set(candidate.id, candidate);
+    }
+  }
+
+  const merged = seedItems.map((seedItem) => {
+    const storedItem = storedMap.get(seedItem.id);
+    return storedItem ? { ...seedItem, ...storedItem } : seedItem;
+  });
+
+  for (const [id, storedItem] of storedMap.entries()) {
+    if (!seedItems.some((seedItem) => seedItem.id === id)) {
+      merged.push(storedItem);
+    }
+  }
+
+  return merged;
+}
+
+function mergeRentalsCatalog(seedItems: Rental[], storedItems: unknown): Rental[] {
+  return mergeCatalogById(seedItems, storedItems);
+}
+
+function haveSameOrderedIds<T extends { id: string }>(left: T[], right: T[]) {
+  return left.length === right.length && left.every((item, index) => item.id === right[index]?.id);
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object') return null;
+  return value as Record<string, unknown>;
+}
+
+function sanitizeUserRole(role: unknown): UserRole {
+  if (role === 'admin' || role === 'host' || role === 'user') return role;
+  return 'user';
+}
+
+function sanitizeApiUser(value: unknown): User | null {
+  const row = asRecord(value);
+  if (!row) return null;
+
+  const id =
+    (typeof row.id === 'string' && row.id) ||
+    (typeof row.userId === 'string' && row.userId) ||
+    (typeof row.uid === 'string' && row.uid) ||
+    '';
+  if (!id) return null;
+
+  const name =
+    (typeof row.name === 'string' && row.name.trim()) ||
+    (typeof row.fullName === 'string' && row.fullName.trim()) ||
+    (typeof row.username === 'string' && row.username.trim()) ||
+    'User';
+  const email = (typeof row.email === 'string' && row.email.trim()) || '';
+  const phone = (typeof row.phone === 'string' && row.phone.trim()) || '';
+  const username = typeof row.username === 'string' && row.username.trim() ? row.username.trim() : undefined;
+
+  return {
+    id,
+    username,
+    name,
+    email,
+    phone,
+    role: sanitizeUserRole(row.role),
+  };
+}
+
+function extractApiUser(payload: unknown): User | null {
+  const root = asRecord(payload);
+  if (!root) return sanitizeApiUser(payload);
+
+  const data = asRecord(root.data);
+  const candidates = [root.user, data?.user, root.profile, data?.profile, payload];
+
+  for (const candidate of candidates) {
+    const user = sanitizeApiUser(candidate);
+    if (user) return user;
+  }
+
+  return null;
+}
+
+function toAuthErrorMessage(error: unknown, fallback: string) {
+  if (isApiError(error)) return error.message;
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function makeSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function toTitleCase(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function inferListingCategory(listingType: HostListingType): HostListingCategory {
+  return listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel' ? 'hotel' : 'rental';
+}
+
+function buildListingPrefix(category: HostListingCategory, listingType: HostListingType): 'HTL' | 'RNT' | 'LST' {
+  if (category === 'hotel' || listingType === 'hotel' || listingType === 'resort' || listingType === 'boutique_hotel') return 'HTL';
+  if (category === 'rental') return 'RNT';
+  return 'LST';
+}
+
+function buildNextListingId(
+  existing: HostListing[],
+  category: HostListingCategory,
+  listingType: HostListingType,
+  createdAtIso?: string,
+) {
+  const year = new Date(createdAtIso || Date.now()).getFullYear();
+  const prefix = buildListingPrefix(category, listingType);
+  const idPrefix = `${prefix}-${year}-`;
+  const maxSeq = existing.reduce((max, listing) => {
+    if (!listing.id.startsWith(idPrefix)) return max;
+    const seq = Number(listing.id.slice(idPrefix.length));
+    if (Number.isNaN(seq)) return max;
+    return Math.max(max, seq);
+  }, 0);
+  return `${idPrefix}${String(maxSeq + 1).padStart(3, '0')}`;
+}
+
+function resolveDestinationFromListing(listing: HostListing, catalogDestinations: Destination[]) {
+  const exactId = listing.destinationId?.trim();
+  if (exactId) {
+    const matchedById = catalogDestinations.find((destination) => destination.id === exactId);
+    if (matchedById) return matchedById;
+  }
+
+  const lookupTokens = [
+    listing.destinationId,
+    listing.location,
+    listing.address,
+    listing.name,
+  ]
+    .map((token) => makeSlug(String(token || '')))
+    .filter(Boolean);
+
+  return (
+    catalogDestinations.find((destination) => {
+      const destinationTokens = [
+        destination.id,
+        destination.name,
+        destination.country,
+        `${destination.name} ${destination.country}`,
+      ]
+        .map((token) => makeSlug(token))
+        .filter(Boolean);
+
+      return lookupTokens.some((token) =>
+        destinationTokens.some((destinationToken) =>
+          token === destinationToken ||
+          token.includes(destinationToken) ||
+          destinationToken.includes(token),
+        ));
+    }) || null
+  );
+}
+
+function buildSyntheticDestinationId(listing: HostListing) {
+  const preferred =
+    listing.destinationId && listing.destinationId !== 'custom-destination'
+      ? listing.destinationId
+      : listing.location || listing.address || listing.name || listing.id;
+  return makeSlug(preferred) || makeSlug(listing.id);
+}
+
+function buildSyntheticDestination(listing: HostListing): Destination {
+  const fallbackName = listing.location || listing.name || 'Host Destination';
+  const [city, countryGuess] = fallbackName.split(',').map((part) => part.trim()).filter(Boolean);
+  const images = (listing.images || []).filter(Boolean);
+  const tags = Array.from(
+    new Set(
+      [listing.type === 'hotel' ? 'Luxury' : 'Nature', ...(listing.featuredTags || []), ...(listing.amenities || [])].filter(Boolean),
+    ),
+  ).slice(0, 5);
+  const mustVisitSource = (listing.featuredTags || []).filter(Boolean);
+  const mustVisit = mustVisitSource.length > 0
+    ? mustVisitSource.slice(0, 5)
+    : [
+        `Stay at ${listing.name}`,
+        `Explore ${city || fallbackName}`,
+        'Local experiences',
+      ];
+
+  return {
+    id: buildSyntheticDestinationId(listing),
+    name: city || fallbackName,
+    country: countryGuess || 'Custom destination',
+    continent: 'Custom',
+    description: listing.description || `Host-curated stay in ${fallbackName}.`,
+    images: images.length > 0 ? images : ['/images/_site/hero-destinations.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(1, listing.bookingsCount || 8),
+    bestSeason: listing.availabilityNotes || 'Year-round',
+    tags: tags.length > 0 ? tags : ['Host Approved'],
+    culture: listing.description || `Discover local experiences around ${fallbackName}.`,
+    cuisine: `Explore local dining and signature flavors near ${fallbackName}.`,
+    mustVisit,
+    lat: Number.NaN,
+    lng: Number.NaN,
+  };
+}
+
+function mapListingToHotelType(listing: HostListing): Hotel['type'] {
+  const rawType = String(listing.hotelType || '').toLowerCase();
+  if (rawType === 'boutique' || rawType === 'budget' || rawType === 'resort' || rawType === 'luxury') return rawType;
+  if (listing.listingType === 'boutique_hotel') return 'boutique';
+  if (listing.listingType === 'resort') return 'resort';
+  return 'luxury';
+}
+
+function mapListingToRentalType(listing: HostListing): Rental['type'] {
+  const rawType = String(listing.rentalType || '').toLowerCase();
+  if (rawType === 'apartment' || rawType === 'villa' || rawType === 'traditional' || rawType === 'chalet') return rawType;
+  if (listing.listingType === 'apartment' || listing.listingType === 'villa' || listing.listingType === 'chalet') return listing.listingType;
+  if (listing.listingType === 'cabin') return 'chalet';
+  return 'traditional';
+}
+
+function buildHotelFromHostListing(listing: HostListing, destinationId: string): Hotel {
+  return {
+    id: listing.id,
+    name: listing.name,
+    destinationId,
+    location: listing.location,
+    images: listing.images.length > 0 ? listing.images : ['/images/_site/hero-hotels.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(4, listing.bookingsCount || 12),
+    pricePerNight: listing.pricePerNight,
+    description: listing.description,
+    amenities: listing.amenities,
+    type: mapListingToHotelType(listing),
+    stars: Math.max(1, Math.min(5, listing.stars || 4)),
+  };
+}
+
+function buildRentalFromHostListing(listing: HostListing, destinationId: string): Rental {
+  return {
+    id: listing.id,
+    name: listing.name,
+    destinationId,
+    location: listing.location,
+    images: listing.images.length > 0 ? listing.images : ['/images/_site/hero-rentals.jpg'],
+    rating: listing.status === 'approved' ? 4.8 : 4.5,
+    reviews: Math.max(3, listing.bookingsCount || 10),
+    pricePerNight: listing.pricePerNight,
+    description: listing.description,
+    amenities: listing.amenities,
+    type: mapListingToRentalType(listing),
+    bedrooms: Math.max(1, listing.bedrooms || 1),
+    bathrooms: Math.max(1, listing.bathrooms || 1),
+    maxGuests: Math.max(1, listing.maxGuests || 1),
+    host: listing.hostName,
+  };
+}
+
+const INITIAL_LISTINGS: HostListing[] = [
+  {
+    id: 'RNT-2026-001',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'rental',
+    listingType: 'villa',
+    name: 'Santorini Sunset Villa',
+    location: 'Santorini, Greece',
+    address: 'Caldera Ridge 21, Oia',
+    destinationId: 'santorini',
+    description: 'Beautiful villa with stunning caldera views and private infinity deck.',
+    pricePerNight: 350,
+    maxGuests: 6,
+    bedrooms: 3,
+    bathrooms: 2,
+    images: ['https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800'],
+    amenities: ['WiFi', 'Pool', 'Sea View', 'Breakfast'],
+    policies: 'No smoking. Quiet hours after 10 PM.',
+    availabilityNotes: 'Open year-round except January maintenance week.',
+    featuredTags: ['Sea View', 'Luxury', 'Family Friendly'],
+    status: 'pending',
+    createdAt: daysAgoIso(18),
+    updatedAt: daysAgoIso(2),
+    submittedAt: daysAgoIso(2),
+    bookingsCount: 18,
+    earningsTotal: 12600,
+    rentalType: 'villa',
+  },
+  {
+    id: 'HTL-2026-001',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'hotel',
+    listingType: 'boutique_hotel',
+    name: 'Aegean Boutique Hotel',
+    location: 'Mykonos, Greece',
+    address: 'Harbor Promenade 11',
+    destinationId: 'mykonos',
+    description: 'Luxury boutique hotel in the heart of Mykonos with rooftop sunset lounge.',
+    pricePerNight: 420,
+    maxGuests: 3,
+    stars: 4,
+    images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800'],
+    amenities: ['WiFi', 'Breakfast', 'Rooftop Bar', 'Airport Shuttle'],
+    policies: 'Flexible cancellation up to 72h before check-in.',
+    availabilityNotes: 'High season inventory updated weekly.',
+    featuredTags: ['Boutique', 'City Center'],
+    status: 'approved',
+    createdAt: daysAgoIso(31),
+    updatedAt: daysAgoIso(5),
+    submittedAt: daysAgoIso(7),
+    reviewedAt: daysAgoIso(5),
+    reviewNote: 'Great listing, approved!',
+    bookingsCount: 27,
+    earningsTotal: 23800,
+    hotelType: 'boutique',
+  },
+  {
+    id: 'RNT-2026-002',
+    hostId: 'host-2',
+    hostName: 'John Smith',
+    hostPublicId: 'HST-0002',
+    type: 'rental',
+    listingType: 'villa',
+    name: 'Bali Jungle Retreat',
+    location: 'Ubud, Bali',
+    address: 'Green Valley Lane 8',
+    destinationId: 'bali',
+    description: 'Peaceful retreat surrounded by lush jungle and rice terraces.',
+    pricePerNight: 180,
+    maxGuests: 4,
+    bedrooms: 2,
+    bathrooms: 1,
+    images: ['https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800'],
+    amenities: ['WiFi', 'Pool', 'Garden', 'Spa'],
+    policies: 'Children above 8 years only.',
+    availabilityNotes: 'Requires 2-night minimum stay.',
+    featuredTags: ['Nature', 'Wellness'],
+    status: 'rejected',
+    createdAt: daysAgoIso(20),
+    updatedAt: daysAgoIso(8),
+    submittedAt: daysAgoIso(10),
+    reviewedAt: daysAgoIso(8),
+    reviewNote: 'Images not clear enough. Please resubmit.',
+    bookingsCount: 6,
+    earningsTotal: 2100,
+    rentalType: 'villa',
+  },
+  {
+    id: 'HTL-2026-002',
+    hostId: 'host-2',
+    hostName: 'John Smith',
+    hostPublicId: 'HST-0002',
+    type: 'hotel',
+    listingType: 'hotel',
+    name: 'Tokyo Zen Hotel',
+    location: 'Shinjuku, Tokyo',
+    address: 'Shinjuku South 14-2',
+    destinationId: 'tokyo',
+    description: 'Modern hotel blending traditional Japanese aesthetics and smart rooms.',
+    pricePerNight: 290,
+    maxGuests: 2,
+    stars: 5,
+    images: ['https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800'],
+    amenities: ['WiFi', 'Onsen', 'Restaurant', 'Gym'],
+    policies: 'No pets. Check-in after 3 PM.',
+    availabilityNotes: 'Limited availability during Sakura season.',
+    featuredTags: ['Business Travel', 'Luxury'],
+    status: 'pending',
+    createdAt: daysAgoIso(9),
+    updatedAt: daysAgoIso(1),
+    submittedAt: daysAgoIso(1),
+    bookingsCount: 12,
+    earningsTotal: 7100,
+    hotelType: 'luxury',
+  },
+  {
+    id: 'RNT-2026-003',
+    hostId: 'host-1',
+    hostName: 'Maria Ionescu',
+    hostPublicId: 'HST-0001',
+    type: 'rental',
+    listingType: 'apartment',
+    name: 'Cyclades Marina Apartment',
+    location: 'Naxos, Greece',
+    address: 'Old Harbor 2',
+    destinationId: 'santorini',
+    description: 'Freshly renovated apartment minutes away from the marina.',
+    pricePerNight: 210,
+    maxGuests: 3,
+    bedrooms: 1,
+    bathrooms: 1,
+    images: ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?w=800'],
+    amenities: ['WiFi', 'Kitchen', 'Balcony'],
+    policies: 'No parties.',
+    availabilityNotes: 'Open from April to November.',
+    featuredTags: ['Marina', 'City Stay'],
+    status: 'draft',
+    createdAt: daysAgoIso(3),
+    updatedAt: daysAgoIso(1),
+    rentalType: 'apartment',
+  },
+];
+
+// ── Context Type (existing + new) ─────────────────────────────────────────────
+
+interface AppContextType {
+  // ── Existing ──
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  role: UserRole;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
+  favorites: FavoriteItem[];
+  addFavorite: (item: FavoriteItem) => void;
+  removeFavorite: (id: string) => void;
+  isFavorite: (id: string) => boolean;
+  bookings: BookingItem[];
+  addBooking: (item: CreateBookingInput) => BookingItem | null;
+  removeBooking: (id: string) => void;
+  clearBookings: () => void;
+  getBookingStats: () => BookingStats;
+  destinations: Destination[];
+  setDestinations: React.Dispatch<React.SetStateAction<Destination[]>>;
+  hotels: Hotel[];
+  setHotels: React.Dispatch<React.SetStateAction<Hotel[]>>;
+  rentals: Rental[];
+  setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
+  publicDestinations: Destination[];
+  publicHotels: Hotel[];
+  publicRentals: Rental[];
+  t: (key: string) => string;
+  translateDynamic: (text: string) => string;
+  formatPrice: (price: number) => string;
+  getPriceWithoutFormat: (price: number) => number;
+  getCurrencySymbol: () => string;
+  // ── New: Auth ──
+  currentUser: User | null;
+  login: (identifier: string, password: string) => Promise<{ success: boolean; error?: string; role?: UserRole; status?: number }>;
+  logout: () => void;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string; role?: UserRole; status?: number }>;
+  isAuthLoading: boolean;
+  authError: string | null;
+  refreshAuthSession: () => Promise<void>;
+  apiStatusMessage: string | null;
+  clearApiStatusMessage: () => void;
+  // ── New: Host listings ──
+  hostListings: HostListing[];
+  addHostListing: (
+    listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'hostPublicId' | 'status' | 'createdAt' | 'updatedAt' | 'submittedAt' | 'reviewedAt' | 'reviewNote'>,
+    options?: { submit?: boolean },
+  ) => string | null;
+  updateHostListing: (id: string, data: Partial<HostListing>) => void;
+  deleteHostListing: (id: string) => void;
+  submitHostListing: (id: string) => void;
+  resubmitHostListing: (id: string) => void;
+  duplicateHostListing: (id: string) => string | null;
+  approveListing: (id: string, note?: string) => void;
+  rejectListing: (id: string, note?: string) => void;
+  getMyListings: () => HostListing[];
+  getPendingListings: () => HostListing[];
+  getApprovedListings: () => HostListing[];
+  getRejectedListings: () => HostListing[];
+  getDraftListings: () => HostListing[];
+}
+
+interface I18nContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+  translateDynamic: (text: string) => string;
+  formatPrice: (price: number) => string;
+  getPriceWithoutFormat: (price: number) => number;
+  getCurrencySymbol: () => string;
+}
+
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
+}
+
+// ── Translations (unchanged from original) ────────────────────────────────────
+
+const translations: Record<Language, Record<string, string>> = {
+  en: {
+    'nav.home': 'Home', 'nav.destinations': 'Destinations', 'nav.hotels': 'Hotels',
+    'nav.rentals': 'Rentals', 'nav.planner': 'Planner', 'nav.favorites': 'Favorites',
+    'nav.bookings': 'My Bookings', 'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Sign In',
+    'nav.role.user': 'Traveler', 'nav.role.host': 'Host', 'nav.role.admin': 'Admin',
+    'hero.title': 'Discover Your Next Dream Destination',
+    'hero.subtitle': 'Explore breathtaking destinations, book luxury stays, and craft unforgettable journeys.',
+    'hero.search': 'Where do you want to go?', 'hero.checkin': 'Check-in', 'hero.checkout': 'Check-out',
+    'hero.guests': 'Guests', 'hero.search_btn': 'Search', 'hero.explore': 'Explore Now',
+    'section.top_destinations': 'Top Destinations', 'section.top_destinations_sub': 'Handpicked places loved by travelers worldwide',
+    'section.featured_hotels': 'Featured Hotels', 'section.featured_hotels_sub': 'Luxury stays for every budget and style',
+    'section.rentals': 'Unique Rentals', 'section.rentals_sub': 'Villas, apartments and traditional houses',
+    'section.culture': 'Culture & Experiences', 'section.cuisine': 'Local Cuisine',
+    'section.must_visit': 'Must-Visit Places', 'section.how_it_works': 'How It Works',
+    'common.per_night': 'per night', 'common.book_now': 'Book Now', 'common.view_details': 'View Details',
+    'common.add_wishlist': 'Add to Wishlist', 'common.remove_wishlist': 'Remove', 'common.rating': 'Rating',
+    'common.reviews': 'reviews', 'common.from': 'From', 'common.guests': 'guests', 'common.nights': 'nights',
+    'common.total': 'Total', 'common.cancel': 'Cancel', 'common.confirm': 'Confirm Booking',
+    'common.see_all': 'See All', 'common.save': 'Save', 'common.filter': 'Filter', 'common.sort': 'Sort By',
+    'common.search': 'Search', 'common.clear_all': 'Clear all', 'common.any': 'Any',
+    'common.prev': 'Prev', 'common.next': 'Next',
+    'destinations.found': 'destinations found', 'destinations.tab.overview': 'Overview',
+    'destinations.tab.culture': 'Culture', 'destinations.tab.cuisine': 'Cuisine',
+    'destinations.tab.mustvisit': 'Must Visit', 'destinations.best_season': 'Best Season',
+    'destinations.tags': 'Tags', 'destinations.in_favorites': 'In Favorites',
+    'destinations.add_favorites': 'Add to Favorites', 'destinations.explore_hotels': 'Explore Hotels',
+    'destinations.continent.all': 'All', 'destinations.continent.europe': 'Europe',
+    'destinations.continent.asia': 'Asia', 'destinations.continent.middle_east': 'Middle East',
+    'destinations.continent.americas': 'Americas', 'destinations.continent.africa': 'Africa',
+    'destinations.tag.beach': 'Beach', 'destinations.tag.culture': 'Culture',
+    'destinations.tag.romance': 'Romance', 'destinations.tag.adventure': 'Adventure',
+    'destinations.tag.food': 'Food', 'destinations.tag.luxury': 'Luxury',
+    'destinations.tag.city': 'City', 'destinations.tag.nature': 'Nature',
+    'hotels.search_placeholder': 'Search hotels...', 'hotels.all_destinations': 'All Destinations',
+    'hotels.sort.top_rated': 'Top Rated', 'hotels.sort.price_low_high': 'Price: Low to High',
+    'hotels.sort.price_high_low': 'Price: High to Low', 'hotels.max_price': 'Max Price',
+    'hotels.min_stars': 'Min Stars', 'hotels.available': 'hotels available',
+    'hotels.saved': 'Saved', 'hotels.save': 'Save', 'hotels.per_night_short': '/night',
+    'hotels.type.luxury': 'Luxury', 'hotels.type.boutique': 'Boutique', 'hotels.type.budget': 'Budget', 'hotels.type.resort': 'Resort',
+    'home.stats.countries': 'Countries', 'home.stats.hotels': 'Hotels',
+    'home.stats.travelers': 'Happy Travelers', 'home.stats.avg_rating': 'Average Rating',
+    'home.culture.badge': 'Immerse Yourself',
+    'home.culture.description': 'Every destination has a story told through its people, art, rituals, and food. From ancient temples to vibrant street markets, let us guide you to the heart of every culture.',
+    'home.culture.item1_title': 'Cultural Festivals', 'home.culture.item1_desc': 'Participate in local celebrations and traditional ceremonies',
+    'home.culture.item2_title': 'Culinary Tours', 'home.culture.item2_desc': 'Taste authentic dishes at hidden local restaurants',
+    'home.culture.item3_title': 'Historical Sites', 'home.culture.item3_desc': 'Explore ancient ruins, museums and UNESCO heritage sites',
+    'home.cuisine.item1_name': 'Asian Street Food', 'home.cuisine.item1_dest': 'Bangkok & Tokyo',
+    'home.cuisine.item2_name': 'Italian Cuisine', 'home.cuisine.item2_dest': 'Rome & Florence',
+    'home.cuisine.item3_name': 'Balinese Feasts', 'home.cuisine.item3_dest': 'Ubud, Bali',
+    'home.how.subtitle': 'Simple steps to your perfect journey',
+    'home.how.search_title': 'Search & Discover', 'home.how.search_desc': 'Browse hundreds of destinations, hotels, and unique rentals.',
+    'home.how.plan_title': 'Plan & Customize', 'home.how.plan_desc': 'Build your perfect itinerary with our smart travel planner.',
+    'home.how.book_title': 'Book Securely', 'home.how.book_desc': 'Reserve with confidence — free cancellation on most bookings.',
+    'home.how.travel_title': 'Travel & Enjoy', 'home.how.travel_desc': 'Explore the world and create memories that last a lifetime.',
+    'home.cta.title': 'Start Planning Your Dream Trip',
+    'home.cta.subtitle': 'Create a personalized travel itinerary in minutes with our AI-powered planner.',
+    'footer.brand_desc': 'Your ultimate travel companion for discovering breathtaking destinations, booking luxury stays, and crafting unforgettable journeys.',
+    'footer.explore': 'Explore', 'footer.top_destinations': 'Top Destinations', 'footer.contact': 'Contact',
+    'footer.dest.santorini': 'Santorini, Greece', 'footer.dest.bali': 'Bali, Indonesia',
+    'footer.dest.paris': 'Paris, France', 'footer.dest.maldives': 'Maldives',
+    'footer.dest.tokyo': 'Tokyo, Japan', 'footer.dest.dubai': 'Dubai, UAE',
+    'footer.address_line1': '123 Explorer Avenue', 'footer.address_line2': 'San Francisco, CA 94102',
+    'footer.rights': '© 2026 TravelDreams. All rights reserved.',
+    'footer.privacy': 'Privacy Policy', 'footer.terms': 'Terms of Service', 'footer.cookies': 'Cookie Policy',
+    'rentals.all_types': 'All Types', 'rentals.type.villas': 'Villas', 'rentals.type.apartments': 'Apartments',
+    'rentals.type.traditional_plural': 'Traditional', 'rentals.type.chalets': 'Chalets',
+    'rentals.listings': 'listings', 'rentals.search_placeholder': 'Search rentals...',
+    'rentals.sort.top_rated': 'Top Rated', 'rentals.sort.price_low_high': 'Price: Low to High',
+    'rentals.sort.price_high_low': 'Price: High to Low', 'rentals.max_price': 'Max Price',
+    'rentals.per_night_short': '/night', 'rentals.min_guests_capacity': 'Min. Guests Capacity',
+    'rentals.available': 'rentals available', 'rentals.type.apartment': 'Apartment',
+    'rentals.type.villa': 'Villa', 'rentals.type.traditional': 'Traditional', 'rentals.type.chalet': 'Chalet',
+    'rentals.bed': 'bed', 'rentals.bath': 'bath', 'rentals.hosted_by': 'Hosted by',
+    'favorites.saved': 'saved', 'favorites.place_singular': 'place', 'favorites.place_plural': 'places',
+    'favorites.filter.all': 'All', 'favorites.type.destination': 'Destination',
+    'favorites.type.hotel': 'Hotel', 'favorites.type.rental': 'Rental',
+    'favorites.empty_sub': 'Save your favorite destinations, hotels, and rentals to see them all in one place.',
+    'favorites.explore_destinations': 'Explore Destinations', 'favorites.explore_short': 'Explore',
+    'favorites.cta_title': 'Ready to plan your trip?',
+    'favorites.cta_subtitle': 'Use our travel planner to create the perfect itinerary with your saved places.',
+    'favorites.open_planner': 'Open Travel Planner',
+    'planner.trip_settings': 'Trip Settings', 'planner.destination': 'Destination',
+    'planner.budget_summary': 'Budget Summary', 'planner.total_budget': 'Total Budget',
+    'planner.planning_for': 'Planning for', 'planner.best': 'Best',
+    'planner.share': 'Share', 'planner.export': 'Export', 'planner.day': 'Day',
+    'planner.suggest': 'Suggest', 'planner.activity_title': 'Activity title *',
+    'planner.notes_optional': 'Notes (optional)', 'planner.cost': 'Cost ($)',
+    'booking.confirmed_for': 'Your booking for',
+    'booking.confirmed_suffix': 'has been confirmed. A confirmation email will be sent shortly.',
+    'booking.step': 'Step', 'booking.of': 'of', 'booking.peak_season': 'Peak season',
+    'booking.offseason_deal': 'Off-season deal', 'booking.taxes_fees': 'Taxes & fees',
+    'booking.continue_details': 'Continue to Details', 'booking.payment_details': 'Payment Details',
+    'booking.card_number': 'Card number: **** **** **** 4242', 'booking.expiry': 'MM / YY', 'booking.cvc': 'CVC',
+    'booking.placeholder_name': 'John Doe', 'booking.placeholder_email': 'john@example.com',
+    'booking.placeholder_phone': '+1 234 567 8900', 'booking.placeholder_special': 'Late check-in, dietary requirements...',
+    'planner.title': 'My Travel Planner', 'planner.subtitle': 'Build your perfect itinerary day by day',
+    'planner.add_day': 'Add Day', 'planner.add_activity': 'Add Activity',
+    'planner.trip_name': 'Trip Name', 'planner.start_date': 'Start Date', 'planner.duration': 'Duration', 'planner.days': 'days',
+    'planner.select': 'Select', 'planner.select_date': 'Select date', 'planner.clear': 'Clear', 'planner.today': 'Today',
+    'planner.active_trip': 'Active trip', 'planner.end_date': 'End date', 'planner.budget_target': 'Budget target',
+    'planner.suggest_settings': 'Suggest Settings', 'planner.suggest_day': 'Suggest Day', 'planner.suggest_itinerary': 'Suggest itinerary',
+    'planner.suggest_mode_hint': 'Selected mode applies instant suggestions and updates day cards + map in sync.',
+    'planner.total_trip': 'Total trip', 'planner.average_per_day': 'Average / day', 'planner.map_preview': 'Map / stops preview',
+    'planner.map_sync_hint': 'Real-time map updates for Trip / Country / City / Category filters with list synchronization.',
+    'planner.stay_favorites': 'Stay + Favorites', 'planner.quick_actions': 'Quick actions', 'planner.items': 'items',
+    'planner.favorite_quick_add': 'Favorite Quick Add', 'planner.favorite_quick_add_hint': 'Mark places with heart and quickly add them to the active day.',
+    'planner.favorite': 'Favorite', 'planner.added': 'Added', 'planner.add': 'Add',
+    'planner.mode.full-day': 'Full day', 'planner.mode.food': 'Food', 'planner.mode.attractions': 'Attractions', 'planner.mode.mixed': 'Mixed',
+    'planner.add_restaurant': 'Add Restaurant', 'planner.add_attraction': 'Add Attraction',
+    'planner.duplicate_day': 'Duplicate Day', 'planner.clear_day': 'Clear Day', 'planner.duplicate': 'Duplicate',
+    'planner.activities': 'activities', 'planner.copy': 'copy', 'planner.empty_title': 'Start building your dream trip',
+    'planner.empty_subtitle': 'No activities yet for this day.', 'planner.add_first_activity': 'Add first activity',
+    'planner.remove_activity': 'Remove activity', 'planner.showing': 'Showing',
+    'planner.filter.all': 'All', 'planner.filter.trip': 'Trip', 'planner.filter.country': 'Country',
+    'planner.filter.city': 'City', 'planner.filter.category': 'Category',
+    'planner.filter.all_trips': 'All trips', 'planner.filter.all_countries': 'All countries',
+    'planner.filter.all_cities': 'All cities', 'planner.filter.all_categories': 'All categories',
+    'planner.category.hotel': 'Hotel', 'planner.category.rental': 'Rental', 'planner.category.activity': 'Activity',
+    'planner.category.restaurant': 'Restaurant', 'planner.category.stop': 'Stop',
+    'planner.loading_map_locations': 'Loading map locations...', 'planner.no_valid_locations': 'No valid locations for current filters.',
+    'planner.unknown_address': 'Unknown address', 'planner.unknown': 'Unknown', 'planner.na': 'N/A',
+    'favorites.title': 'My Favorites', 'favorites.subtitle': 'Your saved destinations, hotels and rentals',
+    'favorites.empty': 'No favorites yet. Start exploring!',
+    'chat.title': 'Travel Assistant', 'chat.subtitle': 'Ask anything about your destination',
+    'chat.placeholder': 'Ask about destinations, hotels, visa requirements...', 'chat.send': 'Send', 'chat.online': 'Online',
+    'admin.title': 'Admin Dashboard', 'admin.users': 'Users', 'admin.hotels': 'Hotels',
+    'admin.bookings': 'Bookings', 'admin.revenue': 'Revenue', 'admin.manage': 'Manage',
+    'booking.title': 'Complete Your Booking', 'booking.name': 'Full Name',
+    'booking.email': 'Email Address', 'booking.phone': 'Phone Number',
+    'booking.special': 'Special Requests', 'booking.success': 'Booking Confirmed!',
+    'my_bookings.badge': 'Purchases',
+    'my_bookings.title': 'My Bookings',
+    'my_bookings.subtitle': 'Track every booked stay and purchase date in one place.',
+    'my_bookings.stats.total': 'Total bookings',
+    'my_bookings.stats.confirmed': 'Confirmed',
+    'my_bookings.stats.pending': 'Pending',
+    'my_bookings.filter.all': 'All',
+    'my_bookings.status.confirmed': 'Confirmed',
+    'my_bookings.status.pending': 'Pending',
+    'my_bookings.empty.title': 'You have no bookings yet.',
+    'my_bookings.empty.subtitle': 'Start from hotels or rentals and your confirmed purchases will appear here automatically.',
+    'my_bookings.empty.explore_hotels': 'Explore Hotels',
+    'my_bookings.empty.explore_rentals': 'Explore Rentals',
+    'my_bookings.empty.filtered': 'No bookings match the selected filter.',
+    'my_bookings.type.hotel': 'Hotel',
+    'my_bookings.type.rental': 'Rental',
+    'my_bookings.type.destination': 'Destination',
+    'my_bookings.booked_on': 'Booked on',
+    'my_bookings.cancel': 'Cancel',
+  },
+  ro: {
+    'nav.home': 'Acasă', 'nav.destinations': 'Destinații', 'nav.hotels': 'Hoteluri',
+    'nav.rentals': 'Închirieri', 'nav.planner': 'Planificator', 'nav.favorites': 'Favorite',
+    'nav.bookings': 'Rezervările mele', 'nav.chat': 'Chat', 'nav.admin': 'Admin', 'nav.signin': 'Conectare',
+    'nav.role.user': 'Călător', 'nav.role.host': 'Gazdă', 'nav.role.admin': 'Admin',
+    'hero.title': 'Descoperă Următoarea Ta Destinație de Vis',
+    'hero.subtitle': 'Explorează destinații spectaculoase, rezervă cazări de lux și creează călătorii de neuitat.',
+    'hero.search': 'Unde vrei să mergi?', 'hero.checkin': 'Check-in', 'hero.checkout': 'Check-out',
+    'hero.guests': 'Oaspeți', 'hero.search_btn': 'Caută', 'hero.explore': 'Explorează Acum',
+    'section.top_destinations': 'Destinații de Top', 'section.top_destinations_sub': 'Locuri alese cu grijă',
+    'section.featured_hotels': 'Hoteluri Recomandate', 'section.featured_hotels_sub': 'Cazări de lux pentru orice buget',
+    'section.rentals': 'Închirieri Unice', 'section.rentals_sub': 'Vile, apartamente și case tradiționale',
+    'section.culture': 'Cultură și Experiențe', 'section.cuisine': 'Bucătărie Locală',
+    'section.must_visit': 'Locuri de Vizitat', 'section.how_it_works': 'Cum Funcționează',
+    'common.per_night': 'pe noapte', 'common.book_now': 'Rezervă Acum', 'common.view_details': 'Vezi Detalii',
+    'common.add_wishlist': 'Adaugă la Favorite', 'common.remove_wishlist': 'Elimină', 'common.rating': 'Rating',
+    'common.reviews': 'recenzii', 'common.from': 'De la', 'common.guests': 'oaspeți', 'common.nights': 'nopți',
+    'common.total': 'Total', 'common.cancel': 'Anulează', 'common.confirm': 'Confirmă Rezervarea',
+    'common.see_all': 'Vezi Tot', 'common.save': 'Salvează', 'common.filter': 'Filtrează',
+    'common.sort': 'Sortează', 'common.search': 'Caută', 'common.clear_all': 'Șterge tot', 'common.any': 'Oricare',
+    'common.prev': 'Înapoi', 'common.next': 'Înainte',
+    'destinations.found': 'destinații găsite', 'destinations.tab.overview': 'Prezentare',
+    'destinations.tab.culture': 'Cultură', 'destinations.tab.cuisine': 'Bucătărie',
+    'destinations.tab.mustvisit': 'De Vizitat', 'destinations.best_season': 'Sezon ideal',
+    'destinations.tags': 'Etichete', 'destinations.in_favorites': 'În Favorite',
+    'destinations.add_favorites': 'Adaugă la Favorite', 'destinations.explore_hotels': 'Explorează Hoteluri',
+    'destinations.continent.all': 'Toate', 'destinations.continent.europe': 'Europa',
+    'destinations.continent.asia': 'Asia', 'destinations.continent.middle_east': 'Orientul Mijlociu',
+    'destinations.continent.americas': 'Americi', 'destinations.continent.africa': 'Africa',
+    'destinations.tag.beach': 'Plajă', 'destinations.tag.culture': 'Cultură',
+    'destinations.tag.romance': 'Romantic', 'destinations.tag.adventure': 'Aventură',
+    'destinations.tag.food': 'Gastronomie', 'destinations.tag.luxury': 'Lux',
+    'destinations.tag.city': 'Oraș', 'destinations.tag.nature': 'Natură',
+    'hotels.search_placeholder': 'Caută hoteluri...', 'hotels.all_destinations': 'Toate Destinațiile',
+    'hotels.sort.top_rated': 'Cel Mai Bun Rating', 'hotels.sort.price_low_high': 'Preț: Crescător',
+    'hotels.sort.price_high_low': 'Preț: Descrescător', 'hotels.max_price': 'Preț Maxim',
+    'hotels.min_stars': 'Stele Minime', 'hotels.available': 'hoteluri disponibile',
+    'hotels.saved': 'Salvat', 'hotels.save': 'Salvează', 'hotels.per_night_short': '/noapte',
+    'hotels.type.luxury': 'Lux', 'hotels.type.boutique': 'Boutique', 'hotels.type.budget': 'Buget', 'hotels.type.resort': 'Resort',
+    'home.stats.countries': 'Țări', 'home.stats.hotels': 'Hoteluri',
+    'home.stats.travelers': 'Călători Fericiți', 'home.stats.avg_rating': 'Rating Mediu',
+    'home.culture.badge': 'Descoperă În Profunzime',
+    'home.culture.description': 'Fiecare destinație are o poveste spusă prin oameni, artă, ritualuri și mâncare.',
+    'home.culture.item1_title': 'Festivaluri Culturale', 'home.culture.item1_desc': 'Participă la sărbători locale',
+    'home.culture.item2_title': 'Tururi Culinare', 'home.culture.item2_desc': 'Gustă preparate autentice',
+    'home.culture.item3_title': 'Situri Istorice', 'home.culture.item3_desc': 'Explorează ruine antice și muzee',
+    'home.cuisine.item1_name': 'Mâncare Stradală Asiatică', 'home.cuisine.item1_dest': 'Bangkok & Tokyo',
+    'home.cuisine.item2_name': 'Bucătărie Italiană', 'home.cuisine.item2_dest': 'Roma & Florența',
+    'home.cuisine.item3_name': 'Festinuri Balineze', 'home.cuisine.item3_dest': 'Ubud, Bali',
+    'home.how.subtitle': 'Pași simpli către călătoria perfectă',
+    'home.how.search_title': 'Caută și Descoperă', 'home.how.search_desc': 'Răsfoiește sute de destinații.',
+    'home.how.plan_title': 'Planifică și Personalizează', 'home.how.plan_desc': 'Construiește itinerariul perfect.',
+    'home.how.book_title': 'Rezervă în Siguranță', 'home.how.book_desc': 'Anulare gratuită pentru majoritatea rezervărilor.',
+    'home.how.travel_title': 'Călătorește și Bucură-te', 'home.how.travel_desc': 'Creează amintiri care durează o viață.',
+    'home.cta.title': 'Începe să Îți Planifici Călătoria de Vis', 'home.cta.subtitle': 'Creează un itinerariu personalizat în câteva minute.',
+    'footer.brand_desc': 'Partenerul tău ideal de călătorie pentru a descoperi destinații uimitoare.',
+    'footer.explore': 'Explorează', 'footer.top_destinations': 'Destinații de Top', 'footer.contact': 'Contact',
+    'footer.dest.santorini': 'Santorini, Grecia', 'footer.dest.bali': 'Bali, Indonezia',
+    'footer.dest.paris': 'Paris, Franța', 'footer.dest.maldives': 'Maldive',
+    'footer.dest.tokyo': 'Tokyo, Japonia', 'footer.dest.dubai': 'Dubai, EAU',
+    'footer.address_line1': 'Aleea Explorer 123', 'footer.address_line2': 'San Francisco, CA 94102',
+    'footer.rights': '© 2026 TravelDreams. Toate drepturile rezervate.',
+    'footer.privacy': 'Politica de Confidențialitate', 'footer.terms': 'Termeni și Condiții', 'footer.cookies': 'Politica de Cookie-uri',
+    'rentals.all_types': 'Toate Tipurile', 'rentals.type.villas': 'Vile', 'rentals.type.apartments': 'Apartamente',
+    'rentals.type.traditional_plural': 'Tradiționale', 'rentals.type.chalets': 'Cabane',
+    'rentals.listings': 'listări', 'rentals.search_placeholder': 'Caută închirieri...',
+    'rentals.sort.top_rated': 'Cel Mai Bun Rating', 'rentals.sort.price_low_high': 'Preț: Crescător',
+    'rentals.sort.price_high_low': 'Preț: Descrescător', 'rentals.max_price': 'Preț Maxim',
+    'rentals.per_night_short': '/noapte', 'rentals.min_guests_capacity': 'Capacitate Minimă Oaspeți',
+    'rentals.available': 'închirieri disponibile', 'rentals.type.apartment': 'Apartament',
+    'rentals.type.villa': 'Vilă', 'rentals.type.traditional': 'Tradițional', 'rentals.type.chalet': 'Cabană',
+    'rentals.bed': 'pat', 'rentals.bath': 'baie', 'rentals.hosted_by': 'Găzduit de',
+    'favorites.saved': 'salvate', 'favorites.place_singular': 'loc', 'favorites.place_plural': 'locuri',
+    'favorites.filter.all': 'Toate', 'favorites.type.destination': 'Destinație',
+    'favorites.type.hotel': 'Hotel', 'favorites.type.rental': 'Închiriere',
+    'favorites.empty_sub': 'Salvează destinațiile, hotelurile și închirierile preferate.',
+    'favorites.explore_destinations': 'Explorează Destinații', 'favorites.explore_short': 'Explorează',
+    'favorites.cta_title': 'Gata să îți planifici călătoria?', 'favorites.cta_subtitle': 'Folosește planificatorul pentru itinerariul perfect.',
+    'favorites.open_planner': 'Deschide Planificatorul',
+    'planner.trip_settings': 'Setări Călătorie', 'planner.destination': 'Destinație',
+    'planner.budget_summary': 'Rezumat Buget', 'planner.total_budget': 'Buget Total',
+    'planner.planning_for': 'Planificare pentru', 'planner.best': 'Ideal',
+    'planner.share': 'Distribuie', 'planner.export': 'Exportă', 'planner.day': 'Ziua',
+    'planner.suggest': 'Sugerează', 'planner.activity_title': 'Titlu activitate *',
+    'planner.notes_optional': 'Notițe (opțional)', 'planner.cost': 'Cost ($)',
+    'booking.confirmed_for': 'Rezervarea pentru', 'booking.confirmed_suffix': 'a fost confirmată.',
+    'booking.step': 'Pasul', 'booking.of': 'din', 'booking.peak_season': 'Sezon de vârf',
+    'booking.offseason_deal': 'Ofertă extrasezon', 'booking.taxes_fees': 'Taxe și comisioane',
+    'booking.continue_details': 'Continuă la Detalii', 'booking.payment_details': 'Detalii Plată',
+    'booking.card_number': 'Număr card: **** **** **** 4242', 'booking.expiry': 'LL / AA', 'booking.cvc': 'CVC',
+    'booking.placeholder_name': 'Ion Popescu', 'booking.placeholder_email': 'ion@example.com',
+    'booking.placeholder_phone': '+40 712 345 678', 'booking.placeholder_special': 'Check-in târziu...',
+    'planner.title': 'Planificatorul Meu de Călătorie', 'planner.subtitle': 'Construiește itinerariul perfect zi cu zi',
+    'planner.add_day': 'Adaugă Zi', 'planner.add_activity': 'Adaugă Activitate',
+    'planner.trip_name': 'Numele Călătoriei', 'planner.start_date': 'Data de Start', 'planner.duration': 'Durată', 'planner.days': 'zile',
+    'planner.select': 'Selectează', 'planner.select_date': 'Selectează data', 'planner.clear': 'Șterge', 'planner.today': 'Astăzi',
+    'planner.active_trip': 'Călătorie activă', 'planner.end_date': 'Data de final', 'planner.budget_target': 'Buget țintă',
+    'planner.suggest_settings': 'Setări sugestii', 'planner.suggest_day': 'Sugerează ziua', 'planner.suggest_itinerary': 'Sugerează itinerariul',
+    'planner.suggest_mode_hint': 'Modul selectat aplică sugestii instant și actualizează sincron cardurile zilei + harta.',
+    'planner.total_trip': 'Total călătorie', 'planner.average_per_day': 'Medie / zi', 'planner.map_preview': 'Previzualizare hartă / opriri',
+    'planner.map_sync_hint': 'Actualizări live pe hartă pentru filtrele Călătorie / Țară / Oraș / Categorie, sincronizate cu lista.',
+    'planner.stay_favorites': 'Cazări + Favorite', 'planner.quick_actions': 'Acțiuni rapide', 'planner.items': 'elemente',
+    'planner.favorite_quick_add': 'Adăugare rapidă favorite', 'planner.favorite_quick_add_hint': 'Marchează locuri cu inimă și adaugă-le rapid în ziua activă.',
+    'planner.favorite': 'Favorit', 'planner.added': 'Adăugat', 'planner.add': 'Adaugă',
+    'planner.mode.full-day': 'Zi completă', 'planner.mode.food': 'Mâncare', 'planner.mode.attractions': 'Atracții', 'planner.mode.mixed': 'Mixt',
+    'planner.add_restaurant': 'Adaugă restaurant', 'planner.add_attraction': 'Adaugă atracție',
+    'planner.duplicate_day': 'Duplică ziua', 'planner.clear_day': 'Golește ziua', 'planner.duplicate': 'Duplică',
+    'planner.activities': 'activități', 'planner.copy': 'copie', 'planner.empty_title': 'Începe să-ți construiești călătoria de vis',
+    'planner.empty_subtitle': 'Nu există activități încă pentru această zi.', 'planner.add_first_activity': 'Adaugă prima activitate',
+    'planner.remove_activity': 'Elimină activitatea', 'planner.showing': 'Afișate',
+    'planner.filter.all': 'Toate', 'planner.filter.trip': 'Călătorie', 'planner.filter.country': 'Țară',
+    'planner.filter.city': 'Oraș', 'planner.filter.category': 'Categorie',
+    'planner.filter.all_trips': 'Toate călătoriile', 'planner.filter.all_countries': 'Toate țările',
+    'planner.filter.all_cities': 'Toate orașele', 'planner.filter.all_categories': 'Toate categoriile',
+    'planner.category.hotel': 'Hotel', 'planner.category.rental': 'Închiriere', 'planner.category.activity': 'Activitate',
+    'planner.category.restaurant': 'Restaurant', 'planner.category.stop': 'Oprire',
+    'planner.loading_map_locations': 'Se încarcă locațiile pe hartă...', 'planner.no_valid_locations': 'Nu există locații valide pentru filtrele curente.',
+    'planner.unknown_address': 'Adresă necunoscută', 'planner.unknown': 'Necunoscut', 'planner.na': 'N/A',
+    'favorites.title': 'Favoritele Mele', 'favorites.subtitle': 'Destinațiile, hotelurile și închirierile salvate',
+    'favorites.empty': 'Nu ai favorite încă. Începe să explorezi!',
+    'chat.title': 'Asistent de Călătorie', 'chat.subtitle': 'Întreabă orice despre destinația ta',
+    'chat.placeholder': 'Întreabă despre destinații, hoteluri, vize...', 'chat.send': 'Trimite', 'chat.online': 'Online',
+    'admin.title': 'Panou Admin', 'admin.users': 'Utilizatori', 'admin.hotels': 'Hoteluri',
+    'admin.bookings': 'Rezervări', 'admin.revenue': 'Venituri', 'admin.manage': 'Gestionează',
+    'booking.title': 'Finalizează Rezervarea', 'booking.name': 'Nume Complet',
+    'booking.email': 'Adresă Email', 'booking.phone': 'Număr Telefon',
+    'booking.special': 'Cereri Speciale', 'booking.success': 'Rezervare Confirmată!',
+    'my_bookings.badge': 'Achiziții',
+    'my_bookings.title': 'Rezervările mele',
+    'my_bookings.subtitle': 'Urmărește toate sejururile rezervate și data achiziției într-un singur loc.',
+    'my_bookings.stats.total': 'Total rezervări',
+    'my_bookings.stats.confirmed': 'Confirmate',
+    'my_bookings.stats.pending': 'În așteptare',
+    'my_bookings.filter.all': 'Toate',
+    'my_bookings.status.confirmed': 'Confirmată',
+    'my_bookings.status.pending': 'În așteptare',
+    'my_bookings.empty.title': 'Nu ai rezervări încă.',
+    'my_bookings.empty.subtitle': 'Începe cu hoteluri sau închirieri, iar achizițiile confirmate vor apărea aici automat.',
+    'my_bookings.empty.explore_hotels': 'Explorează Hoteluri',
+    'my_bookings.empty.explore_rentals': 'Explorează Închirieri',
+    'my_bookings.empty.filtered': 'Nicio rezervare nu corespunde filtrului selectat.',
+    'my_bookings.type.hotel': 'Hotel',
+    'my_bookings.type.rental': 'Închiriere',
+    'my_bookings.type.destination': 'Destinație',
+    'my_bookings.booked_on': 'Rezervat pe',
+    'my_bookings.cancel': 'Anulează',
+  },
+  ru: {
+    'nav.home': 'Главная', 'nav.destinations': 'Направления', 'nav.hotels': 'Отели',
+    'nav.rentals': 'Аренда', 'nav.planner': 'Планировщик', 'nav.favorites': 'Избранное',
+    'nav.bookings': 'Мои брони', 'nav.chat': 'Чат', 'nav.admin': 'Админ', 'nav.signin': 'Войти',
+    'nav.role.user': 'Путешественник', 'nav.role.host': 'Хозяин', 'nav.role.admin': 'Админ',
+    'hero.title': 'Откройте для Себя Место Своей Мечты',
+    'hero.subtitle': 'Исследуйте потрясающие направления, бронируйте роскошное жильё и создавайте незабываемые путешествия.',
+    'hero.search': 'Куда вы хотите поехать?', 'hero.checkin': 'Заезд', 'hero.checkout': 'Выезд',
+    'hero.guests': 'Гости', 'hero.search_btn': 'Поиск', 'hero.explore': 'Исследовать',
+    'section.top_destinations': 'Лучшие Направления', 'section.top_destinations_sub': 'Тщательно отобранные места',
+    'section.featured_hotels': 'Избранные Отели', 'section.featured_hotels_sub': 'Роскошное проживание для любого бюджета',
+    'section.rentals': 'Уникальная Аренда', 'section.rentals_sub': 'Виллы, апартаменты и традиционные дома',
+    'section.culture': 'Культура и Опыт', 'section.cuisine': 'Местная Кухня',
+    'section.must_visit': 'Обязательно к Посещению', 'section.how_it_works': 'Как Это Работает',
+    'common.per_night': 'за ночь', 'common.book_now': 'Забронировать', 'common.view_details': 'Подробнее',
+    'common.add_wishlist': 'В избранное', 'common.remove_wishlist': 'Удалить', 'common.rating': 'Рейтинг',
+    'common.reviews': 'отзывов', 'common.from': 'От', 'common.guests': 'гостей', 'common.nights': 'ночей',
+    'common.total': 'Итого', 'common.cancel': 'Отмена', 'common.confirm': 'Подтвердить Бронь',
+    'common.see_all': 'Смотреть всё', 'common.save': 'Сохранить', 'common.filter': 'Фильтр',
+    'common.sort': 'Сортировать', 'common.search': 'Поиск', 'common.clear_all': 'Очистить всё', 'common.any': 'Любой',
+    'common.prev': 'Назад', 'common.next': 'Вперёд',
+    'destinations.found': 'направлений найдено', 'destinations.tab.overview': 'Обзор',
+    'destinations.tab.culture': 'Культура', 'destinations.tab.cuisine': 'Кухня',
+    'destinations.tab.mustvisit': 'Обязательно', 'destinations.best_season': 'Лучший сезон',
+    'destinations.tags': 'Теги', 'destinations.in_favorites': 'В Избранном',
+    'destinations.add_favorites': 'В Избранное', 'destinations.explore_hotels': 'Смотреть Отели',
+    'destinations.continent.all': 'Все', 'destinations.continent.europe': 'Европа',
+    'destinations.continent.asia': 'Азия', 'destinations.continent.middle_east': 'Ближний Восток',
+    'destinations.continent.americas': 'Америка', 'destinations.continent.africa': 'Африка',
+    'destinations.tag.beach': 'Пляж', 'destinations.tag.culture': 'Культура',
+    'destinations.tag.romance': 'Романтика', 'destinations.tag.adventure': 'Приключения',
+    'destinations.tag.food': 'Еда', 'destinations.tag.luxury': 'Люкс',
+    'destinations.tag.city': 'Город', 'destinations.tag.nature': 'Природа',
+    'hotels.search_placeholder': 'Поиск отелей...', 'hotels.all_destinations': 'Все Направления',
+    'hotels.sort.top_rated': 'С Высоким Рейтингом', 'hotels.sort.price_low_high': 'Цена: По Возрастанию',
+    'hotels.sort.price_high_low': 'Цена: По Убыванию', 'hotels.max_price': 'Макс. Цена',
+    'hotels.min_stars': 'Мин. Звезды', 'hotels.available': 'отелей доступно',
+    'hotels.saved': 'Сохранено', 'hotels.save': 'Сохранить', 'hotels.per_night_short': '/ночь',
+    'hotels.type.luxury': 'Люкс', 'hotels.type.boutique': 'Бутик', 'hotels.type.budget': 'Бюджет', 'hotels.type.resort': 'Курорт',
+    'home.stats.countries': 'Страны', 'home.stats.hotels': 'Отели',
+    'home.stats.travelers': 'Счастливые Путешественники', 'home.stats.avg_rating': 'Средний Рейтинг',
+    'home.culture.badge': 'Погрузитесь Глубже', 'home.culture.description': 'У каждого направления есть своя история.',
+    'home.culture.item1_title': 'Культурные Фестивали', 'home.culture.item1_desc': 'Участвуйте в местных праздниках',
+    'home.culture.item2_title': 'Гастрономические Туры', 'home.culture.item2_desc': 'Пробуйте аутентичные блюда',
+    'home.culture.item3_title': 'Исторические Места', 'home.culture.item3_desc': 'Исследуйте древние руины и музеи',
+    'home.cuisine.item1_name': 'Азиатская Уличная Еда', 'home.cuisine.item1_dest': 'Бангкок и Токио',
+    'home.cuisine.item2_name': 'Итальянская Кухня', 'home.cuisine.item2_dest': 'Рим и Флоренция',
+    'home.cuisine.item3_name': 'Балийские Угощения', 'home.cuisine.item3_dest': 'Убуд, Бали',
+    'home.how.subtitle': 'Простые шаги к идеальному путешествию',
+    'home.how.search_title': 'Поиск и Открытие', 'home.how.search_desc': 'Просматривайте сотни направлений.',
+    'home.how.plan_title': 'Планируйте и Настраивайте', 'home.how.plan_desc': 'Создайте идеальный маршрут.',
+    'home.how.book_title': 'Безопасное Бронирование', 'home.how.book_desc': 'Бронируйте с уверенностью.',
+    'home.how.travel_title': 'Путешествуйте и Наслаждайтесь', 'home.how.travel_desc': 'Исследуйте мир.',
+    'home.cta.title': 'Начните Планировать Путешествие Мечты', 'home.cta.subtitle': 'Создайте персональный маршрут за минуты.',
+    'footer.brand_desc': 'Ваш идеальный помощник в путешествиях.',
+    'footer.explore': 'Исследуйте', 'footer.top_destinations': 'Лучшие Направления', 'footer.contact': 'Контакты',
+    'footer.dest.santorini': 'Санторини, Греция', 'footer.dest.bali': 'Бали, Индонезия',
+    'footer.dest.paris': 'Париж, Франция', 'footer.dest.maldives': 'Мальдивы',
+    'footer.dest.tokyo': 'Токио, Япония', 'footer.dest.dubai': 'Дубай, ОАЭ',
+    'footer.address_line1': '123 Explorer Avenue', 'footer.address_line2': 'San Francisco, CA 94102',
+    'footer.rights': '© 2026 TravelDreams. Все права защищены.',
+    'footer.privacy': 'Политика Конфиденциальности', 'footer.terms': 'Условия Использования', 'footer.cookies': 'Политика Cookie',
+    'rentals.all_types': 'Все Типы', 'rentals.type.villas': 'Виллы', 'rentals.type.apartments': 'Апартаменты',
+    'rentals.type.traditional_plural': 'Традиционные', 'rentals.type.chalets': 'Шале',
+    'rentals.listings': 'объявлений', 'rentals.search_placeholder': 'Поиск аренды...',
+    'rentals.sort.top_rated': 'С Высоким Рейтингом', 'rentals.sort.price_low_high': 'Цена: По Возрастанию',
+    'rentals.sort.price_high_low': 'Цена: По Убыванию', 'rentals.max_price': 'Макс. Цена',
+    'rentals.per_night_short': '/ночь', 'rentals.min_guests_capacity': 'Мин. Вместимость',
+    'rentals.available': 'вариантов аренды', 'rentals.type.apartment': 'Апартаменты',
+    'rentals.type.villa': 'Вилла', 'rentals.type.traditional': 'Традиционный', 'rentals.type.chalet': 'Шале',
+    'rentals.bed': 'спальня', 'rentals.bath': 'ванная', 'rentals.hosted_by': 'Хозяин',
+    'favorites.saved': 'сохранено', 'favorites.place_singular': 'место', 'favorites.place_plural': 'мест',
+    'favorites.filter.all': 'Все', 'favorites.type.destination': 'Направление',
+    'favorites.type.hotel': 'Отель', 'favorites.type.rental': 'Аренда',
+    'favorites.empty_sub': 'Сохраняйте любимые направления, отели и аренду.',
+    'favorites.explore_destinations': 'Смотреть Направления', 'favorites.explore_short': 'Смотреть',
+    'favorites.cta_title': 'Готовы спланировать поездку?', 'favorites.cta_subtitle': 'Используйте планировщик путешествий.',
+    'favorites.open_planner': 'Открыть Планировщик',
+    'planner.trip_settings': 'Настройки Поездки', 'planner.destination': 'Направление',
+    'planner.budget_summary': 'Сводка Бюджета', 'planner.total_budget': 'Общий Бюджет',
+    'planner.planning_for': 'Планирование для', 'planner.best': 'Лучшее',
+    'planner.share': 'Поделиться', 'planner.export': 'Экспорт', 'planner.day': 'День',
+    'planner.suggest': 'Подсказать', 'planner.activity_title': 'Название активности *',
+    'planner.notes_optional': 'Заметки (необязательно)', 'planner.cost': 'Стоимость ($)',
+    'booking.confirmed_for': 'Бронирование для', 'booking.confirmed_suffix': 'подтверждено.',
+    'booking.step': 'Шаг', 'booking.of': 'из', 'booking.peak_season': 'Высокий сезон',
+    'booking.offseason_deal': 'Выгодно вне сезона', 'booking.taxes_fees': 'Налоги и сборы',
+    'booking.continue_details': 'Перейти к Деталям', 'booking.payment_details': 'Детали Оплаты',
+    'booking.card_number': 'Номер карты: **** **** **** 4242', 'booking.expiry': 'ММ / ГГ', 'booking.cvc': 'CVC',
+    'booking.placeholder_name': 'Иван Иванов', 'booking.placeholder_email': 'ivan@example.com',
+    'booking.placeholder_phone': '+7 999 123 45 67', 'booking.placeholder_special': 'Поздний заезд...',
+    'planner.title': 'Мой Планировщик Путешествий', 'planner.subtitle': 'Создайте идеальный маршрут день за днём',
+    'planner.add_day': 'Добавить День', 'planner.add_activity': 'Добавить Активность',
+    'planner.trip_name': 'Название Поездки', 'planner.start_date': 'Дата Начала', 'planner.duration': 'Продолжительность', 'planner.days': 'дней',
+    'planner.select': 'Выбрать', 'planner.select_date': 'Выберите дату', 'planner.clear': 'Очистить', 'planner.today': 'Сегодня',
+    'planner.active_trip': 'Активная поездка', 'planner.end_date': 'Дата окончания', 'planner.budget_target': 'Целевой бюджет',
+    'planner.suggest_settings': 'Настройки подсказок', 'planner.suggest_day': 'Подсказать день', 'planner.suggest_itinerary': 'Подсказать маршрут',
+    'planner.suggest_mode_hint': 'Выбранный режим применяет мгновенные подсказки и синхронно обновляет карточки дней и карту.',
+    'planner.total_trip': 'Итого за поездку', 'planner.average_per_day': 'Среднее / день', 'planner.map_preview': 'Карта / превью остановок',
+    'planner.map_sync_hint': 'Обновления карты в реальном времени для фильтров Поездка / Страна / Город / Категория с синхронизацией списка.',
+    'planner.stay_favorites': 'Проживание + Избранное', 'planner.quick_actions': 'Быстрые действия', 'planner.items': 'элементов',
+    'planner.favorite_quick_add': 'Быстрое добавление из избранного', 'planner.favorite_quick_add_hint': 'Отмечайте места сердцем и быстро добавляйте их в активный день.',
+    'planner.favorite': 'Избранное', 'planner.added': 'Добавлено', 'planner.add': 'Добавить',
+    'planner.mode.full-day': 'Полный день', 'planner.mode.food': 'Еда', 'planner.mode.attractions': 'Достопримечательности', 'planner.mode.mixed': 'Смешанный',
+    'planner.add_restaurant': 'Добавить ресторан', 'planner.add_attraction': 'Добавить достопримечательность',
+    'planner.duplicate_day': 'Дублировать день', 'planner.clear_day': 'Очистить день', 'planner.duplicate': 'Дублировать',
+    'planner.activities': 'активностей', 'planner.copy': 'копия', 'planner.empty_title': 'Начните строить путешествие мечты',
+    'planner.empty_subtitle': 'Для этого дня пока нет активностей.', 'planner.add_first_activity': 'Добавить первую активность',
+    'planner.remove_activity': 'Удалить активность', 'planner.showing': 'Показано',
+    'planner.filter.all': 'Все', 'planner.filter.trip': 'Поездка', 'planner.filter.country': 'Страна',
+    'planner.filter.city': 'Город', 'planner.filter.category': 'Категория',
+    'planner.filter.all_trips': 'Все поездки', 'planner.filter.all_countries': 'Все страны',
+    'planner.filter.all_cities': 'Все города', 'planner.filter.all_categories': 'Все категории',
+    'planner.category.hotel': 'Отель', 'planner.category.rental': 'Аренда', 'planner.category.activity': 'Активность',
+    'planner.category.restaurant': 'Ресторан', 'planner.category.stop': 'Остановка',
+    'planner.loading_map_locations': 'Загрузка локаций на карте...', 'planner.no_valid_locations': 'Нет корректных локаций для текущих фильтров.',
+    'planner.unknown_address': 'Неизвестный адрес', 'planner.unknown': 'Неизвестно', 'planner.na': 'Н/Д',
+    'favorites.title': 'Моё Избранное', 'favorites.subtitle': 'Сохранённые направления, отели и аренда',
+    'favorites.empty': 'Пока нет избранного. Начните исследовать!',
+    'chat.title': 'Тревел-Ассистент', 'chat.subtitle': 'Спрашивайте всё о вашем направлении',
+    'chat.placeholder': 'Спросите о направлениях, отелях, визах...', 'chat.send': 'Отправить', 'chat.online': 'Онлайн',
+    'admin.title': 'Панель Администратора', 'admin.users': 'Пользователи', 'admin.hotels': 'Отели',
+    'admin.bookings': 'Бронирования', 'admin.revenue': 'Доход', 'admin.manage': 'Управление',
+    'booking.title': 'Завершить Бронирование', 'booking.name': 'Полное Имя',
+    'booking.email': 'Электронная Почта', 'booking.phone': 'Номер Телефона',
+    'booking.special': 'Особые Пожелания', 'booking.success': 'Бронирование Подтверждено!',
+    'my_bookings.badge': 'Покупки',
+    'my_bookings.title': 'Мои бронирования',
+    'my_bookings.subtitle': 'Отслеживайте все бронирования и даты покупки в одном месте.',
+    'my_bookings.stats.total': 'Всего бронирований',
+    'my_bookings.stats.confirmed': 'Подтверждено',
+    'my_bookings.stats.pending': 'В ожидании',
+    'my_bookings.filter.all': 'Все',
+    'my_bookings.status.confirmed': 'Подтверждено',
+    'my_bookings.status.pending': 'В ожидании',
+    'my_bookings.empty.title': 'У вас пока нет бронирований.',
+    'my_bookings.empty.subtitle': 'Начните с отелей или аренды, и подтвержденные покупки автоматически появятся здесь.',
+    'my_bookings.empty.explore_hotels': 'Смотреть отели',
+    'my_bookings.empty.explore_rentals': 'Смотреть аренду',
+    'my_bookings.empty.filtered': 'Нет бронирований по выбранному фильтру.',
+    'my_bookings.type.hotel': 'Отель',
+    'my_bookings.type.rental': 'Аренда',
+    'my_bookings.type.destination': 'Направление',
+    'my_bookings.booked_on': 'Забронировано',
+    'my_bookings.cancel': 'Отменить',
+  },
+};
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
+const I18nContext = createContext<I18nContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+const EXCHANGE_RATES: Record<Language, number> = { 'en': 1.0, 'ro': 4.97, 'ru': 98.50 };
+const CURRENCY_SYMBOLS: Record<Language, string> = { 'en': '$', 'ro': 'lei', 'ru': '₽' };
+const TRANSLATION_FLUSH_DELAY_MS = 220;
+const TRANSLATION_RETRY_DELAY_MS = 320;
+const TRANSLATION_BATCH_SIZE = 24;
+const TRANSLATION_MAX_TEXT_LENGTH = 84;
+const TRANSLATION_MAX_WORDS = 12;
+
+export function AppProvider({ children }: { children: ReactNode }) {
+  // ── Existing state ────────────────────────────────────────────────────────
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.language);
+      if (stored === 'en' || stored === 'ro' || stored === 'ru') return stored;
+    }
+    return 'en';
+  });
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(STORAGE_KEYS.theme);
+      if (stored === 'light' || stored === 'dark') return stored;
+    }
+    return 'light';
+  });
+  const [favorites, setFavorites] = useState<FavoriteItem[]>(() =>
+    sanitizeFavoritesList(loadStoredJson<unknown>(STORAGE_KEYS.favorites, [])),
+  );
+  const [bookings, setBookings] = useState<BookingItem[]>(() =>
+    sanitizeBookingsList(loadStoredJson<unknown>(STORAGE_KEYS.bookings, [])),
+  );
+  const [dynamicTranslations, setDynamicTranslations] = useState<Record<Language, Record<string, string>>>({ en: {}, ro: {}, ru: {} });
+  const pendingTranslations = useRef<Set<string>>(new Set());
+  const translationQueue = useRef<Map<Language, Set<string>>>(new Map());
+  const translationFlushTimer = useRef<number | null>(null);
+  const isTranslationFlushRunning = useRef(false);
+  const hasQueuedFlushAfterRun = useRef(false);
+
+  // ── New state ─────────────────────────────────────────────────────────────
+  const [catalog, setCatalog] = useState<CatalogState>(() => {
+    const fallback: CatalogState = {
+      destinations: seedDestinations,
+      hotels: seedHotels,
+      rentals: seedRentals,
+    };
+    const stored = loadStoredJson<Partial<CatalogState>>(STORAGE_KEYS.catalog, fallback);
+    return {
+      destinations: mergeCatalogById(fallback.destinations, stored?.destinations),
+      hotels: mergeCatalogById(fallback.hotels, stored?.hotels),
+      rentals: mergeRentalsCatalog(fallback.rentals, stored?.rentals),
+    };
+  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [apiStatusMessage, setApiStatusMessage] = useState<string | null>(null);
+  const [hostListings, setHostListings] = useState<HostListing[]>(() => loadStoredJson(STORAGE_KEYS.hostListings, INITIAL_LISTINGS));
+  const role: UserRole = currentUser?.role || 'user';
+
+  const destinations = catalog.destinations;
+  const hotels = catalog.hotels;
+  const rentals = catalog.rentals;
+
+  const setDestinations: React.Dispatch<React.SetStateAction<Destination[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      destinations: typeof nextValue === 'function' ? (nextValue as (current: Destination[]) => Destination[])(prev.destinations) : nextValue,
+    }));
+  };
+
+  const setHotels: React.Dispatch<React.SetStateAction<Hotel[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      hotels: typeof nextValue === 'function' ? (nextValue as (current: Hotel[]) => Hotel[])(prev.hotels) : nextValue,
+    }));
+  };
+
+  const setRentals: React.Dispatch<React.SetStateAction<Rental[]>> = (nextValue) => {
+    setCatalog((prev) => ({
+      ...prev,
+      rentals: typeof nextValue === 'function' ? (nextValue as (current: Rental[]) => Rental[])(prev.rentals) : nextValue,
+    }));
+  };
+
+  const approvedCatalog = useMemo(() => {
+    const approvedHostListings = hostListings.filter((listing) => listing.status === 'approved');
+    if (!approvedHostListings.length) {
+      return {
+        publicDestinations: destinations,
+        publicHotels: hotels,
+        publicRentals: rentals,
+      };
+    }
+
+    const destinationMap = new Map<string, Destination>();
+    destinations.forEach((destination) => {
+      destinationMap.set(destination.id, destination);
+    });
+
+    const syntheticDestinations: Destination[] = [];
+    const publicHotelsExtra: Hotel[] = [];
+    const publicRentalsExtra: Rental[] = [];
+
+    approvedHostListings.forEach((listing) => {
+      const linkedDestination = resolveDestinationFromListing(listing, [...destinations, ...syntheticDestinations]);
+      const destinationId = linkedDestination?.id || buildSyntheticDestinationId(listing);
+
+      if (!linkedDestination && !destinationMap.has(destinationId)) {
+        const syntheticDestination = buildSyntheticDestination(listing);
+        destinationMap.set(destinationId, syntheticDestination);
+        syntheticDestinations.push(syntheticDestination);
+      }
+
+      if (listing.type === 'hotel') {
+        publicHotelsExtra.push(buildHotelFromHostListing(listing, destinationId));
+      } else {
+        publicRentalsExtra.push(buildRentalFromHostListing(listing, destinationId));
+      }
+    });
+
+    return {
+      publicDestinations: [...destinations, ...syntheticDestinations],
+      publicHotels: [...hotels, ...publicHotelsExtra],
+      publicRentals: [...rentals, ...publicRentalsExtra],
+    };
+  }, [destinations, hotels, rentals, hostListings]);
+
+  const publicDestinations = approvedCatalog.publicDestinations;
+  const publicHotels = approvedCatalog.publicHotels;
+  const publicRentals = approvedCatalog.publicRentals;
+
+  const refreshAuthSession = useCallback(async () => {
+    setIsAuthLoading(true);
+    try {
+      const payload = await apiGet<unknown>('/auth/me');
+      const user = extractApiUser(payload);
+
+      if (!user) {
+        throw new Error('Session response does not include a valid user.');
+      }
+
+      setCurrentUser(user);
+      setAuthError(null);
+    } catch (error) {
+      if (isApiError(error) && error.status === 401) {
+        setCurrentUser(null);
+        setAuthError(null);
+      } else {
+        setCurrentUser(null);
+        setAuthError(toAuthErrorMessage(error, 'Unable to validate your session.'));
+      }
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const shouldBootstrapAuth = APP_ENV !== 'development' || HAS_EXPLICIT_API_BASE_URL;
+    if (!shouldBootstrapAuth) {
+      setIsAuthLoading(false);
+      return;
+    }
+    void refreshAuthSession();
+  }, [refreshAuthSession]);
+
+  useEffect(() => {
+    return onApiStatus(401, (error) => {
+      if (error.url.includes('/auth/login') || error.url.includes('/auth/register')) return;
+      setCurrentUser((previousUser) => {
+        if (!previousUser) return previousUser;
+        setAuthError('Your session has expired. Please sign in again.');
+        return null;
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+    return onApiStatus(403, () => {
+      setApiStatusMessage('Access denied. You do not have permission to perform this action.');
+    });
+  }, []);
+
+  useEffect(() => {
+    return onApiStatus(500, () => {
+      setApiStatusMessage('Server error. Please retry in a few moments.');
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!apiStatusMessage || typeof window === 'undefined') return;
+    const timeoutId = window.setTimeout(() => {
+      setApiStatusMessage(null);
+    }, 6000);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [apiStatusMessage]);
+
+  const clearApiStatusMessage = useCallback(() => {
+    setApiStatusMessage(null);
+  }, []);
+
+  // Keep catalog synchronized with latest seed data even when stale local state exists.
+  useEffect(() => {
+    setCatalog((prev) => {
+      const nextDestinations = mergeCatalogById(seedDestinations, prev.destinations);
+      const nextHotels = mergeCatalogById(seedHotels, prev.hotels);
+      const nextRentals = mergeRentalsCatalog(seedRentals, prev.rentals);
+
+      const isUnchanged =
+        haveSameOrderedIds(nextDestinations, prev.destinations) &&
+        haveSameOrderedIds(nextHotels, prev.hotels) &&
+        haveSameOrderedIds(nextRentals, prev.rentals);
+
+      if (isUnchanged) return prev;
+
+      return {
+        destinations: nextDestinations,
+        hotels: nextHotels,
+        rentals: nextRentals,
+      };
+    });
+  }, []);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.favorites, favorites);
+  }, [favorites]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.language, language);
+  }, [language]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.bookings, bookings);
+  }, [bookings]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.hostListings, hostListings);
+  }, [hostListings]);
+
+  useEffect(() => {
+    writeStoredJson(STORAGE_KEYS.catalog, catalog);
+  }, [catalog]);
+
+  useEffect(() => () => {
+    if (translationFlushTimer.current !== null) {
+      window.clearTimeout(translationFlushTimer.current);
+    }
+  }, []);
+
+  // ── Theme (unchanged) ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    const bodyElement = document.body;
+    const useDarkTheme = theme === 'dark';
+
+    htmlElement.classList.toggle('dark', useDarkTheme);
+    bodyElement.classList.toggle('dark', useDarkTheme);
+    htmlElement.style.colorScheme = theme;
+  }, [theme]);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.theme, newTheme);
+    }
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  }, [setTheme, theme]);
+
+  // ── NEW: Auth ─────────────────────────────────────────────────────────────
+  async function login(identifier: string, password: string) {
+    const normalizedIdentifier = identifier.trim();
+    if (!normalizedIdentifier || !password) {
+      return { success: false, error: 'Please provide both credentials.' };
+    }
+
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const payload = await apiPost<unknown>('/auth/login', {
+        identifier: normalizedIdentifier,
+        password,
+      });
+
+      let user = extractApiUser(payload);
+      if (!user) {
+        const mePayload = await apiGet<unknown>('/auth/me');
+        user = extractApiUser(mePayload);
+      }
+
+      if (!user) {
+        return { success: false, error: 'Login succeeded but user profile could not be loaded.' };
+      }
+
+      setCurrentUser(user);
+      setAuthError(null);
+      return { success: true, role: user.role };
+    } catch (error) {
+      if (isApiError(error) && error.status === 401) {
+        setCurrentUser(null);
+      }
+      return {
+        success: false,
+        error: toAuthErrorMessage(error, 'Login failed. Please try again.'),
+        status: isApiError(error) ? error.status : undefined,
+      };
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }
+
+  function logout() {
+    setIsAuthLoading(true);
+    void apiPost('/auth/logout', {}).catch(() => undefined).finally(() => {
+      setCurrentUser(null);
+      setAuthError(null);
+      setIsAuthLoading(false);
+    });
+  }
+
+  async function register(data: RegisterData) {
+    setIsAuthLoading(true);
+    setAuthError(null);
+    try {
+      const payload = await apiPost<unknown>('/auth/register', {
+        name: data.name.trim(),
+        username: data.username?.trim() || undefined,
+        email: data.email.trim(),
+        phone: data.phone.trim(),
+        password: data.password,
+        role: data.role,
+      });
+
+      let user = extractApiUser(payload);
+      if (!user) {
+        const mePayload = await apiGet<unknown>('/auth/me');
+        user = extractApiUser(mePayload);
+      }
+
+      if (!user) {
+        return { success: false, error: 'Registration succeeded but user profile could not be loaded.' };
+      }
+
+      setCurrentUser(user);
+      setAuthError(null);
+      return { success: true, role: user.role };
+    } catch (error) {
+      return {
+        success: false,
+        error: toAuthErrorMessage(error, 'Registration failed. Please try again.'),
+        status: isApiError(error) ? error.status : undefined,
+      };
+    } finally {
+      setIsAuthLoading(false);
+    }
+  }
+
+  function getHostActor(): User | null {
+    if (currentUser?.role === 'host') return currentUser;
+    return null;
+  }
+
+  // ── NEW: Host listing actions ──────────────────────────────────────────────
+  function addHostListing(
+    listing: Omit<HostListing, 'id' | 'hostId' | 'hostName' | 'hostPublicId' | 'status' | 'createdAt' | 'updatedAt' | 'submittedAt' | 'reviewedAt' | 'reviewNote'>,
+    options?: { submit?: boolean },
+  ) {
+    const hostActor = getHostActor();
+    if (!hostActor) return null;
+
+    const now = new Date().toISOString();
+    const listingType = listing.listingType || (listing.type === 'hotel' ? 'hotel' : 'apartment');
+    const type = listing.type || inferListingCategory(listingType);
+    const nextId = buildNextListingId(hostListings, type, listingType, now);
+    const hostPublicId = hostActor.id.startsWith('host-')
+      ? `HST-${hostActor.id.replace('host-', '').padStart(4, '0')}`
+      : hostActor.id.toUpperCase();
+    const shouldSubmit = options?.submit === true;
+
+    const newListing: HostListing = {
+      ...listing,
+      id: nextId,
+      hostId: hostActor.id,
+      hostName: hostActor.name,
+      hostPublicId,
+      type,
+      listingType,
+      address: listing.address || listing.location,
+      amenities: Array.from(new Set((listing.amenities || []).map((a) => a.trim()).filter(Boolean))),
+      images: (listing.images || []).map((img) => img.trim()).filter(Boolean),
+      featuredTags: (listing.featuredTags || []).map((tag) => tag.trim()).filter(Boolean),
+      pricePerNight: Math.max(0, Number(listing.pricePerNight) || 0),
+      maxGuests: Math.max(1, Number(listing.maxGuests) || 1),
+      bedrooms: listing.bedrooms ? Math.max(0, Number(listing.bedrooms) || 0) : undefined,
+      bathrooms: listing.bathrooms ? Math.max(0, Number(listing.bathrooms) || 0) : undefined,
+      stars: listing.stars ? Math.max(0, Math.min(5, Number(listing.stars) || 0)) : undefined,
+      status: shouldSubmit ? 'pending' : 'draft',
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: shouldSubmit ? now : undefined,
+      reviewedAt: undefined,
+      reviewNote: undefined,
+    };
+
+    setHostListings((prev) => [newListing, ...prev]);
+    return nextId;
+  }
+
+  function updateHostListing(id: string, data: Partial<HostListing>) {
+    const hostActor = getHostActor();
+    if (!hostActor) return;
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id && listing.hostId === hostActor.id
+          ? {
+              ...listing,
+              ...data,
+              amenities: data.amenities
+                ? Array.from(new Set(data.amenities.map((a) => a.trim()).filter(Boolean)))
+                : listing.amenities,
+              images: data.images
+                ? data.images.map((img) => img.trim()).filter(Boolean)
+                : listing.images,
+              featuredTags: data.featuredTags
+                ? data.featuredTags.map((tag) => tag.trim()).filter(Boolean)
+                : listing.featuredTags,
+              updatedAt: now,
+            }
+          : listing,
+      ),
+    );
+  }
+
+  function deleteHostListing(id: string) {
+    const hostActor = getHostActor();
+    if (!hostActor) return;
+    setHostListings((prev) => prev.filter((l) => !(l.id === id && l.hostId === hostActor.id)));
+  }
+
+  function submitHostListing(id: string) {
+    const hostActor = getHostActor();
+    if (!hostActor) return;
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id && listing.hostId === hostActor.id
+          ? {
+              ...listing,
+              status: 'pending',
+              submittedAt: now,
+              reviewedAt: undefined,
+              reviewNote: undefined,
+              updatedAt: now,
+            }
+          : listing,
+      ),
+    );
+  }
+
+  function resubmitHostListing(id: string) {
+    submitHostListing(id);
+  }
+
+  function duplicateHostListing(id: string) {
+    const hostActor = getHostActor();
+    if (!hostActor) return null;
+    const source = hostListings.find((listing) => listing.id === id && listing.hostId === hostActor.id);
+    if (!source) return null;
+
+    const now = new Date().toISOString();
+    const duplicatedId = buildNextListingId(hostListings, source.type, source.listingType, now);
+    const duplicated: HostListing = {
+      ...source,
+      id: duplicatedId,
+      name: `${source.name} (Copy)`,
+      status: 'draft',
+      createdAt: now,
+      updatedAt: now,
+      submittedAt: undefined,
+      reviewedAt: undefined,
+      reviewNote: undefined,
+    };
+
+    setHostListings((prev) => [duplicated, ...prev]);
+    return duplicatedId;
+  }
+
+  function approveListing(id: string, note?: string) {
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'approved' as ListingStatus,
+              reviewedAt: now,
+              reviewNote: note || 'Approved.',
+              updatedAt: now,
+            }
+          : l,
+      ),
+    );
+  }
+
+  function rejectListing(id: string, note?: string) {
+    const now = new Date().toISOString();
+    setHostListings((prev) =>
+      prev.map((l) =>
+        l.id === id
+          ? {
+              ...l,
+              status: 'rejected' as ListingStatus,
+              reviewedAt: now,
+              reviewNote: note || 'Rejected.',
+              updatedAt: now,
+            }
+          : l,
+      ),
+    );
+  }
+
+  function getMyListings() {
+    const hostActor = getHostActor();
+    if (!hostActor) return [];
+    return hostListings.filter((l) => l.hostId === hostActor.id);
+  }
+
+  function getPendingListings() { return hostListings.filter((l) => l.status === 'pending'); }
+  function getApprovedListings() { return hostListings.filter((l) => l.status === 'approved'); }
+  function getRejectedListings() { return hostListings.filter((l) => l.status === 'rejected'); }
+  function getDraftListings() { return hostListings.filter((l) => l.status === 'draft'); }
+
+  // ── Existing: Translation logic (performance-tuned) ───────────────────────
+  const hasQueuedTranslations = useCallback(() => {
+    for (const queuedTexts of translationQueue.current.values()) {
+      if (queuedTexts.size > 0) return true;
+    }
+    return false;
+  }, []);
+
+  const shouldTranslate = useCallback((text: string): boolean => {
+    const normalizedText = text.trim();
+    if (!normalizedText || normalizedText.length < 2) return false;
+    if (normalizedText.length > TRANSLATION_MAX_TEXT_LENGTH) return false;
+    if (normalizedText.split(/\s+/).length > TRANSLATION_MAX_WORDS) return false;
+    if (/https?:\/\/|www\./i.test(normalizedText)) return false;
+    const hasLetters = /[A-Za-zÀ-ÖØ-öø-ÿА-Яа-я]/.test(normalizedText);
+    const hasManySymbols = /^[^A-Za-zÀ-ÖØ-öø-ÿА-Яа-я0-9\s]+$/.test(normalizedText);
+    return hasLetters && !hasManySymbols;
+  }, []);
+
+  const translateWithApi = useCallback(async (text: string, target: Language): Promise<string> => {
+    if (target === 'en') return text;
+    try {
+      const payload = await apiPost<unknown>(
+        '/translate',
+        {
+          text,
+          source: 'en',
+          target,
+        },
+        { timeoutMs: 10000 },
+      );
+      const row = asRecord(payload);
+      const data = asRecord(row?.data);
+      const translated =
+        (typeof row?.translatedText === 'string' && row.translatedText) ||
+        (typeof row?.translation === 'string' && row.translation) ||
+        (typeof row?.text === 'string' && row.text) ||
+        (typeof data?.translatedText === 'string' && data.translatedText) ||
+        (typeof data?.translation === 'string' && data.translation) ||
+        (typeof data?.text === 'string' && data.text) ||
+        '';
+      return translated || text;
+    } catch {
+      return text;
+    }
+  }, []);
+
+  const flushQueuedTranslations = useCallback(async () => {
+    if (isTranslationFlushRunning.current) {
+      hasQueuedFlushAfterRun.current = true;
+      return;
+    }
+
+    const queuedEntries = Array.from(translationQueue.current.entries())
+      .map(([target, texts]) => {
+        const batch = Array.from(texts).slice(0, TRANSLATION_BATCH_SIZE);
+        if (!batch.length) return null;
+        batch.forEach((text) => texts.delete(text));
+        if (texts.size === 0) translationQueue.current.delete(target);
+        return [target, batch] as [Language, string[]];
+      })
+      .filter((entry): entry is [Language, string[]] => entry !== null);
+
+    if (!queuedEntries.length) return;
+    isTranslationFlushRunning.current = true;
+
+    const mergedByLanguage: Partial<Record<Language, Record<string, string>>> = {};
+
+    try {
+      await Promise.all(
+        queuedEntries.map(async ([target, texts]) => {
+          const translatedEntries = await Promise.all(
+            texts.map(async (text) => {
+              try {
+                return [text, await translateWithApi(text, target)] as const;
+              } catch {
+                return [text, text] as const;
+              }
+            }),
+          );
+
+          if (!translatedEntries.length) return;
+          mergedByLanguage[target] = Object.fromEntries(translatedEntries);
+        }),
+      );
+
+      if (!Object.keys(mergedByLanguage).length) return;
+
+      setDynamicTranslations((prev) => {
+        let hasChanges = false;
+        const next = { ...prev };
+
+        (Object.keys(mergedByLanguage) as Language[]).forEach((target) => {
+          const updates = mergedByLanguage[target];
+          if (!updates) return;
+
+          const currentEntries = prev[target];
+          const changedEntries = Object.entries(updates).filter(([text, translated]) => currentEntries[text] !== translated);
+          if (!changedEntries.length) return;
+
+          hasChanges = true;
+          next[target] = {
+            ...currentEntries,
+            ...Object.fromEntries(changedEntries),
+          };
+        });
+
+        return hasChanges ? next : prev;
+      });
+    } finally {
+      queuedEntries.forEach(([target, texts]) => {
+        texts.forEach((text) => pendingTranslations.current.delete(`${target}::${text}`));
+      });
+
+      isTranslationFlushRunning.current = false;
+
+      if (typeof window !== 'undefined' && hasQueuedTranslations() && translationFlushTimer.current === null) {
+        translationFlushTimer.current = window.setTimeout(() => {
+          translationFlushTimer.current = null;
+          void flushQueuedTranslations();
+        }, TRANSLATION_RETRY_DELAY_MS);
+      }
+
+      if (!hasQueuedTranslations()) {
+        hasQueuedFlushAfterRun.current = false;
+      }
+    }
+  }, [hasQueuedTranslations, translateWithApi]);
+
+  const scheduleTranslation = useCallback((text: string, target: Language) => {
+    if (target === 'en') return;
+
+    const cacheKey = `${target}::${text}`;
+    if (pendingTranslations.current.has(cacheKey)) return;
+
+    pendingTranslations.current.add(cacheKey);
+
+    const queuedTexts = translationQueue.current.get(target) || new Set<string>();
+    queuedTexts.add(text);
+    translationQueue.current.set(target, queuedTexts);
+
+    if (typeof window === 'undefined') return;
+    if (isTranslationFlushRunning.current) {
+      hasQueuedFlushAfterRun.current = true;
+      return;
+    }
+    if (translationFlushTimer.current !== null) return;
+
+    translationFlushTimer.current = window.setTimeout(() => {
+      translationFlushTimer.current = null;
+      void flushQueuedTranslations();
+    }, TRANSLATION_FLUSH_DELAY_MS);
+  }, [flushQueuedTranslations]);
+
+  const translateDynamic = useCallback((text: string): string => {
+    if (language === 'en' || !shouldTranslate(text)) return text;
+    const cached = dynamicTranslations[language][text];
+    if (cached) return cached;
+    scheduleTranslation(text, language);
+    return text;
+  }, [dynamicTranslations, language, scheduleTranslation, shouldTranslate]);
+
+  const t = useCallback((key: string): string => {
+    const localized = translations[language][key];
+    if (localized) return localized;
+    const english = translations['en'][key];
+    if (!english) return key;
+    return translateDynamic(english);
+  }, [language, translateDynamic]);
+
+  const getCurrencySymbol = useCallback((): string => CURRENCY_SYMBOLS[language], [language]);
+  const getPriceWithoutFormat = useCallback((price: number): number => Math.round(price * EXCHANGE_RATES[language]), [language]);
+  const formatPrice = useCallback((price: number): string => {
+    const p = getPriceWithoutFormat(price);
+    const s = CURRENCY_SYMBOLS[language];
+    if (language === 'en') return `${s}${p}`;
+    if (language === 'ro') return `${p} ${s}`;
+    return `${p}${s}`;
+  }, [getPriceWithoutFormat, language]);
+
+  const i18nContextValue = useMemo<I18nContextType>(
+    () => ({
+      language,
+      setLanguage,
+      t,
+      translateDynamic,
+      formatPrice,
+      getPriceWithoutFormat,
+      getCurrencySymbol,
+    }),
+    [formatPrice, getCurrencySymbol, getPriceWithoutFormat, language, t, translateDynamic],
+  );
+  const themeContextValue = useMemo<ThemeContextType>(
+    () => ({
+      theme,
+      setTheme,
+      toggleTheme,
+    }),
+    [setTheme, theme, toggleTheme],
+  );
+
+  const addFavorite = (item: FavoriteItem) => {
+    const safeItem = sanitizeFavoriteItem(item);
+    if (!safeItem) return;
+    setFavorites((prev) => (prev.find((f) => f.id === safeItem.id) ? prev : [...prev, safeItem]));
+  };
+  const removeFavorite = (id: string) => setFavorites(prev => prev.filter(f => f.id !== id));
+  const isFavorite = (id: string) => favorites.some(f => f.id === id);
+
+  const addBooking = (item: CreateBookingInput): BookingItem | null => {
+    if (!currentUser) return null;
+
+    const safeBooking = sanitizeBookingItem({
+      id: buildBookingId(),
+      sourceId: item.sourceId,
+      title: item.title,
+      type: item.type,
+      location: item.location,
+      price: item.price,
+      currency: item.currency,
+      image: item.image,
+      bookedAt: item.bookedAt || new Date().toISOString(),
+      status: item.status || 'confirmed',
+    });
+
+    if (!safeBooking) return null;
+    setBookings((prev) => [safeBooking, ...prev]);
+    return safeBooking;
+  };
+
+  const removeBooking = (id: string) => {
+    setBookings((prev) => prev.filter((booking) => booking.id !== id));
+  };
+
+  const clearBookings = () => {
+    setBookings([]);
+  };
+
+  const getBookingStats = (): BookingStats => {
+    const confirmed = bookings.filter((booking) => booking.status === 'confirmed').length;
+    const pending = bookings.filter((booking) => booking.status === 'pending').length;
+
+    return {
+      total: bookings.length,
+      confirmed,
+      pending,
+    };
+  };
+
+  return (
+    <ThemeContext.Provider value={themeContextValue}>
+      <I18nContext.Provider value={i18nContextValue}>
+        <AppContext.Provider value={{
+          // Existing
+          language, setLanguage, role, theme, setTheme, toggleTheme,
+          favorites, addFavorite, removeFavorite, isFavorite,
+          bookings, addBooking, removeBooking, clearBookings, getBookingStats,
+          destinations, setDestinations, hotels, setHotels, rentals, setRentals,
+          publicDestinations, publicHotels, publicRentals,
+          t, translateDynamic, formatPrice, getPriceWithoutFormat, getCurrencySymbol,
+          // New
+          currentUser, login, logout, register, isAuthLoading, authError, refreshAuthSession,
+          apiStatusMessage, clearApiStatusMessage,
+          hostListings, addHostListing, updateHostListing, deleteHostListing,
+          submitHostListing, resubmitHostListing, duplicateHostListing,
+          approveListing, rejectListing,
+          getMyListings, getPendingListings, getApprovedListings, getRejectedListings, getDraftListings,
+        }}>
+          {children}
+        </AppContext.Provider>
+      </I18nContext.Provider>
+    </ThemeContext.Provider>
+  );
+}
+
+export function useApp() {
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within AppProvider');
+  return ctx;
+}
+
+export function useI18n() {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error('useI18n must be used within AppProvider');
+  return ctx;
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('useTheme must be used within AppProvider');
+  return ctx;
+}

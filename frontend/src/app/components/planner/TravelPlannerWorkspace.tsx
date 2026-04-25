@@ -1,0 +1,454 @@
+import React from 'react';
+import { CalendarDays, CalendarRange, Maximize2, Minimize2, PiggyBank, Sparkles } from 'lucide-react';
+import { format } from 'date-fns';
+import { useApp } from '../../context/AppContext';
+import { useTravelPlanner } from '../../hooks/useTravelPlanner';
+import { calculateDayCost } from '../../utils/travelBudget';
+import { Button } from '../common/Button';
+import { Select } from '../common/Select';
+import { Calendar } from '../ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { MapFilters } from '../map/MapFilters';
+import { MapLegend } from '../map/MapLegend';
+import { DayCard } from '../days/DayCard';
+import { QuickActions } from '../sidebar/QuickActions';
+import { StayFavorites } from '../sidebar/StayFavorites';
+import type { TravelCategory, TravelDayMode } from '../../types/travel';
+
+const LazyTripMap = React.lazy(async () => ({
+  default: (await import('../map/TripMap')).TripMap,
+}));
+
+const suggestModes: TravelDayMode[] = ['full-day', 'food', 'attractions', 'mixed'];
+
+const parseIsoDate = (value?: string) => {
+  if (!value) return undefined;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day);
+};
+
+const toIsoDate = (date?: Date) => (date ? format(date, 'yyyy-MM-dd') : '');
+
+type PlannerDateFieldProps = {
+  label: string;
+  value?: string;
+  onChange: (value: string) => void;
+  minDate?: string;
+};
+
+function PlannerDateField({ label, value, onChange, minDate }: PlannerDateFieldProps) {
+  const { theme, t } = useApp();
+  const isDark = theme === 'dark';
+  const selected = parseIsoDate(value);
+  const min = parseIsoDate(minDate);
+
+  return (
+    <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+      {label}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={`flex h-10 w-full items-center justify-between rounded-2xl border px-3 text-sm font-semibold outline-none transition focus:ring-2 ${
+              isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+            }`}
+            style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+          >
+            <span>{selected ? format(selected, 'MM/dd/yyyy') : t('planner.select_date')}</span>
+            <CalendarDays size={15} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          sideOffset={6}
+          className={`w-auto rounded-2xl border p-3 shadow-[0_18px_46px_rgba(15,23,42,0.18)] ${
+            isDark ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-[#D9E3F0] bg-white'
+          }`}
+        >
+          <Calendar
+            mode="single"
+            selected={selected}
+            onSelect={(date) => onChange(toIsoDate(date || undefined))}
+            disabled={min ? { before: min } : undefined}
+            initialFocus
+          />
+          <div className={`mt-3 flex items-center justify-between border-t pt-2 ${isDark ? 'border-slate-700' : 'border-[#E2E8F0]'}`}>
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              {t('planner.clear')}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange(toIsoDate(new Date()))}
+              className={`rounded-lg px-2 py-1 text-xs font-semibold ${
+                isDark ? 'text-cyan-300 hover:bg-slate-800' : 'text-blue-600 hover:bg-blue-50'
+              }`}
+            >
+              {t('planner.today')}
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </label>
+  );
+}
+
+export default function TravelPlannerWorkspace() {
+  const { formatPrice, theme, t, translateDynamic } = useApp();
+  const isDark = theme === 'dark';
+  const planner = useTravelPlanner();
+  const [isMapFullscreen, setIsMapFullscreen] = React.useState(false);
+  const mapSectionRef = React.useRef<HTMLElement | null>(null);
+  const visibleMapPlaces = planner.filteredPlaces;
+  const totalMapPlaces = planner.validAllPlaces;
+  const visibleCategoryCounts = React.useMemo<Record<TravelCategory, number>>(() => {
+    const counts: Record<TravelCategory, number> = {
+      hotel: 0,
+      rental: 0,
+      activity: 0,
+      restaurant: 0,
+      stop: 0,
+    };
+
+    for (const place of visibleMapPlaces) {
+      counts[place.category] += 1;
+    }
+
+    return counts;
+  }, [visibleMapPlaces]);
+
+  React.useEffect(() => {
+    const categoryTotal = Object.values(visibleCategoryCounts).reduce((sum, count) => sum + count, 0);
+    if (categoryTotal !== visibleMapPlaces.length) {
+      console.warn('[planner-map] category counts mismatch', {
+        visiblePlaces: visibleMapPlaces.length,
+        categoryTotal,
+        visibleCategoryCounts,
+      });
+    }
+  }, [visibleCategoryCounts, visibleMapPlaces.length]);
+
+  React.useEffect(() => {
+    if (!isMapFullscreen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMapFullscreen]);
+
+  const toggleMapFullscreen = () => {
+    setIsMapFullscreen((prev) => !prev);
+  };
+
+  const activeDayId = planner.activeDay?.id || '';
+  const handleQuickAdd = React.useCallback(
+    (placeId: string) => {
+      if (!activeDayId) return;
+      planner.addPlaceToDay(activeDayId, placeId);
+    },
+    [activeDayId, planner.addPlaceToDay],
+  );
+  const handleAddActivity = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addActivity(activeDayId);
+  }, [activeDayId, planner.addActivity]);
+  const handleAddRestaurant = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addRestaurant(activeDayId);
+  }, [activeDayId, planner.addRestaurant]);
+  const handleAddAttraction = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.addAttraction(activeDayId);
+  }, [activeDayId, planner.addAttraction]);
+  const handleClearActiveDay = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.clearDay(activeDayId);
+  }, [activeDayId, planner.clearDay]);
+  const handleDuplicateActiveDay = React.useCallback(() => {
+    if (!activeDayId) return;
+    planner.duplicateDay(activeDayId);
+  }, [activeDayId, planner.duplicateDay]);
+  const handleSuggestActiveDay = React.useCallback(
+    (mode: TravelDayMode) => {
+      if (!activeDayId) return;
+      planner.suggestDay(activeDayId, mode);
+    },
+    [activeDayId, planner.suggestDay],
+  );
+  const activeTripOptions = planner.filterOptions.trips
+    .filter((trip) => trip.value !== 'all')
+    .map((trip) => ({ ...trip, label: translateDynamic(trip.label) }));
+
+  return (
+    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      <div className="mx-auto max-w-[1450px] space-y-4 p-4 md:p-6">
+        <div className="grid gap-4 xl:grid-cols-3">
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.trip_settings')}</h2>
+            <div className="grid gap-2">
+              <Select
+                label={t('planner.active_trip')}
+                value={planner.activeTripId}
+                options={activeTripOptions}
+                onChange={planner.setTripFilter}
+              />
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                {t('planner.trip_name')}
+                <input
+                  value={planner.activeTrip?.name || ''}
+                  onChange={(event) => planner.updateTripSettings({ name: event.target.value })}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+                />
+              </label>
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                {t('planner.destination')}
+                <input
+                  value={planner.activeTrip?.destination || ''}
+                  onChange={(event) => planner.updateTripSettings({ destination: event.target.value })}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+                />
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <PlannerDateField
+                  label={t('planner.start_date')}
+                  value={planner.activeTrip?.startDate || ''}
+                  onChange={(next) => planner.updateTripSettings({ startDate: next })}
+                />
+                <PlannerDateField
+                  label={t('planner.end_date')}
+                  value={planner.activeTrip?.endDate || ''}
+                  minDate={planner.activeTrip?.startDate || ''}
+                  onChange={(next) => planner.updateTripSettings({ endDate: next })}
+                />
+              </div>
+              <label className={`flex flex-col gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                {t('planner.budget_target')}
+                <input
+                  type="number"
+                  min={0}
+                  value={planner.activeTrip?.budget || 0}
+                  onChange={(event) => planner.updateTripSettings({ budget: Number(event.target.value) || 0 })}
+                  className={`h-10 rounded-xl border px-3 text-sm font-semibold outline-none focus:ring-2 ${
+                    isDark ? 'bg-slate-800 text-slate-100' : 'bg-white text-slate-800'
+                  }`}
+                  style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+                />
+              </label>
+            </div>
+          </section>
+
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.suggest_settings')}</h2>
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                {suggestModes.map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => planner.activeDay && planner.suggestDay(planner.activeDay.id, mode)}
+                    className={`rounded-full border px-2 py-1 text-xs font-semibold ${
+                      planner.activeSuggestMode === mode
+                        ? 'border-transparent bg-slate-900 text-white'
+                        : isDark
+                          ? 'border-slate-600 bg-slate-800 text-slate-300'
+                          : 'border-slate-200 bg-white text-slate-600'
+                    }`}
+                  >
+                    {t(`planner.mode.${mode}`)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => planner.activeDay && planner.suggestDay(planner.activeDay.id, 'full-day')}
+                >
+                  <Sparkles size={14} />
+                  {t('planner.suggest_day')}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={planner.suggestItinerary}>
+                  <Sparkles size={14} />
+                  {t('planner.suggest_itinerary')}
+                </Button>
+              </div>
+              <div
+                className={`rounded-xl border p-3 text-xs ${isDark ? 'bg-slate-700/60 text-slate-300' : 'bg-slate-50 text-slate-600'}`}
+                style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+              >
+                {t('planner.suggest_mode_hint')}
+              </div>
+            </div>
+          </section>
+
+          <section
+            className={`rounded-2xl border p-4 shadow-sm ${isDark ? 'bg-slate-800' : 'bg-white'}`}
+            style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+          >
+            <h2 className={`mb-3 text-base font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.budget_summary')}</h2>
+            <div className="grid gap-2">
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('planner.total_trip')}</span>
+                  <PiggyBank size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
+                </div>
+                <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.total || 0)}</div>
+              </div>
+              <div className={`rounded-xl border p-3 ${isDark ? 'bg-slate-700/60' : 'bg-slate-50'}`} style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>{t('planner.average_per_day')}</span>
+                  <CalendarRange size={16} className={isDark ? 'text-slate-300' : 'text-slate-500'} />
+                </div>
+                <div className={`mt-1 text-xl font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(planner.budget?.averagePerDay || 0)}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {Object.entries(planner.budget?.byCategory || {}).map(([category, value]) => (
+                  <div
+                    key={category}
+                    className={`rounded-lg border p-2 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}
+                    style={{ borderColor: isDark ? '#475569' : '#D9E3F0' }}
+                  >
+                    <div className="font-semibold">{t(`planner.category.${category as TravelCategory}`)}</div>
+                    <div className={`mt-0.5 text-sm font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{formatPrice(value)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-12">
+          <aside className="space-y-4 xl:col-span-4">
+            <StayFavorites
+              places={planner.visibleSidebarPlaces}
+              favorites={planner.favorites}
+              selectedPlaceId={planner.selectedPlaceId}
+              dayPlaceIds={planner.dayPlaceIds}
+              onSelectPlace={planner.selectPlaceFromList}
+              onQuickAdd={handleQuickAdd}
+              onToggleFavorite={planner.toggleFavorite}
+              onCategoryFilter={planner.setCategoryFilter}
+            />
+
+            <QuickActions
+              onAddDay={planner.addDay}
+              onAddActivity={handleAddActivity}
+              onSuggestDay={handleSuggestActiveDay}
+              onClearDay={handleClearActiveDay}
+              onDuplicateDay={handleDuplicateActiveDay}
+              onAddRestaurant={handleAddRestaurant}
+              onAddAttraction={handleAddAttraction}
+              onSuggestItinerary={planner.suggestItinerary}
+            />
+          </aside>
+
+          <main className="space-y-4 xl:col-span-8">
+            <section
+              ref={mapSectionRef}
+              className={`rounded-2xl border p-4 shadow-sm ${
+                isDark ? 'bg-slate-800' : 'bg-white'
+              } ${isMapFullscreen ? 'fixed inset-4 z-[80] overflow-auto shadow-[0_30px_80px_rgba(15,23,42,0.28)]' : 'xl:sticky xl:top-20 xl:z-10'}`}
+              style={{ borderColor: isDark ? '#334155' : '#D9E3F0' }}
+            >
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h2 className={`text-lg font-black ${isDark ? 'text-slate-50' : 'text-slate-900'}`}>{t('planner.map_preview')}</h2>
+                  <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {t('planner.map_sync_hint')}
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" onClick={toggleMapFullscreen} className="shrink-0">
+                  {isMapFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  {isMapFullscreen ? 'Exit full screen' : 'Full screen'}
+                </Button>
+              </div>
+              <MapFilters
+                filters={planner.filters}
+                options={planner.filterOptions}
+                onTripChange={planner.setTripFilter}
+                onCountryChange={planner.setCountryFilter}
+                onCityChange={planner.setCityFilter}
+                onCategoryChange={planner.setCategoryFilter}
+              />
+              <div className="mt-3">
+                <React.Suspense
+                  fallback={
+                    <div
+                      className={`grid place-items-center rounded-2xl border border-dashed text-sm ${
+                        isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-500'
+                      }`}
+                      style={{ borderColor: isDark ? '#475569' : '#D9E3F0', minHeight: isMapFullscreen ? 'calc(100vh - 18rem)' : 330 }}
+                    >
+                      {t('planner.loading_map_locations')}
+                    </div>
+                  }
+                >
+                  <LazyTripMap
+                    places={visibleMapPlaces}
+                    selectedPlaceId={planner.selectedPlaceId}
+                    focusedPlaceId={planner.mapController.focusedPlaceId}
+                    focusNonce={planner.mapController.focusNonce}
+                    onPlaceSelect={planner.selectPlaceFromMap}
+                    sizeInvalidateKey={isMapFullscreen}
+                    height={isMapFullscreen ? 'calc(100vh - 18rem)' : 330}
+                  />
+                </React.Suspense>
+              </div>
+              <MapLegend
+                showing={visibleMapPlaces.length}
+                total={totalMapPlaces.length}
+                categoryCounts={visibleCategoryCounts}
+              />
+            </section>
+
+            <section className="space-y-3">
+              {planner.activeTrip?.days.map((day, index) => (
+                <DayCard
+                  key={day.id}
+                  day={day}
+                  dayIndex={index}
+                  dayCost={calculateDayCost(day)}
+                  isActive={planner.activeDayId === day.id}
+                  selectedPlaceId={planner.selectedPlaceId}
+                  onSelectDay={() => planner.selectDay(day.id)}
+                  onModeChange={(mode) => planner.setDayMode(day.id, mode)}
+                  onAddActivity={() => planner.addActivity(day.id)}
+                  onSuggestDay={() => planner.suggestDay(day.id, planner.activeSuggestMode)}
+                  onClearDay={() => planner.clearDay(day.id)}
+                  onDuplicateDay={() => planner.duplicateDay(day.id)}
+                  onAddRestaurant={() => planner.addRestaurant(day.id)}
+                  onAddAttraction={() => planner.addAttraction(day.id)}
+                  onAddFirstActivity={() => planner.addActivity(day.id)}
+                  onSuggestItinerary={planner.suggestItinerary}
+                  onSelectPlace={planner.selectPlaceFromList}
+                  onRemovePlace={(placeId) => planner.removePlaceFromDay(day.id, placeId)}
+                />
+              ))}
+            </section>
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}

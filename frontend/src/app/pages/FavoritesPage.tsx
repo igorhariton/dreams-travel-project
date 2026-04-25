@@ -1,0 +1,263 @@
+﻿import React, { useState } from 'react';
+import { Heart, Star, MapPin, Trash2, ArrowRight, Hotel as HotelIcon, Home as HomeIcon, Globe2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import { BookingModal } from '../components/BookingModal';
+import type { Hotel as HotelItem, Rental as RentalItem } from '../data/travelData';
+import { ListingDetailsModal, type ListingDetailsItem } from '../components/ListingDetailsModal';
+
+const typeConfig = {
+  destination: { icon: <Globe2 size={14} />, color: 'bg-blue-100 text-blue-700', labelKey: 'favorites.type.destination' },
+  hotel: { icon: <HotelIcon size={14} />, color: 'bg-purple-100 text-purple-700', labelKey: 'favorites.type.hotel' },
+  rental: { icon: <HomeIcon size={14} />, color: 'bg-emerald-100 text-emerald-700', labelKey: 'favorites.type.rental' },
+};
+
+export default function FavoritesPage() {
+  const { t, translateDynamic, favorites, removeFavorite, formatPrice, publicHotels, publicRentals, publicDestinations, theme } = useApp();
+  const [filter, setFilter] = useState<'all' | 'destination' | 'hotel' | 'rental'>('all');
+  const [activeItem, setActiveItem] = useState<ListingDetailsItem | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const isDark = theme === 'dark';
+
+  const filtered = filter === 'all' ? favorites : favorites.filter(f => f.type === filter);
+  const destinationById = new Map(publicDestinations.map((destination) => [destination.id, destination]));
+
+  const openSavedListing = (id: string, type: 'destination' | 'hotel' | 'rental') => {
+    if (type === 'destination') return;
+
+    if (type === 'hotel') {
+      const hotel = publicHotels.find((entry: HotelItem) => entry.id === id);
+      if (!hotel) return;
+      const destination = destinationById.get(hotel.destinationId);
+      setActiveItem({
+        id: hotel.id,
+        kind: 'hotel',
+        name: hotel.name,
+        location: hotel.location,
+        images: hotel.images,
+        rating: hotel.rating,
+        reviews: hotel.reviews,
+        pricePerNight: hotel.pricePerNight,
+        description: hotel.description,
+        amenities: hotel.amenities,
+        typeLabel: hotel.type.charAt(0).toUpperCase() + hotel.type.slice(1),
+        stars: hotel.stars,
+        lat: destination?.lat,
+        lng: destination?.lng,
+      });
+    } else {
+      const rental = publicRentals.find((entry: RentalItem) => entry.id === id);
+      if (!rental) return;
+      const destination = destinationById.get(rental.destinationId);
+      setActiveItem({
+        id: rental.id,
+        kind: 'rental',
+        name: rental.name,
+        location: rental.location,
+        images: rental.images,
+        rating: rental.rating,
+        reviews: rental.reviews,
+        pricePerNight: rental.pricePerNight,
+        description: rental.description,
+        amenities: rental.amenities,
+        typeLabel: rental.type.charAt(0).toUpperCase() + rental.type.slice(1),
+        host: rental.host,
+        bedrooms: rental.bedrooms,
+        bathrooms: rental.bathrooms,
+        maxGuests: rental.maxGuests,
+        lat: destination?.lat,
+        lng: destination?.lng,
+      });
+    }
+
+    setIsBookingOpen(false);
+    setIsDetailsOpen(true);
+  };
+
+  const closeDetails = () => {
+    setIsDetailsOpen(false);
+    if (!isBookingOpen) setActiveItem(null);
+  };
+
+  const startBooking = () => {
+    setIsDetailsOpen(false);
+    setIsBookingOpen(true);
+  };
+
+  const closeBooking = () => {
+    setIsBookingOpen(false);
+    setActiveItem(null);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-20">
+      {/* Header */}
+      <div className="relative overflow-hidden py-16 px-6">
+        <img
+          src="/images/_site/hero-favorites.jpg"
+          alt="Favorites"
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="eager"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950/72 via-slate-900/56 to-cyan-950/54" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_46%)]" />
+        <div className="relative max-w-5xl mx-auto text-center">
+          <h1 className="text-4xl font-black text-white [text-shadow:0_4px_18px_rgba(2,6,23,0.55)] mb-2">{t('favorites.title')}</h1>
+          <p className="text-white/85 text-lg">{t('favorites.subtitle')}</p>
+          {favorites.length > 0 && (
+            <div className="mt-4 text-sm text-white/90">
+              {favorites.length} {t('favorites.saved')} {favorites.length === 1 ? t('favorites.place_singular') : t('favorites.place_plural')}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {/* Filter tabs */}
+        {favorites.length > 0 && (
+          <div className="flex gap-2 mb-8 overflow-x-auto pb-1 scrollbar-hide">
+            {(['all', 'destination', 'hotel', 'rental'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all ${filter === f ? 'border-rose-500 bg-rose-50 text-rose-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+              >
+                {f === 'all' ? `❤️ ${t('favorites.filter.all')}` : t(typeConfig[f].labelKey)}
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${filter === f ? 'bg-rose-100 text-rose-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {f === 'all' ? favorites.length : favorites.filter(fav => fav.type === f).length}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-24"
+          >
+            <div className="text-7xl mb-6">💔</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('favorites.empty')}</h2>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">{t('favorites.empty_sub')}</p>
+            <Link to="/destinations" className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-rose-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-all">
+              {t('favorites.explore_destinations')} <ArrowRight size={18} />
+            </Link>
+          </motion.div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <AnimatePresence>
+              {filtered.map((item, i) => {
+                const cfg = typeConfig[item.type];
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9, x: -20 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group"
+                  >
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/50 to-transparent" />
+                      <div className="absolute top-3 left-3">
+                        <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full ${cfg.color}`}>
+                          {cfg.icon} {t(cfg.labelKey)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => removeFavorite(item.id)}
+                        className="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all shadow group"
+                      >
+                        <Trash2 size={14} className="text-rose-500" />
+                      </button>
+                    </div>
+
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-base mb-1">{item.name}</h3>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-3">
+                        <MapPin size={10} /> {translateDynamic(item.location)}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          {item.rating && (
+                            <>
+                              <Star size={13} className="text-amber-400 fill-amber-400" />
+                              <span className="text-sm font-semibold text-gray-700">{item.rating}</span>
+                            </>
+                          )}
+                        </div>
+                        {item.price && (
+                          <div className="text-right">
+                            <span className="text-lg font-black text-gray-900">{formatPrice(item.price)}</span>
+                            <span className="text-xs text-gray-400 ml-1">{t('common.per_night')}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        {item.type !== 'destination' && (
+                          <button
+                            onClick={() => openSavedListing(item.id, item.type)}
+                            className="flex-1 py-2 bg-linear-to-r from-rose-500 to-pink-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all"
+                          >
+                            {t('common.view_details')}
+                          </button>
+                        )}
+                        {item.type === 'destination' && (
+                          <Link to="/destinations" className="flex-1 py-2 bg-linear-to-r from-blue-600 to-cyan-500 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all text-center">
+                            {t('favorites.explore_short')} →
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => removeFavorite(item.id)}
+                          className="px-3 py-2 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-500 transition-all"
+                        >
+                          <Heart size={14} className="fill-rose-400 text-rose-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {favorites.length > 0 && (
+          <div
+            className={`mt-12 rounded-2xl p-6 text-center ${
+              isDark
+                ? 'bg-linear-to-r from-slate-900 to-slate-800 border border-slate-700/90 shadow-lg shadow-slate-950/30'
+                : 'bg-linear-to-r from-rose-50 to-pink-50 border border-rose-100'
+            }`}
+          >
+            <h3 className={`font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t('favorites.cta_title')}</h3>
+            <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>{t('favorites.cta_subtitle')}</p>
+            <Link to="/planner" className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-indigo-600 to-purple-500 text-white rounded-xl font-semibold hover:opacity-90 transition-all text-sm">
+              {t('favorites.open_planner')} <ArrowRight size={16} />
+            </Link>
+          </div>
+        )}
+      </div>
+
+      <ListingDetailsModal
+        isOpen={isDetailsOpen}
+        item={activeItem}
+        onClose={closeDetails}
+        onReserve={startBooking}
+      />
+      <BookingModal isOpen={isBookingOpen} onClose={closeBooking} item={activeItem} />
+    </div>
+  );
+}
+
