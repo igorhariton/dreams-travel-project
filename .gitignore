@@ -1,1 +1,11 @@
 frontend/public/images/
+
+node_modules/
+dist/
+.dist/
+.vs/
+
+**/bin/
+**/obj/
+
+/package-lock.json

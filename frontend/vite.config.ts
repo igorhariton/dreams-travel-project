@@ -96,6 +96,16 @@ export default defineConfig({
     },
   },
 
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5134',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+
   build: {
     target: 'esnext',
     chunkSizeWarningLimit: 600,
