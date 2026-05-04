@@ -2,6 +2,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../layouts';
 import { useI18n } from '../context';
+import { BrandIcon } from './components/BrandIcon';
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const DestinationsPage = lazy(() => import('../pages/DestinationsPage'));
@@ -64,9 +65,7 @@ function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center animate-pulse">
-          <span className="text-white text-xl">✈</span>
-        </div>
+        <BrandIcon className="h-12 w-12 animate-pulse" />
         <div className="text-gray-400 text-sm">{translateDynamic('Loading...')}</div>
       </div>
     </div>

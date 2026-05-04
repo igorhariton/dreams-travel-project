@@ -590,7 +590,18 @@ function buildLocalReply(payload: AssistantRequestPayload): AssistantReply {
 
 export async function requestTravelAssistantReply(payload: AssistantRequestPayload): Promise<AssistantReply> {
   try {
-    const data = await apiPost<unknown>(CHAT_API_PATH, payload, { timeoutMs: REQUEST_TIMEOUT_MS });
+    const data = await apiPost<unknown>(
+      CHAT_API_PATH,
+      {
+        ...payload,
+        catalog: {
+          destinations: catalogDestinations,
+          hotels: catalogHotels,
+          rentals: catalogRentals,
+        },
+      },
+      { timeoutMs: REQUEST_TIMEOUT_MS },
+    );
     const normalized = sanitizeApiReply(data, payload.context);
     if (normalized) {
       return normalized;
@@ -617,19 +628,19 @@ async function postAction(endpoint: string, payload: Record<string, unknown>) {
   return { success: true, referenceId, message };
 }
 
-export async function submitBookingRequest(sessionId: string, draft: BookingDraft) {
+export async function submitBookingRequest(sessionId: string, draft: BookingDraft, language?: AssistantRequestPayload['language']) {
   const endpoint = `${ACTIONS_API_BASE_PATH}/booking-request`;
-  return postAction(endpoint, { sessionId, ...draft });
+  return postAction(endpoint, { sessionId, language, ...draft });
 }
 
-export async function submitContactRequest(sessionId: string, draft: ContactDraft) {
+export async function submitContactRequest(sessionId: string, draft: ContactDraft, language?: AssistantRequestPayload['language']) {
   const endpoint = `${ACTIONS_API_BASE_PATH}/contact-host`;
-  return postAction(endpoint, { sessionId, ...draft });
+  return postAction(endpoint, { sessionId, language, ...draft });
 }
 
-export async function submitSupportRequest(sessionId: string, draft: SupportDraft) {
+export async function submitSupportRequest(sessionId: string, draft: SupportDraft, language?: AssistantRequestPayload['language']) {
   const endpoint = `${ACTIONS_API_BASE_PATH}/support`;
-  return postAction(endpoint, { sessionId, ...draft });
+  return postAction(endpoint, { sessionId, language, ...draft });
 }
 
 export function getAllChatListings(): AssistantListing[] {

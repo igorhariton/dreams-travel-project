@@ -22,14 +22,34 @@ import { isApiError } from '../../services/apiClient';
 
 const STORAGE_KEY = 'td_ai_assistant_session_v2';
 
-const QUICK_PROMPTS = [
-  'Recommend destinations for a romantic beach trip',
-  'Find top-rated hotels in Santorini under $350',
-  'Show family rentals in Bali for 4 guests',
-  'What visa requirements apply for Maldives?',
-  'Plan a 4-day itinerary in Tokyo',
-  'I need support with a booking payment issue',
-];
+type ChatLanguage = 'en' | 'ro' | 'ru';
+
+const QUICK_PROMPTS: Record<ChatLanguage, string[]> = {
+  en: [
+    'Recommend destinations for a romantic beach trip',
+    'Find top-rated hotels in Santorini under $350',
+    'Show family rentals in Bali for 4 guests',
+    'What visa requirements apply for Maldives?',
+    'Plan a 4-day itinerary in Tokyo',
+    'I need support with a booking payment issue',
+  ],
+  ro: [
+    'Recomanda destinatii pentru o vacanta romantica la mare',
+    'Gaseste hoteluri de top in Santorini sub $350',
+    'Arata-mi chirii pentru familie in Bali pentru 4 persoane',
+    'Ce cerinte de viza sunt pentru Maldives?',
+    'Planifica un itinerar de 4 zile in Tokyo',
+    'Am nevoie de suport pentru o problema de plata',
+  ],
+  ru: [
+    'Порекомендуй направления для романтической поездки к морю',
+    'Найди лучшие отели в Santorini до $350',
+    'Покажи семейные виллы в Bali на 4 гостей',
+    'Какие визовые требования для Maldives?',
+    'Составь маршрут на 4 дня в Tokyo',
+    'Мне нужна поддержка по проблеме с оплатой',
+  ],
+};
 
 type ActiveComposer =
   | { type: 'booking'; listingId?: string }
@@ -82,15 +102,40 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function createWelcomeMessage(): ChatMessage {
+function getWelcomeCopy(language: ChatLanguage) {
+  if (language === 'ro') {
+    return {
+      text:
+        "Salut, sunt asistentul tau AI TravelDreams.\n\n" +
+        "Te pot ajuta cu recomandari de destinatii, cautare hoteluri/chirii, cereri de rezervare, contactarea gazdei, vize, itinerare si suport.\n\n" +
+        "Spune-mi destinatia, datele, numarul de persoane sau bugetul ca sa incepem.",
+      suggestions: [
+        'Gaseste hoteluri luxury in Paris',
+        'Planifica o vacanta sub $250/noapte',
+        'Am nevoie de o vila cu piscina in Bali',
+      ],
+    };
+  }
+
+  if (language === 'ru') {
+    return {
+      text:
+        "Здравствуйте, я AI-ассистент TravelDreams.\n\n" +
+        "Я помогу подобрать направления, отели и аренду, оформить запрос на бронирование, связаться с хозяином, проверить визы, составить маршрут и обратиться в поддержку.\n\n" +
+        "Напишите направление, даты, число гостей или бюджет, и начнем.",
+      suggestions: [
+        'Найди luxury отели в Paris',
+        'Спланируй поездку до $250 за ночь',
+        'Нужна вилла с бассейном в Bali',
+      ],
+    };
+  }
+
   return {
-    id: createId('assistant'),
-    role: 'assistant',
     text:
       "Hello, I'm your TravelDreams AI assistant.\n\n" +
       "I can help with destination recommendations, hotel/rental search, reservation requests, host contact, visa guidance, itinerary planning, and support.\n\n" +
       'Tell me your destination, dates, guest count, or budget to begin.',
-    timestamp: Date.now(),
     suggestions: [
       'Find me luxury hotels in Paris',
       'Plan a budget trip under $250/night',
@@ -99,8 +144,19 @@ function createWelcomeMessage(): ChatMessage {
   };
 }
 
-function sanitizeStoredMessages(raw: unknown): ChatMessage[] {
-  if (!Array.isArray(raw)) return [createWelcomeMessage()];
+function createWelcomeMessage(language: ChatLanguage = 'en'): ChatMessage {
+  const copy = getWelcomeCopy(language);
+  return {
+    id: createId('assistant'),
+    role: 'assistant',
+    text: copy.text,
+    timestamp: Date.now(),
+    suggestions: copy.suggestions,
+  };
+}
+
+function sanitizeStoredMessages(raw: unknown, language: ChatLanguage): ChatMessage[] {
+  if (!Array.isArray(raw)) return [createWelcomeMessage(language)];
   const result = raw
     .map((item): ChatMessage | null => {
       if (!item || typeof item !== 'object') return null;
@@ -118,13 +174,13 @@ function sanitizeStoredMessages(raw: unknown): ChatMessage[] {
       };
     })
     .filter((item): item is ChatMessage => Boolean(item));
-  return result.length > 0 ? result : [createWelcomeMessage()];
+  return result.length > 0 ? result : [createWelcomeMessage(language)];
 }
 
-function loadSession(): StoredSession {
+function loadSession(language: ChatLanguage): StoredSession {
   const fallback: StoredSession = {
     sessionId: createId('session'),
-    messages: [createWelcomeMessage()],
+    messages: [createWelcomeMessage(language)],
     context: getDefaultAssistantContext(),
   };
 
@@ -136,7 +192,7 @@ function loadSession(): StoredSession {
     const parsed = JSON.parse(raw) as Partial<StoredSession>;
     return {
       sessionId: typeof parsed.sessionId === 'string' ? parsed.sessionId : fallback.sessionId,
-      messages: sanitizeStoredMessages(parsed.messages),
+      messages: sanitizeStoredMessages(parsed.messages, language),
       context: parsed.context && typeof parsed.context === 'object' ? { ...getDefaultAssistantContext(), ...parsed.context } : fallback.context,
     };
   } catch {
@@ -167,19 +223,125 @@ function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null 
   return speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition || null;
 }
 
-function mapSpeechError(errorCode: string) {
+function toChatLanguage(language: string): ChatLanguage {
+  return language === 'ro' || language === 'ru' ? language : 'en';
+}
+
+function toSpeechLanguage(language: ChatLanguage) {
+  if (language === 'ro') return 'ro-RO';
+  if (language === 'ru') return 'ru-RU';
+  return 'en-US';
+}
+
+function chatCopy(language: ChatLanguage, key: string) {
+  const copy: Record<ChatLanguage, Record<string, string>> = {
+    en: {
+      bookingSubmitted: 'Reservation request submitted for',
+      selectedProperty: 'selected property',
+      guests: 'guests',
+      requestOk: 'Your request has been submitted successfully.',
+      referenceId: 'Reference ID',
+      contactHost: 'Contact host',
+      customerSupport: 'Customer support',
+      headerSubtitle: 'Live booking guidance for destinations, properties, host contact, and support',
+      newChat: 'New chat',
+      retry: 'Retry',
+      assistantUnavailable: 'I could not reach the assistant service right now. Please try again in a moment.',
+      contactFollowUp: 'A host representative should reply shortly through your contact channel.',
+      supportFollowUp: 'Our support team will follow up with you as soon as possible.',
+      retryMoment: 'Please try again after a moment.',
+      verifyRetry: 'Please verify your details and try again.',
+      dashboardSupport: 'Please try again shortly or contact support from your account dashboard.',
+      startVoiceInput: 'Start voice input',
+      stopVoiceInput: 'Stop voice input',
+      stoppingVoiceInput: 'Stopping voice input...',
+      speechUnsupported: 'Speech recognition is not supported in this browser.',
+      microphoneDenied: 'Microphone permission denied. Please allow microphone access and try again.',
+      noMicrophone: 'No microphone detected. Connect a microphone and try again.',
+      noSpeech: 'No speech detected. Please speak clearly and try again.',
+      voiceNetwork: 'Network error while processing speech. Please check your connection.',
+      voiceFailed: 'Voice recognition failed. Please try again.',
+      voiceStartFailed: 'Voice recognition could not be started. Try again.',
+      listening: 'Listening...',
+      processingVoice: 'Processing voice input...',
+    },
+    ro: {
+      bookingSubmitted: 'Cerere de rezervare trimisa pentru',
+      selectedProperty: 'proprietatea selectata',
+      guests: 'persoane',
+      requestOk: 'Cererea ta a fost trimisa cu succes.',
+      referenceId: 'ID referinta',
+      contactHost: 'Contacteaza gazda',
+      customerSupport: 'Suport clienti',
+      headerSubtitle: 'Ghid live pentru destinatii, cazari, contact gazda si suport',
+      newChat: 'Chat nou',
+      retry: 'Incearca din nou',
+      assistantUnavailable: 'Nu pot contacta serviciul de chat acum. Incearca din nou peste cateva momente.',
+      contactFollowUp: 'Un reprezentant al gazdei ar trebui sa raspunda curand pe canalul tau de contact.',
+      supportFollowUp: 'Echipa de suport va reveni cat mai curand.',
+      retryMoment: 'Incearca din nou peste cateva momente.',
+      verifyRetry: 'Verifica detaliile si incearca din nou.',
+      dashboardSupport: 'Incearca din nou in scurt timp sau contacteaza suportul din cont.',
+      startVoiceInput: 'Porneste dictarea',
+      stopVoiceInput: 'Opreste dictarea',
+      stoppingVoiceInput: 'Se opreste dictarea...',
+      speechUnsupported: 'Recunoasterea vocala nu este suportata in acest browser.',
+      microphoneDenied: 'Permisiunea pentru microfon a fost refuzata. Permite accesul si incearca din nou.',
+      noMicrophone: 'Nu am detectat microfon. Conecteaza un microfon si incearca din nou.',
+      noSpeech: 'Nu am detectat voce. Vorbeste mai clar si incearca din nou.',
+      voiceNetwork: 'Eroare de retea la procesarea vocii. Verifica conexiunea.',
+      voiceFailed: 'Recunoasterea vocala a esuat. Incearca din nou.',
+      voiceStartFailed: 'Dictarea nu a putut fi pornita. Incearca din nou.',
+      listening: 'Ascult...',
+      processingVoice: 'Procesez vocea...',
+    },
+    ru: {
+      bookingSubmitted: 'Запрос на бронирование отправлен для',
+      selectedProperty: 'выбранного объекта',
+      guests: 'гостей',
+      requestOk: 'Ваш запрос успешно отправлен.',
+      referenceId: 'ID запроса',
+      contactHost: 'Связаться с хозяином',
+      customerSupport: 'Поддержка',
+      headerSubtitle: 'Помощь с направлениями, жильем, связью с хозяином и поддержкой',
+      newChat: 'Новый чат',
+      retry: 'Повторить',
+      assistantUnavailable: 'Сервис чата сейчас недоступен. Попробуйте еще раз через несколько минут.',
+      contactFollowUp: 'Представитель хозяина скоро ответит через ваш контактный канал.',
+      supportFollowUp: 'Команда поддержки свяжется с вами как можно скорее.',
+      retryMoment: 'Попробуйте еще раз через несколько минут.',
+      verifyRetry: 'Проверьте данные и попробуйте снова.',
+      dashboardSupport: 'Попробуйте позже или обратитесь в поддержку из аккаунта.',
+      startVoiceInput: 'Начать голосовой ввод',
+      stopVoiceInput: 'Остановить голосовой ввод',
+      stoppingVoiceInput: 'Остановка голосового ввода...',
+      speechUnsupported: 'Распознавание речи не поддерживается в этом браузере.',
+      microphoneDenied: 'Доступ к микрофону запрещен. Разрешите доступ и попробуйте снова.',
+      noMicrophone: 'Микрофон не найден. Подключите микрофон и попробуйте снова.',
+      noSpeech: 'Речь не обнаружена. Говорите четче и попробуйте снова.',
+      voiceNetwork: 'Ошибка сети при обработке речи. Проверьте подключение.',
+      voiceFailed: 'Распознавание речи не удалось. Попробуйте снова.',
+      voiceStartFailed: 'Не удалось запустить голосовой ввод. Попробуйте снова.',
+      listening: 'Слушаю...',
+      processingVoice: 'Обработка голоса...',
+    },
+  };
+  return copy[language][key] || copy.en[key] || key;
+}
+
+function mapSpeechError(language: ChatLanguage, errorCode: string) {
   switch (errorCode) {
     case 'not-allowed':
     case 'service-not-allowed':
-      return 'Microphone permission denied. Please allow microphone access and try again.';
+      return chatCopy(language, 'microphoneDenied');
     case 'audio-capture':
-      return 'No microphone detected. Connect a microphone and try again.';
+      return chatCopy(language, 'noMicrophone');
     case 'no-speech':
-      return 'No speech detected. Please speak clearly and try again.';
+      return chatCopy(language, 'noSpeech');
     case 'network':
-      return 'Network error while processing speech. Please check your connection.';
+      return chatCopy(language, 'voiceNetwork');
     default:
-      return 'Voice recognition failed. Please try again.';
+      return chatCopy(language, 'voiceFailed');
   }
 }
 
@@ -210,9 +372,10 @@ function toServiceErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function ChatPage() {
-  const { t, formatPrice, theme, publicDestinations, publicHotels, publicRentals } = useApp();
+  const { t, formatPrice, theme, language, publicDestinations, publicHotels, publicRentals } = useApp();
   const navigate = useNavigate();
-  const initialSession = useMemo(() => loadSession(), []);
+  const chatLanguage = toChatLanguage(language);
+  const initialSession = useMemo(() => loadSession(chatLanguage), []);
   const isDarkTheme = theme === 'dark';
 
   const [sessionId, setSessionId] = useState(initialSession.sessionId);
@@ -349,6 +512,7 @@ export default function ChatPage() {
           message: messageText,
           history: historyForRequest.slice(-16).map((item) => ({ role: item.role, text: item.text })),
           context: contextState,
+          language: chatLanguage,
         });
 
         setContextState(reply.context);
@@ -356,7 +520,7 @@ export default function ChatPage() {
       } catch (error) {
         const errorMessage = toServiceErrorMessage(
           error,
-          'I could not reach the assistant service right now. Please try again in a moment.',
+          chatCopy(chatLanguage, 'assistantUnavailable'),
         );
         setMessages((prev) => [
           ...prev,
@@ -366,8 +530,8 @@ export default function ChatPage() {
             text: errorMessage,
             timestamp: Date.now(),
             actions: [
-              { id: createId('retry'), label: 'Retry', kind: 'check_availability' },
-              { id: createId('support'), label: 'Customer support', kind: 'open_support' },
+              { id: createId('retry'), label: chatCopy(chatLanguage, 'retry'), kind: 'check_availability' },
+              { id: createId('support'), label: chatCopy(chatLanguage, 'customerSupport'), kind: 'open_support' },
             ],
           },
         ]);
@@ -375,7 +539,7 @@ export default function ChatPage() {
         setIsSending(false);
       }
     },
-    [contextState, input, isSending, messages, sessionId],
+    [chatLanguage, contextState, input, isSending, messages, sessionId],
   );
 
   const handleAction = useCallback(
@@ -416,7 +580,7 @@ export default function ChatPage() {
     async (draft: Parameters<typeof submitBookingRequest>[1]) => {
       const listing = listingCatalog.find((item) => item.id === draft.listingId);
       try {
-        const response = await submitBookingRequest(sessionId, draft);
+        const response = await submitBookingRequest(sessionId, draft, chatLanguage);
 
         setMessages((prev) => [
           ...prev,
@@ -424,20 +588,20 @@ export default function ChatPage() {
             id: createId('system'),
             role: 'system',
             text:
-              `Reservation request submitted for ${listing?.title || 'selected property'} ` +
-              `(${draft.checkIn} → ${draft.checkOut}, ${draft.guests} guests).`,
+              `${chatCopy(chatLanguage, 'bookingSubmitted')} ${listing?.title || chatCopy(chatLanguage, 'selectedProperty')} ` +
+              `(${draft.checkIn} -> ${draft.checkOut}, ${draft.guests} ${chatCopy(chatLanguage, 'guests')}).`,
             timestamp: Date.now(),
           },
           {
             id: createId('assistant'),
             role: 'assistant',
             text:
-              `${response.message || 'Your request has been submitted successfully.'}\n` +
-              `Reference ID: ${response.referenceId}`,
+              `${response.message || chatCopy(chatLanguage, 'requestOk')}\n` +
+              `${chatCopy(chatLanguage, 'referenceId')}: ${response.referenceId}`,
             timestamp: Date.now(),
             actions: [
-              { id: createId('contact-host'), kind: 'contact_host', label: 'Contact host', payload: { listingId: draft.listingId } },
-              { id: createId('support'), kind: 'open_support', label: 'Customer support' },
+              { id: createId('contact-host'), kind: 'contact_host', label: chatCopy(chatLanguage, 'contactHost'), payload: { listingId: draft.listingId } },
+              { id: createId('support'), kind: 'open_support', label: chatCopy(chatLanguage, 'customerSupport') },
             ],
           },
         ]);
@@ -449,19 +613,19 @@ export default function ChatPage() {
           {
             id: createId('assistant'),
             role: 'assistant',
-            text: `${errorMessage}\nPlease try again after a moment.`,
+            text: `${errorMessage}\n${chatCopy(chatLanguage, 'retryMoment')}`,
             timestamp: Date.now(),
           },
         ]);
       }
     },
-    [listingCatalog, sessionId],
+    [chatLanguage, listingCatalog, sessionId],
   );
 
   const handleContactSubmit = useCallback(
     async (draft: Parameters<typeof submitContactRequest>[1]) => {
       try {
-        const response = await submitContactRequest(sessionId, draft);
+        const response = await submitContactRequest(sessionId, draft, chatLanguage);
         setMessages((prev) => [
           ...prev,
           {
@@ -469,8 +633,8 @@ export default function ChatPage() {
             role: 'assistant',
             text:
               `${response.message || 'Host contact request sent.'}\n` +
-              `Reference ID: ${response.referenceId}\n` +
-              'A host representative should reply shortly through your contact channel.',
+              `${chatCopy(chatLanguage, 'referenceId')}: ${response.referenceId}\n` +
+              chatCopy(chatLanguage, 'contactFollowUp'),
             timestamp: Date.now(),
           },
         ]);
@@ -482,19 +646,19 @@ export default function ChatPage() {
           {
             id: createId('assistant'),
             role: 'assistant',
-            text: `${errorMessage}\nPlease verify your details and try again.`,
+            text: `${errorMessage}\n${chatCopy(chatLanguage, 'verifyRetry')}`,
             timestamp: Date.now(),
           },
         ]);
       }
     },
-    [sessionId],
+    [chatLanguage, sessionId],
   );
 
   const handleSupportSubmit = useCallback(
     async (draft: Parameters<typeof submitSupportRequest>[1]) => {
       try {
-        const response = await submitSupportRequest(sessionId, draft);
+        const response = await submitSupportRequest(sessionId, draft, chatLanguage);
         setMessages((prev) => [
           ...prev,
           {
@@ -502,8 +666,8 @@ export default function ChatPage() {
             role: 'assistant',
             text:
               `${response.message || 'Support request submitted.'}\n` +
-              `Reference ID: ${response.referenceId}\n` +
-              'Our support team will follow up with you as soon as possible.',
+              `${chatCopy(chatLanguage, 'referenceId')}: ${response.referenceId}\n` +
+              chatCopy(chatLanguage, 'supportFollowUp'),
             timestamp: Date.now(),
           },
         ]);
@@ -515,13 +679,13 @@ export default function ChatPage() {
           {
             id: createId('assistant'),
             role: 'assistant',
-            text: `${errorMessage}\nPlease try again shortly or contact support from your account dashboard.`,
+            text: `${errorMessage}\n${chatCopy(chatLanguage, 'dashboardSupport')}`,
             timestamp: Date.now(),
           },
         ]);
       }
     },
-    [sessionId],
+    [chatLanguage, sessionId],
   );
 
   const stopVoiceRecognition = useCallback((forceAbort = false) => {
@@ -540,7 +704,7 @@ export default function ChatPage() {
   const startVoiceRecognition = useCallback(() => {
     const RecognitionCtor = getSpeechRecognitionConstructor();
     if (!RecognitionCtor) {
-      setVoiceError('Speech recognition is not supported in this browser.');
+      setVoiceError(chatCopy(chatLanguage, 'speechUnsupported'));
       setVoiceState('error');
       return;
     }
@@ -553,7 +717,7 @@ export default function ChatPage() {
 
     setVoiceError(null);
     setInterimTranscript('');
-    recognition.lang = navigator.language || 'en-US';
+    recognition.lang = toSpeechLanguage(chatLanguage);
     recognition.continuous = true;
     recognition.interimResults = true;
 
@@ -586,7 +750,7 @@ export default function ChatPage() {
 
     recognition.onerror = (event) => {
       setInterimTranscript('');
-      setVoiceError(mapSpeechError(event.error));
+      setVoiceError(mapSpeechError(chatLanguage, event.error));
       setVoiceState('error');
     };
 
@@ -599,10 +763,10 @@ export default function ChatPage() {
     try {
       recognition.start();
     } catch {
-      setVoiceError('Voice recognition could not be started. Try again.');
+      setVoiceError(chatCopy(chatLanguage, 'voiceStartFailed'));
       setVoiceState('error');
     }
-  }, []);
+  }, [chatLanguage]);
 
   const handleMicrophoneClick = useCallback(() => {
     if (voiceState === 'listening') {
@@ -621,7 +785,7 @@ export default function ChatPage() {
   const resetConversation = () => {
     const newSessionId = createId('session');
     setSessionId(newSessionId);
-    setMessages([createWelcomeMessage()]);
+    setMessages([createWelcomeMessage(chatLanguage)]);
     setContextState(getDefaultAssistantContext());
     setActiveComposer(null);
     if (typeof window !== 'undefined') {
@@ -687,7 +851,7 @@ export default function ChatPage() {
             <div className="min-w-0">
               <h1 className="truncate text-lg font-black">Travel AI Assistant</h1>
               <p className="truncate text-sm text-white/80">
-                Live booking guidance for destinations, properties, host contact, and support
+                {chatCopy(chatLanguage, 'headerSubtitle')}
               </p>
             </div>
           </div>
@@ -697,7 +861,7 @@ export default function ChatPage() {
             className="travel-badge inline-flex items-center gap-2 bg-white/20 px-4 py-2 text-sm font-semibold transition hover:bg-white/30"
           >
             <RefreshCw size={14} />
-            New chat
+            {chatCopy(chatLanguage, 'newChat')}
           </button>
         </div>
 
@@ -712,7 +876,7 @@ export default function ChatPage() {
           className="quick-prompts-scroll mb-3 flex cursor-grab gap-2 overflow-x-auto overflow-y-hidden pb-2 active:cursor-grabbing select-none"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {QUICK_PROMPTS.map((prompt) => (
+          {QUICK_PROMPTS[chatLanguage].map((prompt) => (
             <button
               key={prompt}
               type="button"
@@ -897,10 +1061,10 @@ export default function ChatPage() {
             onClick={handleMicrophoneClick}
             title={
               voiceState === 'listening'
-                ? 'Stop voice input'
+                ? chatCopy(chatLanguage, 'stopVoiceInput')
                 : voiceState === 'processing'
-                  ? 'Stopping voice input...'
-                  : 'Start voice input'
+                  ? chatCopy(chatLanguage, 'stoppingVoiceInput')
+                  : chatCopy(chatLanguage, 'startVoiceInput')
             }
             className={`travel-icon-button p-3 transition ${
               voiceState === 'listening'
@@ -955,9 +1119,9 @@ export default function ChatPage() {
             {voiceError
               ? voiceError
               : voiceState === 'listening'
-                ? `Listening...${interimTranscript ? ` ${interimTranscript}` : ''}`
+                ? `${chatCopy(chatLanguage, 'listening')}${interimTranscript ? ` ${interimTranscript}` : ''}`
                 : voiceState === 'processing'
-                  ? 'Processing voice input...'
+                  ? chatCopy(chatLanguage, 'processingVoice')
                   : null}
           </div>
         )}

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { BrandIcon } from "../components/BrandIcon";
 
 function GoogleIcon() {
   return (
@@ -123,9 +124,7 @@ export default function TravelLoginPage() {
             </button>
 
             <div className="flex items-center gap-3 rounded-full bg-white/88 px-4 py-3 shadow-lg backdrop-blur-md">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff7a18_0%,#ffd200_100%)] text-lg shadow-sm">
-                ✈
-              </div>
+              <BrandIcon className="h-10 w-10 shrink-0" />
               <p className="text-[1.7rem] font-black tracking-[-0.04em] text-[#1f2937]">
                 TravelDreams
               </p>
@@ -167,9 +166,7 @@ export default function TravelLoginPage() {
                   ←
                 </button>
 
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#ff7a18_0%,#ffd200_100%)] text-lg shadow-sm">
-                  ✈
-                </div>
+                <BrandIcon className="h-11 w-11 shrink-0" />
                 <p className="text-[1.9rem] font-black tracking-[-0.04em] text-[#1f2937]">
                   TravelDreams
                 </p>

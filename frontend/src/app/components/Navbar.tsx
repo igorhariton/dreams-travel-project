@@ -5,6 +5,7 @@ import { useApp, Language } from '../../context';
 import { motion, AnimatePresence } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 import { supportedLanguages } from '../../i18n';
+import { BrandIcon } from './BrandIcon';
 
 export function Navbar() {
   const { language, setLanguage, role, favorites, bookings, t, theme, currentUser, logout, toggleTheme } = useApp();
@@ -124,9 +125,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center shadow-md">
-              <span className="text-white text-lg">✈</span>
-            </div>
+            <BrandIcon className="h-9 w-9 shrink-0" />
             <div className="hidden sm:block">
               <span className={`font-bold text-lg ${darkNav ? 'text-white' : theme === 'dark' ? 'text-slate-100' : 'text-gray-900'}`}>Travel</span>
               <span className="font-bold text-lg text-cyan-400">Dreams</span>

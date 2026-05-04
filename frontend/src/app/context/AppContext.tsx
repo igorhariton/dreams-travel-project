@@ -91,7 +91,7 @@ export type RegisterData = {
   email: string;
   phone: string;
   password: string;
-  role: 'host';
+  role: 'user' | 'host';
 };
 
 const STORAGE_KEYS = {

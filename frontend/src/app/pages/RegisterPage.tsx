@@ -1,6 +1,7 @@
 ﻿import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useApp } from "../context/AppContext";
+import { BrandIcon } from "../components/BrandIcon";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -59,7 +60,7 @@ export default function RegisterPage() {
       email: email.trim(),
       phone: phone.trim(),
       password,
-      role: "host",
+      role: "user",
     });
 
     if (!result.success) {
@@ -103,9 +104,7 @@ export default function RegisterPage() {
             </button>
 
             <div className="flex items-center gap-3 rounded-full bg-white/88 px-4 py-3 shadow-lg">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-yellow-300">
-                ✈
-              </div>
+              <BrandIcon className="h-10 w-10 shrink-0" />
               <p className="text-xl font-black text-[#1f2937]">
                 TravelDreams
               </p>
@@ -139,9 +138,7 @@ export default function RegisterPage() {
                 </span>
               </button>
 
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-yellow-300">
-                ✈
-              </div>
+              <BrandIcon className="h-11 w-11 shrink-0" />
 
               <p className="text-xl font-black text-[#1f2937]">
                 TravelDreams

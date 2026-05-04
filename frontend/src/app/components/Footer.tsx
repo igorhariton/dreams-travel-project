@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Facebook, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { BrandIcon } from './BrandIcon';
 
 export function Footer() {
   const { t, translateDynamic, theme } = useApp();
@@ -40,9 +41,7 @@ export function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
-                <span className="text-white text-lg">✈</span>
-              </div>
+              <BrandIcon className="h-9 w-9 shrink-0" />
               <span className="text-white font-bold text-lg">Travel<span className="text-cyan-400">Dreams</span></span>
             </div>
             <p className="text-sm text-gray-400 leading-relaxed mb-5">

@@ -63,6 +63,7 @@ export interface AssistantRequestPayload {
   message: string;
   history: Array<Pick<ChatMessage, 'role' | 'text'>>;
   context: AssistantContextState;
+  language?: 'en' | 'ro' | 'ru';
 }
 
 export interface AssistantReply {
