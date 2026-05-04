@@ -74,7 +74,7 @@ namespace TravelBackend.BusinessLayer.Core
                     Country = data.Country,
                     Description = data.Description,
                     ImageUrl = data.ImageUrl,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 db.Destinations.Add(destinationData);
                 db.SaveChanges();
@@ -103,7 +103,7 @@ namespace TravelBackend.BusinessLayer.Core
             localData.Country = data.Country;
             localData.Description = data.Description;
             localData.ImageUrl = data.ImageUrl;
-            localData.UpdatedAt = DateTime.Now;
+            localData.UpdatedAt = DateTime.UtcNow;
 
             using (var db = new TravelContext())
             {

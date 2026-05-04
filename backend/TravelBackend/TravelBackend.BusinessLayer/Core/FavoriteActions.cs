@@ -70,7 +70,7 @@ namespace TravelBackend.BusinessLayer.Core
                     UserId = data.UserId,
                     ListingType = data.ListingType,
                     ListingId = data.ListingId,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 db.Favorites.Add(favoriteData);
                 db.SaveChanges();

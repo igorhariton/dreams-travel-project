@@ -73,7 +73,7 @@ namespace TravelBackend.BusinessLayer.Core
                     PricePerNight = data.PricePerNight,
                     Rating = data.Rating,
                     ImageUrl = data.ImageUrl,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 db.Hotels.Add(hotelData);
                 db.SaveChanges();
@@ -104,7 +104,7 @@ namespace TravelBackend.BusinessLayer.Core
             localData.PricePerNight = data.PricePerNight;
             localData.Rating = data.Rating;
             localData.ImageUrl = data.ImageUrl;
-            localData.UpdatedAt = DateTime.Now;
+            localData.UpdatedAt = DateTime.UtcNow;
 
             using (var db = new TravelContext())
             {

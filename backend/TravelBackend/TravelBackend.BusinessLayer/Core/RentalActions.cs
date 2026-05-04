@@ -73,7 +73,7 @@ namespace TravelBackend.BusinessLayer.Core
                     DestinationId = data.DestinationId,
                     PricePerDay = data.PricePerDay,
                     ImageUrl = data.ImageUrl,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 db.Rentals.Add(rentalData);
                 db.SaveChanges();
@@ -104,7 +104,7 @@ namespace TravelBackend.BusinessLayer.Core
             localData.DestinationId = data.DestinationId;
             localData.PricePerDay = data.PricePerDay;
             localData.ImageUrl = data.ImageUrl;
-            localData.UpdatedAt = DateTime.Now;
+            localData.UpdatedAt = DateTime.UtcNow;
 
             using (var db = new TravelContext())
             {

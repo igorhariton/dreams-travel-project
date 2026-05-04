@@ -10,6 +10,7 @@ namespace TravelBackend.Api.Controller
     [ApiController]
     public class AuthCompatibilityController : ControllerBase
     {
+        private const string SessionCookieName = "td_session_user_id";
         private readonly IUserLoginAction _userLogin;
         private readonly IUserRegAction _userRegister;
 
@@ -47,6 +48,8 @@ namespace TravelBackend.Api.Controller
             {
                 return Unauthorized(new { message = "User profile could not be loaded." });
             }
+
+            SignIn(user);
 
             return Ok(new
             {
@@ -103,6 +106,8 @@ namespace TravelBackend.Api.Controller
                 }
             }
 
+            SignIn(user);
+
             return Ok(new
             {
                 message = result.Message,
@@ -113,12 +118,22 @@ namespace TravelBackend.Api.Controller
         [HttpGet("me")]
         public IActionResult Me()
         {
-            return Unauthorized(new { message = "No active session." });
+            var user = GetSessionUser();
+            if (user == null)
+            {
+                return Unauthorized(new { message = "No active session." });
+            }
+
+            return Ok(new
+            {
+                user = ToFrontendUser(user)
+            });
         }
 
         [HttpPost("logout")]
         public IActionResult Logout()
         {
+            Response.Cookies.Delete(SessionCookieName);
             return Ok(new { message = "Logged out." });
         }
 
@@ -126,6 +141,33 @@ namespace TravelBackend.Api.Controller
         {
             using var db = new UserContext();
             return db.Users.FirstOrDefault(x => x.UserName == credential || x.Email == credential);
+        }
+
+        private UserData? GetSessionUser()
+        {
+            if (!Request.Cookies.TryGetValue(SessionCookieName, out var rawUserId) ||
+                !int.TryParse(rawUserId, out var userId))
+            {
+                return null;
+            }
+
+            using var db = new UserContext();
+            return db.Users.FirstOrDefault(x => x.Id == userId);
+        }
+
+        private void SignIn(UserData user)
+        {
+            Response.Cookies.Append(
+                SessionCookieName,
+                user.Id.ToString(),
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    IsEssential = true,
+                    MaxAge = TimeSpan.FromDays(7),
+                    SameSite = SameSiteMode.Lax,
+                    Secure = Request.IsHttps
+                });
         }
 
         private static object ToFrontendUser(UserData user)

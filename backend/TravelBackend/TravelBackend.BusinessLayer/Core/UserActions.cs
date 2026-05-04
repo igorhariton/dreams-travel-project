@@ -64,7 +64,7 @@ namespace TravelBackend.BusinessLayer.Core
                 UserName = uReg.UserName,
                 Phone = uReg.Phone,
                 Role = UserRole.User,
-                RegisteredOn = DateTime.Now
+                RegisteredOn = DateTime.UtcNow
             };
 
             using (var db = new UserContext())

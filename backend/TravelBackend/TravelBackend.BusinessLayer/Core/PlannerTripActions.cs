@@ -82,7 +82,7 @@ namespace TravelBackend.BusinessLayer.Core
                     StartDate = data.StartDate,
                     EndDate = data.EndDate,
                     Notes = data.Notes,
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.UtcNow
                 };
                 db.PlannerTrips.Add(tripData);
                 db.SaveChanges();
@@ -113,7 +113,7 @@ namespace TravelBackend.BusinessLayer.Core
             localData.StartDate = data.StartDate;
             localData.EndDate = data.EndDate;
             localData.Notes = data.Notes;
-            localData.UpdatedAt = DateTime.Now;
+            localData.UpdatedAt = DateTime.UtcNow;
 
             using (var db = new TravelContext())
             {
